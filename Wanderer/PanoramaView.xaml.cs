@@ -52,8 +52,7 @@ namespace Wanderer
                     bitmapImage = new BitmapImage();
                     bitmapImage.SetSource(imageStream);
                 }
-            }
-
+            }           
             panoramaImage.Source = bitmapImage;
         }
 

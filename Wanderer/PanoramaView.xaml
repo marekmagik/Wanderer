@@ -11,7 +11,7 @@
     Foreground="{StaticResource PhoneForegroundBrush}"
     SupportedOrientations="Landscape" Orientation="Landscape"
     mc:Ignorable="d"
-    shell:SystemTray.IsVisible="True">
+    shell:SystemTray.IsVisible="False">
 
     <!--LayoutRoot is the root grid where all page content is placed-->
     <Grid x:Name="LayoutRoot" Background="Transparent">
@@ -34,7 +34,7 @@
                 </ImageBrush>
             </Grid.Background>
         -->
-            <Image Name="PanoramaImage" Source="/Polonina.jpg" Height="Auto" Width="Auto" Stretch="UniformToFill"  Visibility="Visible"/>
+            <Image Name="PanoramaImage" Height="Auto" Width="Auto" Stretch="UniformToFill"  Visibility="Visible"/>
         </Grid>
     </Grid>
 </phone:PhoneApplicationPage>
