@@ -37,5 +37,11 @@ namespace Wanderer
         //    ApplicationBarMenuItem appBarMenuItem = new ApplicationBarMenuItem(AppResources.AppBarMenuItemText);
         //    ApplicationBar.MenuItems.Add(appBarMenuItem);
         //}
+
+        private void showPanoramaViewPage(Object sender, RoutedEventArgs e)
+        {
+            NavigationService.Navigate(new Uri("/PanoramaView.xaml", UriKind.Relative));
+        }
+
     }
 }
