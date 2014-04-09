@@ -13,6 +13,7 @@ using Windows.Storage;
 using System.IO;
 using System.IO.IsolatedStorage;
 using System.Threading.Tasks;
+using System.Windows.Input;
 
 namespace Wanderer
 {
@@ -39,7 +40,6 @@ namespace Wanderer
             StorageFolder localRoot = ApplicationData.Current.LocalFolder;
             LoadImage("/PołoninaWetlińska.jpg", PanoramaImage);
 
-
         }
 
         private async void LoadImage(string filename, Image panoramaImage)
@@ -52,8 +52,11 @@ namespace Wanderer
                     bitmapImage = new BitmapImage();
                     bitmapImage.SetSource(imageStream);
                 }
-            }           
-            panoramaImage.Source = bitmapImage;
+            }
+            ImageSource = bitmapImage;
+
+            panoramaImage.DataContext = imageSource;
+         
         }
 
         private Task<Stream> LoadImageAsync(string filename)
@@ -76,6 +79,14 @@ namespace Wanderer
                 }
                 return stream;
             });
+        }
+
+
+
+        private void manipulationDeltaHandler(object sender, ManipulationDeltaEventArgs e)
+        {
+         //   PanoramaImageMove.X += e.DeltaManipulation.Translation.X;
+
         }
 
     }
