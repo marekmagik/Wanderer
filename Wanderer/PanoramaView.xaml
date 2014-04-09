@@ -14,8 +14,8 @@
     shell:SystemTray.IsVisible="False">
 
     <!--LayoutRoot is the root grid where all page content is placed-->
-    <Grid x:Name="LayoutRoot" Background="Transparent">
-       <!-- <Grid.RowDefinitions>
+    <Grid x:Name="LayoutRoot" Background="Transparent" Width="10000">
+        <!-- <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
@@ -28,28 +28,29 @@
         -->
 
         <!--ContentPanel - place additional content here-->
-   
-    <!--    <Grid x:Name="ContentPanel" Grid.Row="1" Margin="0,0,0,0">
+
+        <!--    <Grid x:Name="ContentPanel" Grid.Row="1" Margin="0,0,0,0">
      -->
-            <!--    <Grid.Background>
+        <!--    <Grid.Background>
                 <ImageBrush x:Name="PanoramaImage" ImageSource="{Binding Path=ImageSource}">
                 </ImageBrush>
             </Grid.Background>
         -->
-            <ScrollViewer Name="ScrollViewer" VerticalAlignment="Center" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-                <Image Name="PanoramaImage" Source="{Binding}" Visibility="Visible" ManipulationDelta="manipulationDeltaHandler">
-           
-                    <!--  <Image.RenderTransform>
-                            <TranslateTransform x:Name="PanoramaImageMove"></TranslateTransform>
-                        </Image.RenderTransform>
-                    -->
+        <!--        <ScrollViewer Name="ScrollViewer" VerticalAlignment="Center" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+-->
+        <Image Name="PanoramaImage" Source="{Binding}" Visibility="Visible" ManipulationDelta="manipulationDeltaHandler" HorizontalAlignment="Left">
 
-                </Image>
+            <Image.RenderTransform>
+                <TranslateTransform x:Name="PanoramaImageMove"></TranslateTransform>
+            </Image.RenderTransform>
 
-        </ScrollViewer>
 
-        </Grid>
-<!--    
+        </Image>
+
+        <!--        </ScrollViewer>
+-->
+    </Grid>
+    <!--    
 </Grid>
-   --> 
+   -->
 </phone:PhoneApplicationPage>

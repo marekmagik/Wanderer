@@ -54,9 +54,10 @@ namespace Wanderer
                 }
             }
             ImageSource = bitmapImage;
-
+           
             panoramaImage.DataContext = imageSource;
-         
+            panoramaImage.Width = 7000;
+
         }
 
         private Task<Stream> LoadImageAsync(string filename)
@@ -85,7 +86,7 @@ namespace Wanderer
 
         private void manipulationDeltaHandler(object sender, ManipulationDeltaEventArgs e)
         {
-         //   PanoramaImageMove.X += e.DeltaManipulation.Translation.X;
+            PanoramaImageMove.X += e.DeltaManipulation.Translation.X;
 
         }
 
