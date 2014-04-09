@@ -54,9 +54,10 @@ namespace Wanderer
                 }
             }
             ImageSource = bitmapImage;
-           
-            panoramaImage.DataContext = imageSource;
-            panoramaImage.Width = 7000;
+            panoramaImage.DataContext = imageSource; 
+
+            panoramaImage.Width = bitmapImage.PixelWidth;
+            LayoutRoot.Width = panoramaImage.Width;
 
         }
 
