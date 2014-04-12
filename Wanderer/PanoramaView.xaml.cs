@@ -14,6 +14,7 @@ using System.IO;
 using System.IO.IsolatedStorage;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using System.Diagnostics;
 
 namespace Wanderer
 {
@@ -39,7 +40,6 @@ namespace Wanderer
 
             StorageFolder localRoot = ApplicationData.Current.LocalFolder;
             LoadImage("/PołoninaWetlińska.jpg", PanoramaImage);
-
         }
 
         private async void LoadImage(string filename, Image panoramaImage)
@@ -53,11 +53,11 @@ namespace Wanderer
                     bitmapImage.SetSource(imageStream);
                 }
             }
+
             ImageSource = bitmapImage;
-            panoramaImage.DataContext = imageSource; 
+            panoramaImage.DataContext = imageSource;
 
             panoramaImage.Width = bitmapImage.PixelWidth;
-            LayoutRoot.Width = panoramaImage.Width;
 
         }
 
@@ -87,9 +87,49 @@ namespace Wanderer
 
         private void manipulationDeltaHandler(object sender, ManipulationDeltaEventArgs e)
         {
-            PanoramaImageMove.X += e.DeltaManipulation.Translation.X;
+            PanoramaTransform.X += e.DeltaManipulation.Translation.X;
+        }
+
+        private void manipulationCompletedHandler(object sender, ManipulationCompletedEventArgs e)
+        {
+
+            /* jeśli podczas oderwania palca od ekranu powinna być widoczna bezwładność obrazka */
+            if (e.IsInertial)
+            {
+
+                /* wyliczenie współczynnika bezwładności na podstawie prędkości przesuwania palca */
+                double dx2 = e.FinalVelocities.LinearVelocity.X / 4.0;
+
+                /* utworzenie nowego wątku - ma to na celu opuszczenie Handlera (zwolnienie Dispatchera), aby móc odświeżać ekran. 
+                   Odświeżanie okranu odbywa się po ZAKOŃCZENIU metody, którą obsługuje wątek UI, czyli Dispatcher.
+                   Handler jest metodą Dispatchera, dlatego nie można wewnątrz niej odświeżać ekranu.
+                */
+                System.Threading.Thread startupThread =
+                 new System.Threading.Thread(new System.Threading.ThreadStart(delegate { ComputeInertia(dx2); }));
+                startupThread.Start();
+
+            }
+        }
+
+        /* Metoda wyliczająca kolejne (coraz mniejsze) "kroki" bezwładności i odświeża PanoramaImage */
+        private void ComputeInertia(double dx2)
+        {
+            while (Math.Abs(dx2) > 1.0)
+            {
+                dx2 = dx2 / 2.2;
+
+                Deployment.Current.Dispatcher.BeginInvoke(delegate
+                {
+                    PanoramaTransform.X += dx2;
+                }
+                );
+
+                System.Threading.Thread.Sleep(30);
+
+            }
 
         }
+
 
     }
 }
