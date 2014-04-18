@@ -12,16 +12,23 @@
     SupportedOrientations="Landscape" Orientation="Landscape"
     mc:Ignorable="d"
     shell:SystemTray.IsVisible="False">
-    
-        <Grid x:Name="LayoutRoot" Background="Green" Width="Auto" >
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
 
-            <Image Grid.Column="0" Name="PanoramaImage" Source="{Binding}" VerticalAlignment="Top" Visibility="Visible" ManipulationDelta="manipulationDeltaHandler" ManipulationCompleted="manipulationCompletedHandler" HorizontalAlignment="Left">
+    <Grid x:Name="LayoutRoot" Background="Green" Width="Auto" >
+        <Canvas>
+            <Image Name="PanoramaImageLeft" Source="{Binding}"  HorizontalAlignment="Left"  Visibility="Visible" ManipulationDelta="manipulationDeltaHandlerLeft" ManipulationCompleted="manipulationCompletedHandlerLeft" DoubleTap="doubleTapHandler">
                 <Image.RenderTransform>
-                    <TranslateTransform x:Name="PanoramaTransform"></TranslateTransform>
+                    <CompositeTransform x:Name="PanoramaTransformLeft"></CompositeTransform>
                 </Image.RenderTransform>
             </Image>
-        </Grid>
+        </Canvas>
+
+        <Canvas>
+            <Image Name="PanoramaImageRight" Source="{Binding}"  HorizontalAlignment="Right" Visibility="Visible" ManipulationDelta="manipulationDeltaHandlerRight" ManipulationCompleted="manipulationCompletedHandlerRight" DoubleTap="doubleTapHandler">
+                <Image.RenderTransform>
+                    <CompositeTransform x:Name="PanoramaTransformRight"></CompositeTransform>
+                </Image.RenderTransform>
+            </Image>
+        </Canvas>
+
+    </Grid>
 </phone:PhoneApplicationPage>
