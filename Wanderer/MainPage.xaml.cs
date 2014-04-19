@@ -40,7 +40,12 @@ namespace Wanderer
 
         private void showPanoramaViewPage(Object sender, RoutedEventArgs e)
         {
-            NavigationService.Navigate(new Uri("/PanoramaView.xaml", UriKind.Relative));
+            /* Wywołanie Garbage Collectora jest konieczne - gdy ładujemy duże zdjęcia, a poprzednie jest w pamięci 
+             * może wystąpić naruszenie pamięci (core dump).
+             */
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            NavigationService.Navigate(new Uri("/PanoramaView.xaml", UriKind.Relative));  
         }
 
     }

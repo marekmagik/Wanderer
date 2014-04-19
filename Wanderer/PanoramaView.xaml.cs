@@ -15,6 +15,7 @@ using System.IO.IsolatedStorage;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Diagnostics;
+using Microsoft.Phone;
 
 namespace Wanderer
 {
@@ -35,7 +36,6 @@ namespace Wanderer
             set
             {
                 imageSource = value;
-
             }
         }
 
@@ -45,31 +45,53 @@ namespace Wanderer
         {
             InitializeComponent();
 
+
+            PanoramaImageLeft.DataContext = null;
+            PanoramaImageRight.DataContext = null;
+            imageSource = null;
+            GC.Collect();
+
             StorageFolder localRoot = ApplicationData.Current.LocalFolder;
-            LoadImage("/PołoninaWetlińska.jpg", PanoramaImageLeft);
-            LoadImage("/PołoninaWetlińska.jpg", PanoramaImageRight);
+            //LoadImage("/PołoninaWetlińska.jpg");
+            //LoadImage("/PołoninaWetlińska.jpg");
+
+            LoadImage("/foto4.jpg");
+            //LoadImage("/foto4.jpg");
         }
 
-        private async void LoadImage(string filename, Image panoramaImage)
+        private async void LoadImage(string filename)
         {
-            BitmapImage bitmapImage = null;
-            using (var imageStream = await LoadImageAsync(filename))
+            //BitmapImage bitmapImage2;
+            //bitmapImage2.
+
+            using (var stream = await LoadImageAsync(filename))
             {
-                if (imageStream != null)
-                {
-                    bitmapImage = new BitmapImage();
-                    bitmapImage.SetSource(imageStream);
-                }
+                WriteableBitmap bitmapImage = PictureDecoder.DecodeJpeg(await LoadImageAsync(filename));
+
+                ImageSource = bitmapImage;
+                PanoramaImageLeft.DataContext = ImageSource;
+                PanoramaImageRight.DataContext = ImageSource;
+
+                //panoramaImage.Width = bitmapImage.PixelWidth;
+                //panoramaImage.Height = bitmapImage.PixelHeight;
+                
+         //       PanoramaImageRight.Height = 480;
+         //      PanoramaImageLeft.Height = 480;
+
+                //width = (int) PanoramaImageLeft.ActualWidth;
+
+                CompositeTransform transformLeft = (CompositeTransform)PanoramaImageLeft.RenderTransform;
+                CompositeTransform transformRight = (CompositeTransform)PanoramaImageRight.RenderTransform;
+                double scale = 0.5;
+                transformLeft.ScaleX = scale;
+                transformLeft.ScaleY = scale;
+                transformRight.ScaleX = scale;
+                transformRight.ScaleY = scale;
+
+                width = (int) (bitmapImage.PixelWidth * scale);
+
+                Debug.WriteLine("Size: " + bitmapImage.PixelWidth + " x " + bitmapImage.PixelHeight);
             }
-
-            ImageSource = bitmapImage;
-            panoramaImage.DataContext = ImageSource;
-
-            panoramaImage.Width = bitmapImage.PixelWidth;
-            width = bitmapImage.PixelWidth;
-
-            Debug.WriteLine(panoramaImage.ActualWidth);
-
         }
 
         private Task<Stream> LoadImageAsync(string filename)
@@ -98,17 +120,17 @@ namespace Wanderer
 
         private void manipulationDeltaHandlerLeft(object sender, ManipulationDeltaEventArgs e)
         {
-         
+
             if (e.DeltaManipulation.Scale.X > 0.0 && e.DeltaManipulation.Scale.Y > 0.0)
             {
 
+                CompositeTransform scaleTransformLeft = (CompositeTransform)PanoramaImageLeft.RenderTransform;
+                CompositeTransform scaleTransformRight = (CompositeTransform)PanoramaImageRight.RenderTransform;
 
-                CompositeTransform scaleTransform = (CompositeTransform) PanoramaImageLeft.RenderTransform;
-
-                double xScaleValue = scaleTransform.ScaleX * e.DeltaManipulation.Scale.X;
-                double yScaleValue = scaleTransform.ScaleY * e.DeltaManipulation.Scale.Y;
+                double xScaleValue = scaleTransformLeft.ScaleX * e.DeltaManipulation.Scale.X;
+                double yScaleValue = scaleTransformLeft.ScaleY * e.DeltaManipulation.Scale.Y;
                 double scaleValue = Math.Max(xScaleValue, yScaleValue);
-                
+
                 if (scaleValue < 1.0)
                 {
                     scaleValue = 1.0;
@@ -118,22 +140,24 @@ namespace Wanderer
                     scaleValue = MAX_SCALE;
                 }
 
-                scaleTransform.ScaleX = scaleValue;
-                scaleTransform.ScaleY = scaleValue;         
-
+                scaleTransformLeft.ScaleX = scaleValue;
+                scaleTransformLeft.ScaleY = scaleValue;
+                scaleTransformRight.ScaleX = scaleValue;
+                scaleTransformRight.ScaleY = scaleValue;
             }
             else
             {
                 MoveHorizontial(PanoramaTransformLeft, PanoramaTransformRight, e.DeltaManipulation.Translation.X);
 
-              //  PanoramaTransformLeft.TranslateX += e.DeltaManipulation.Translation.X;
+                //  PanoramaTransformLeft.TranslateX += e.DeltaManipulation.Translation.X;
 
-                if (PanoramaTransformLeft.ScaleX > 1.0)
-                {
+                //       if (PanoramaTransformLeft.ScaleX > 1.0)
+                //       {
 
-                    PanoramaTransformLeft.TranslateY += e.DeltaManipulation.Translation.Y;
-              
-                }
+                PanoramaTransformLeft.TranslateY += e.DeltaManipulation.Translation.Y;
+                PanoramaTransformRight.TranslateY += e.DeltaManipulation.Translation.Y;
+
+                //        }
 
             }
 
@@ -172,12 +196,13 @@ namespace Wanderer
 
                 //  PanoramaTransformLeft.TranslateX += e.DeltaManipulation.Translation.X;
 
-                if (PanoramaTransformLeft.ScaleX > 1.0)
-                {
+                //       if (PanoramaTransformLeft.ScaleX > 1.0)
+                //       {
 
-                    PanoramaTransformLeft.TranslateY += e.DeltaManipulation.Translation.Y;
+                PanoramaTransformLeft.TranslateY += e.DeltaManipulation.Translation.Y;
+                PanoramaTransformRight.TranslateY += e.DeltaManipulation.Translation.Y;
 
-                }
+                //       }
 
             }
 
@@ -277,8 +302,8 @@ namespace Wanderer
             {
                 if (position == "left")
                 {
-                    transform2.TranslateX += width +1;
-                    transform2.TranslateX += width +1; 
+                    transform2.TranslateX += width + 1;
+                    transform2.TranslateX += width + 1;
                     position = "both_r";
                 }
             }
@@ -292,8 +317,8 @@ namespace Wanderer
             {
                 if (position == "right")
                 {
-                    transform2.TranslateX -= width -1;
-                    transform2.TranslateX -= width -1;
+                    transform2.TranslateX -= width - 1;
+                    transform2.TranslateX -= width - 1;
                     position = "both_l";
                 }
             }
@@ -301,6 +326,7 @@ namespace Wanderer
 
         private void doubleTapHandler(object sender, System.Windows.Input.GestureEventArgs e)
         {
+
             if (PanoramaTransformLeft.ScaleX == 1.0)
             {
                 PanoramaTransformLeft.ScaleX = MAX_SCALE;
@@ -308,14 +334,14 @@ namespace Wanderer
                 PanoramaTransformRight.ScaleX = MAX_SCALE;
                 PanoramaTransformRight.ScaleY = MAX_SCALE;
 
-                PanoramaTransformLeft.TranslateX *=  MAX_SCALE;
+                PanoramaTransformLeft.TranslateX *= MAX_SCALE;
                 PanoramaTransformLeft.TranslateX -= 265.0 * MAX_SCALE;
                 PanoramaTransformRight.TranslateX *= MAX_SCALE;
                 PanoramaTransformRight.TranslateX -= 265.0 * MAX_SCALE;
 
 
                 PanoramaTransformLeft.TranslateY = -(PanoramaImageRight.ActualHeight);
-            
+
             }
             else
             {
@@ -337,10 +363,10 @@ namespace Wanderer
         }
 
     }
-/*
- * Rozważyć powiększenie przez odczytanie aktualnych współrzędnych (centrum) potem zmiana 
- * wysokości / szerokości (może wystąpić problem granulacji) i ustawienie punktu centrum.
- * 
-*/
+    /*
+     * Rozważyć powiększenie przez odczytanie aktualnych współrzędnych (centrum) potem zmiana 
+     * wysokości / szerokości (może wystąpić problem granulacji) i ustawienie punktu centrum.
+     * 
+    */
 
 }
