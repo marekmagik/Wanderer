@@ -21,12 +21,15 @@ namespace Wanderer
 {
     public partial class PanoramaView : PhoneApplicationPage
     {
-        private double MAX_SCALE = 3.0;
+        private double MIN_SCALE;
+        private readonly double MAX_SCALE = 1.0;
 
+        private double currentScale;
+
+        private int height;
         private int width;
-        private String position = "right";
-        private int actualPositionLeft = 0;
-        private int actualPositionRight = 800;
+        private int screenWidth;
+        private int screenHeight;
 
         private ImageSource imageSource;
 
@@ -40,11 +43,9 @@ namespace Wanderer
         }
 
 
-
         public PanoramaView()
         {
             InitializeComponent();
-
 
             PanoramaImageLeft.DataContext = null;
             PanoramaImageRight.DataContext = null;
@@ -53,16 +54,16 @@ namespace Wanderer
 
             StorageFolder localRoot = ApplicationData.Current.LocalFolder;
             //LoadImage("/PołoninaWetlińska.jpg");
-            //LoadImage("/PołoninaWetlińska.jpg");
+            LoadImage("/PołoninaWetlińska.jpg", 800, 480, true);
 
-            LoadImage("/foto4.jpg");
+            //LoadImage("/foto4.jpg", 800, 480, true);
             //LoadImage("/foto4.jpg");
         }
 
-        private async void LoadImage(string filename)
+        private async void LoadImage(string filename, int screenResolutionWidth, int screenResolutionHeight, bool isImageFullyPanoramic)
         {
-            //BitmapImage bitmapImage2;
-            //bitmapImage2.
+            screenWidth = screenResolutionWidth;
+            screenHeight = screenResolutionHeight;
 
             using (var stream = await LoadImageAsync(filename))
             {
@@ -72,23 +73,19 @@ namespace Wanderer
                 PanoramaImageLeft.DataContext = ImageSource;
                 PanoramaImageRight.DataContext = ImageSource;
 
-                //panoramaImage.Width = bitmapImage.PixelWidth;
-                //panoramaImage.Height = bitmapImage.PixelHeight;
-                
-         //       PanoramaImageRight.Height = 480;
-         //      PanoramaImageLeft.Height = 480;
-
-                //width = (int) PanoramaImageLeft.ActualWidth;
-
                 CompositeTransform transformLeft = (CompositeTransform)PanoramaImageLeft.RenderTransform;
                 CompositeTransform transformRight = (CompositeTransform)PanoramaImageRight.RenderTransform;
-                double scale = 0.5;
-                transformLeft.ScaleX = scale;
-                transformLeft.ScaleY = scale;
-                transformRight.ScaleX = scale;
-                transformRight.ScaleY = scale;
+                //  double scale = 
+                MIN_SCALE = (double)screenHeight / (double)bitmapImage.PixelHeight;
+                currentScale = MIN_SCALE;
 
-                width = (int) (bitmapImage.PixelWidth * scale);
+                transformLeft.ScaleX = currentScale;
+                transformLeft.ScaleY = currentScale;
+                transformRight.ScaleX = currentScale;
+                transformRight.ScaleY = currentScale;
+
+                width = bitmapImage.PixelWidth;
+                height = bitmapImage.PixelHeight;
 
                 Debug.WriteLine("Size: " + bitmapImage.PixelWidth + " x " + bitmapImage.PixelHeight);
             }
@@ -127,13 +124,13 @@ namespace Wanderer
                 CompositeTransform scaleTransformLeft = (CompositeTransform)PanoramaImageLeft.RenderTransform;
                 CompositeTransform scaleTransformRight = (CompositeTransform)PanoramaImageRight.RenderTransform;
 
-                double xScaleValue = scaleTransformLeft.ScaleX * e.DeltaManipulation.Scale.X;
-                double yScaleValue = scaleTransformLeft.ScaleY * e.DeltaManipulation.Scale.Y;
+                double xScaleValue = currentScale * e.DeltaManipulation.Scale.X;
+                double yScaleValue = currentScale * e.DeltaManipulation.Scale.Y;
                 double scaleValue = Math.Max(xScaleValue, yScaleValue);
 
-                if (scaleValue < 1.0)
+                if (scaleValue < MIN_SCALE)
                 {
-                    scaleValue = 1.0;
+                    scaleValue = MIN_SCALE;
                 }
                 else if (scaleValue > MAX_SCALE)
                 {
@@ -144,20 +141,49 @@ namespace Wanderer
                 scaleTransformLeft.ScaleY = scaleValue;
                 scaleTransformRight.ScaleX = scaleValue;
                 scaleTransformRight.ScaleY = scaleValue;
+
+                currentScale = scaleValue;
+
+                PanoramaTransformRight.TranslateX = PanoramaTransformLeft.TranslateX + (width * currentScale);
             }
             else
             {
-                MoveHorizontial(PanoramaTransformLeft, PanoramaTransformRight, e.DeltaManipulation.Translation.X);
+                Deployment.Current.Dispatcher.BeginInvoke(delegate
+                    {
 
-                //  PanoramaTransformLeft.TranslateX += e.DeltaManipulation.Translation.X;
+                        if (e.DeltaManipulation.Translation.X < width)
+                        {
 
-                //       if (PanoramaTransformLeft.ScaleX > 1.0)
-                //       {
+                            MoveHorizontial(e.DeltaManipulation.Translation.X * currentScale);
+                        }
+                        else
+                        {
+                            MoveHorizontial(width * currentScale);
 
-                PanoramaTransformLeft.TranslateY += e.DeltaManipulation.Translation.Y;
-                PanoramaTransformRight.TranslateY += e.DeltaManipulation.Translation.Y;
+                        }
 
-                //        }
+                    });
+
+                double yTransform = PanoramaTransformLeft.TranslateY + (e.DeltaManipulation.Translation.Y * currentScale);
+
+                if (yTransform < 0 && (yTransform > (((-1.0) * height * currentScale) + screenHeight)))
+                {
+                    PanoramaTransformLeft.TranslateY += e.DeltaManipulation.Translation.Y * currentScale;
+                    PanoramaTransformRight.TranslateY += e.DeltaManipulation.Translation.Y * currentScale;
+                }
+                else
+                {
+                    if (yTransform > (((-1.0) * height * currentScale) + screenHeight))
+                    {
+                        PanoramaTransformLeft.TranslateY = 0;
+                        PanoramaTransformRight.TranslateY = 0;
+                    }
+                    else
+                    {
+                        PanoramaTransformLeft.TranslateY = (-1.0) * height * currentScale + screenHeight;// -880;
+                        PanoramaTransformRight.TranslateY = (-1.0) * height * currentScale + screenHeight;// -880;
+                    }
+                }
 
             }
 
@@ -170,47 +196,74 @@ namespace Wanderer
             if (e.DeltaManipulation.Scale.X > 0.0 && e.DeltaManipulation.Scale.Y > 0.0)
             {
 
+                CompositeTransform scaleTransformLeft = (CompositeTransform)PanoramaImageLeft.RenderTransform;
+                CompositeTransform scaleTransformRight = (CompositeTransform)PanoramaImageRight.RenderTransform;
 
-                CompositeTransform scaleTransform = (CompositeTransform)PanoramaImageLeft.RenderTransform;
-
-                double xScaleValue = scaleTransform.ScaleX * e.DeltaManipulation.Scale.X;
-                double yScaleValue = scaleTransform.ScaleY * e.DeltaManipulation.Scale.Y;
+                double xScaleValue = currentScale * e.DeltaManipulation.Scale.X;
+                double yScaleValue = currentScale * e.DeltaManipulation.Scale.Y;
                 double scaleValue = Math.Max(xScaleValue, yScaleValue);
 
-                if (scaleValue < 1.0)
+                if (scaleValue < MIN_SCALE)
                 {
-                    scaleValue = 1.0;
+                    scaleValue = MIN_SCALE;
                 }
                 else if (scaleValue > MAX_SCALE)
                 {
                     scaleValue = MAX_SCALE;
                 }
 
-                scaleTransform.ScaleX = scaleValue;
-                scaleTransform.ScaleY = scaleValue;
+                scaleTransformLeft.ScaleX = scaleValue;
+                scaleTransformLeft.ScaleY = scaleValue;
+                scaleTransformRight.ScaleX = scaleValue;
+                scaleTransformRight.ScaleY = scaleValue;
 
+                currentScale = scaleValue;
+
+                PanoramaTransformRight.TranslateX = PanoramaTransformLeft.TranslateX + (width * currentScale);
             }
             else
             {
-                MoveHorizontial(PanoramaTransformRight, PanoramaTransformLeft, e.DeltaManipulation.Translation.X);
+                Deployment.Current.Dispatcher.BeginInvoke(delegate
+                     {
+                         if (e.DeltaManipulation.Translation.X < width)
+                         {
+                             MoveHorizontial(e.DeltaManipulation.Translation.X * currentScale);
+                         }
+                         else
+                         {
+                             MoveHorizontial(width * currentScale);
+                         }
+                     });
 
-                //  PanoramaTransformLeft.TranslateX += e.DeltaManipulation.Translation.X;
+                double yTransform = PanoramaTransformRight.TranslateY + (e.DeltaManipulation.Translation.Y * currentScale);
 
-                //       if (PanoramaTransformLeft.ScaleX > 1.0)
-                //       {
-
-                PanoramaTransformLeft.TranslateY += e.DeltaManipulation.Translation.Y;
-                PanoramaTransformRight.TranslateY += e.DeltaManipulation.Translation.Y;
-
-                //       }
+                if (yTransform < 0 && (yTransform > (((-1.0) * height * currentScale) + screenHeight)))
+                {
+                    PanoramaTransformLeft.TranslateY += e.DeltaManipulation.Translation.Y * currentScale;
+                    PanoramaTransformRight.TranslateY += e.DeltaManipulation.Translation.Y * currentScale;
+                }
+                else
+                {
+                    if (yTransform > (((-1.0) * height * currentScale) + screenHeight))
+                    {
+                        PanoramaTransformLeft.TranslateY = 0;
+                        PanoramaTransformRight.TranslateY = 0;
+                    }
+                    else
+                    {
+                        PanoramaTransformLeft.TranslateY = (-1.0) * height * currentScale + screenHeight;
+                        PanoramaTransformRight.TranslateY = (-1.0) * height * currentScale + screenHeight;
+                    }
+                }
 
             }
 
         }
 
 
-        private void manipulationCompletedHandlerLeft(object sender, ManipulationCompletedEventArgs e)
+        private void manipulationCompletedHandler(object sender, ManipulationCompletedEventArgs e)
         {
+            //return;
             /* jeśli podczas oderwania palca od ekranu powinna być widoczna bezwładność obrazka */
             if (e.IsInertial)
             {
@@ -223,150 +276,161 @@ namespace Wanderer
                    Handler jest metodą Dispatchera, dlatego nie można wewnątrz niej odświeżać ekranu.
                 */
                 System.Threading.Thread startupThread =
-                 new System.Threading.Thread(new System.Threading.ThreadStart(delegate { ComputeInertia(dx2, PanoramaTransformLeft, PanoramaTransformRight); }));
+                 new System.Threading.Thread(new System.Threading.ThreadStart(delegate { ComputeInertia(dx2); }));
                 startupThread.Start();
 
             }
         }
-
-        private void manipulationCompletedHandlerRight(object sender, ManipulationCompletedEventArgs e)
-        {
-            /* jeśli podczas oderwania palca od ekranu powinna być widoczna bezwładność obrazka */
-            if (e.IsInertial)
-            {
-
-                /* wyliczenie współczynnika bezwładności na podstawie prędkości przesuwania palca */
-                double dx2 = e.FinalVelocities.LinearVelocity.X / 4.0;
-
-                /* utworzenie nowego wątku - ma to na celu opuszczenie Handlera (zwolnienie Dispatchera), aby móc odświeżać ekran. 
-                   Odświeżanie okranu odbywa się po ZAKOŃCZENIU metody, którą obsługuje wątek UI, czyli Dispatcher.
-                   Handler jest metodą Dispatchera, dlatego nie można wewnątrz niej odświeżać ekranu.
-                */
-                System.Threading.Thread startupThread =
-                 new System.Threading.Thread(new System.Threading.ThreadStart(delegate { ComputeInertia(dx2, PanoramaTransformRight, PanoramaTransformLeft); }));
-                startupThread.Start();
-
-            }
-        }
-
-
 
 
         /* Metoda wyliczająca kolejne (coraz mniejsze) "kroki" bezwładności i odświeża PanoramaImage */
-        private void ComputeInertia(double dx2, CompositeTransform transform, CompositeTransform transform2)
+        private void ComputeInertia(double dx2)
         {
+            double singleStep;
+            dx2 *= currentScale;
             dx2 /= 1.3;
-
             while (Math.Abs(dx2) > 1.0)
             {
                 dx2 = dx2 / 1.45;
-
-                Deployment.Current.Dispatcher.BeginInvoke(delegate
+                singleStep = dx2;
+                //Debug.WriteLine(singleStep);
+                /* wywołanie metody odpowiedzialnej za przesuwanie musi odbywać się wewnątrz wątku Dispatchera, 
+                 * aby po jej zakończeniu wygenerowany został Event aktualizujący View.
+                 */
+                while (Math.Abs(singleStep) > 0)
                 {
-                    //PanoramaTransform.TranslateX += dx2;
-                    MoveHorizontial(transform, transform2, dx2);
-                }
-                );
+                    Deployment.Current.Dispatcher.BeginInvoke(delegate
+                    {
+                        singleStep = MoveHorizontial(singleStep);
+                    }
+                    );
 
-                System.Threading.Thread.Sleep(30);
+                    /* Cykliczne wstrzymanie aktualizacji jest konieczne, aby efekt zmniejszania inercjii był widoczny.
+                     */
+                    System.Threading.Thread.Sleep(30);
+
+
+                }
+
 
             }
 
         }
 
-        private void MoveHorizontial(CompositeTransform transform, CompositeTransform transform2, double dx2)
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.Synchronized)]
+        private double MoveHorizontial(double dx2)
         {
-            if (transform2.TranslateX == transform.TranslateX)
-                transform2.TranslateX += width - 1;
+            double distanceToCompleteSingleIntertiaStep = 0;
 
-            transform.TranslateX += dx2;
-            transform2.TranslateX += dx2;
-            actualPositionRight -= (int)dx2;
-            actualPositionLeft -= (int)dx2;
-
-            if (actualPositionLeft > 0 && actualPositionRight < width)
+            /* Po wczytaniu strony oba zdjęcia znajdują się w tym samym miejscu. 
+             * Lewe zdjęcie należy przesunąć o szerokość zdjęcia. 
+             * Warunek ten jest spełniony tylko jeden raz w przeciągu istnienia danej instancji tej strony.
+             */
+            if (PanoramaTransformLeft.TranslateX == PanoramaTransformRight.TranslateX)
             {
-                if (position == "both_l")
-                    position = "left";
-                else if (position == "both_r")
-                    position = "right";
+                PanoramaTransformLeft.TranslateX -= (width * currentScale) - 1;
             }
 
-            if (actualPositionRight >= width + 800)
+            /* Warunek jest spełniony jeśli przesunięcie palcem było na tyle silne, że w czasie przesuwania zdjęć 
+             * wystąpi conajmniej dwukrotnie konieczność przesunięcia obu do środka, aby uzyskać efekt nieskończonego przesuwania. 
+             */
+            if (Math.Abs(dx2) > (width * currentScale))
             {
-                position = "left";
-                actualPositionLeft = 0 - (int)dx2;
-                actualPositionRight = 800 - (int)dx2;
-            }
-            else if (actualPositionRight >= width)
-            {
-                if (position == "left")
+                if (dx2 > 0)
                 {
-                    transform2.TranslateX += width + 1;
-                    transform2.TranslateX += width + 1;
-                    position = "both_r";
+                    distanceToCompleteSingleIntertiaStep = dx2 - (width * currentScale);
+                    dx2 = width * currentScale;
+                }
+                else
+                {
+                    distanceToCompleteSingleIntertiaStep = dx2 + (width * currentScale);
+                    dx2 = (-1.0) * width * currentScale;
                 }
             }
-            else if (actualPositionLeft <= -800)
+
+            /* Przesunięcie zdjęcia. */
+            PanoramaTransformLeft.TranslateX += dx2;
+            PanoramaTransformRight.TranslateX += dx2;
+
+            /* Warunki są spełnione jeśli odpowiednio: 
+             *   - nastąpiło zbyt duże przesunięcie w lewo,
+             *   - nastąpiło zbyt duże przesunięcie w prawo, 
+             *  wtedy oba zdjęcia przesuwamy do środka, o długość zdjęcia
+             */
+            if (PanoramaTransformLeft.TranslateX >= 0)
             {
-                position = "right";
-                actualPositionLeft = width - 800 - (int)dx2;
-                actualPositionRight = width - (int)dx2;
+                PanoramaTransformLeft.TranslateX -= width * currentScale;
+                PanoramaTransformRight.TranslateX -= width * currentScale;
             }
-            else if (actualPositionLeft <= 0)
+            if ((PanoramaTransformRight.TranslateX + (width * currentScale)) < screenWidth)
             {
-                if (position == "right")
-                {
-                    transform2.TranslateX -= width - 1;
-                    transform2.TranslateX -= width - 1;
-                    position = "both_l";
-                }
+                PanoramaTransformLeft.TranslateX += width * currentScale;
+                PanoramaTransformRight.TranslateX += width * currentScale;
             }
+
+            return distanceToCompleteSingleIntertiaStep;
         }
 
         private void doubleTapHandler(object sender, System.Windows.Input.GestureEventArgs e)
         {
 
-            if (PanoramaTransformLeft.ScaleX == 1.0)
+            if (PanoramaTransformLeft.ScaleX == MAX_SCALE)
             {
+                PanoramaTransformLeft.ScaleX = MIN_SCALE;
+                PanoramaTransformLeft.ScaleY = MIN_SCALE;
+                PanoramaTransformRight.ScaleX = MIN_SCALE;
+                PanoramaTransformRight.ScaleY = MIN_SCALE;
+
+
+                //    PanoramaTransformLeft.TranslateX *= MIN_SCALE;
+                //     PanoramaTransformLeft.TranslateX -= 265.0 * MIN_SCALE;
+                //      PanoramaTransformRight.TranslateX *= MIN_SCALE;
+                //      PanoramaTransformRight.TranslateX -= 265.0 * MIN_SCALE;
+
+                currentScale = MIN_SCALE;
+                PanoramaTransformLeft.TranslateY = 0.0;
+                PanoramaTransformRight.TranslateY = 0.0;
+            }
+            else
+            {
+                double scaleX = currentScale;
+
                 PanoramaTransformLeft.ScaleX = MAX_SCALE;
                 PanoramaTransformLeft.ScaleY = MAX_SCALE;
                 PanoramaTransformRight.ScaleX = MAX_SCALE;
                 PanoramaTransformRight.ScaleY = MAX_SCALE;
 
-                PanoramaTransformLeft.TranslateX *= MAX_SCALE;
-                PanoramaTransformLeft.TranslateX -= 265.0 * MAX_SCALE;
-                PanoramaTransformRight.TranslateX *= MAX_SCALE;
-                PanoramaTransformRight.TranslateX -= 265.0 * MAX_SCALE;
 
+                //    PanoramaTransformLeft.TranslateX *= (1 / scaleX);
+                // PanoramaTransformLeft.TranslateX += 88.25 * scaleX;
+                //    PanoramaTransformRight.TranslateX *= (1 / scaleX);
+                //  PanoramaTransformRight.TranslateX += 88.25 * scaleX;
+
+                currentScale = MAX_SCALE;
 
                 PanoramaTransformLeft.TranslateY = -(PanoramaImageRight.ActualHeight);
 
             }
-            else
-            {
-                double scaleX = PanoramaTransformLeft.ScaleX;
-                PanoramaTransformLeft.ScaleX = 1.0;
-                PanoramaTransformLeft.ScaleY = 1.0;
-                PanoramaTransformRight.ScaleX = 1.0;
-                PanoramaTransformRight.ScaleY = 1.0;
-
-                PanoramaTransformLeft.TranslateX *= (1 / scaleX);
-                PanoramaTransformLeft.TranslateX += 88.25 * scaleX;
-                PanoramaTransformRight.TranslateX *= (1 / scaleX);
-                PanoramaTransformRight.TranslateX += 88.25 * scaleX;
-
-
-                PanoramaTransformLeft.TranslateY = 0.0;
-                PanoramaTransformRight.TranslateY = 0.0;
-            }
         }
 
     }
-    /*
+    /* 
+     * BRUDNOPIS:
+     * 
      * Rozważyć powiększenie przez odczytanie aktualnych współrzędnych (centrum) potem zmiana 
      * wysokości / szerokości (może wystąpić problem granulacji) i ustawienie punktu centrum.
      * 
     */
+
+    /* Update:
+     * Problem granulacji jest już rozwiązany, przez zastąpienie Bitmap przez WriteableBitmap, 
+     * TO DO:
+     * 
+     * - zapytać promotora o powiększanie ponad oryginalny rozmiar zdjęcia,
+     * - sparametryzować szerokość drugiego zdjęcia (możliwość ustawienia czarnego tła)
+     * - czarny piksel, rozciągnięcie, itd.
+     * - sprawdzić cykl życia strony (ponowne ładowanie strony, obrazka, [jeśli taki sam = brak przeładowania])
+     * 
+     */
 
 }

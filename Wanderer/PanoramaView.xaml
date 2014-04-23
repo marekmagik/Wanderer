@@ -13,9 +13,10 @@
     mc:Ignorable="d"
     shell:SystemTray.IsVisible="False">
 
+
     <Grid x:Name="LayoutRoot" Background="Green" Width="Auto" >
         <Canvas>
-            <Image Name="PanoramaImageLeft" Source="{Binding}"  HorizontalAlignment="Left"  Visibility="Visible" ManipulationDelta="manipulationDeltaHandlerLeft" ManipulationCompleted="manipulationCompletedHandlerLeft" DoubleTap="doubleTapHandler">
+            <Image Name="PanoramaImageLeft" Source="{Binding}"  HorizontalAlignment="Left"  Visibility="Visible" ManipulationDelta="manipulationDeltaHandlerLeft" ManipulationCompleted="manipulationCompletedHandler" DoubleTap="doubleTapHandler">
                 <Image.RenderTransform>
                     <CompositeTransform x:Name="PanoramaTransformLeft"></CompositeTransform>
                 </Image.RenderTransform>
@@ -23,7 +24,7 @@
         </Canvas>
 
         <Canvas>
-            <Image Name="PanoramaImageRight" Source="{Binding}"  HorizontalAlignment="Right" Visibility="Visible" ManipulationDelta="manipulationDeltaHandlerRight" ManipulationCompleted="manipulationCompletedHandlerRight" DoubleTap="doubleTapHandler">
+            <Image Name="PanoramaImageRight" Source="{Binding}"  HorizontalAlignment="Right" Visibility="Visible" ManipulationDelta="manipulationDeltaHandlerRight" ManipulationCompleted="manipulationCompletedHandler" DoubleTap="doubleTapHandler">
                 <Image.RenderTransform>
                     <CompositeTransform x:Name="PanoramaTransformRight"></CompositeTransform>
                 </Image.RenderTransform>
@@ -31,4 +32,5 @@
         </Canvas>
 
     </Grid>
+
 </phone:PhoneApplicationPage>
