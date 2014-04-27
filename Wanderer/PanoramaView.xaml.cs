@@ -54,9 +54,9 @@ namespace Wanderer
 
             StorageFolder localRoot = ApplicationData.Current.LocalFolder;
             //LoadImage("/PołoninaWetlińska.jpg");
-            LoadImage("/PołoninaWetlińska.jpg", 800, 480, true);
+            //LoadImage("/PołoninaWetlińska.jpg", 800, 480, true);
 
-            //LoadImage("/foto4.jpg", 800, 480, true);
+            LoadImage("/foto4.jpg", 800, 480, true);
             //LoadImage("/foto4.jpg");
         }
 
@@ -151,44 +151,21 @@ namespace Wanderer
             {
                 Deployment.Current.Dispatcher.BeginInvoke(delegate
                     {
-
                         if (e.DeltaManipulation.Translation.X < width)
                         {
-
                             MoveHorizontial(e.DeltaManipulation.Translation.X * currentScale);
                         }
                         else
                         {
                             MoveHorizontial(width * currentScale);
-
                         }
 
+                        MoveVertical(e.DeltaManipulation.Translation.Y * currentScale);
                     });
-
-                double yTransform = PanoramaTransformLeft.TranslateY + (e.DeltaManipulation.Translation.Y * currentScale);
-
-                if (yTransform < 0 && (yTransform > (((-1.0) * height * currentScale) + screenHeight)))
-                {
-                    PanoramaTransformLeft.TranslateY += e.DeltaManipulation.Translation.Y * currentScale;
-                    PanoramaTransformRight.TranslateY += e.DeltaManipulation.Translation.Y * currentScale;
-                }
-                else
-                {
-                    if (yTransform > (((-1.0) * height * currentScale) + screenHeight))
-                    {
-                        PanoramaTransformLeft.TranslateY = 0;
-                        PanoramaTransformRight.TranslateY = 0;
-                    }
-                    else
-                    {
-                        PanoramaTransformLeft.TranslateY = (-1.0) * height * currentScale + screenHeight;// -880;
-                        PanoramaTransformRight.TranslateY = (-1.0) * height * currentScale + screenHeight;// -880;
-                    }
-                }
             }
         }
 
-        private void scaleImages(double newScale, double translateFactor) 
+        private void scaleImages(double newScale, double translateFactor)
         {
             double positionHorizontalBefore = PanoramaTransformLeft.TranslateX;
             double positionVerticalBefore = PanoramaTransformLeft.TranslateY;
@@ -219,20 +196,20 @@ namespace Wanderer
 
         private void manipulationCompletedHandler(object sender, ManipulationCompletedEventArgs e)
         {
-            //return;
             /* jeśli podczas oderwania palca od ekranu powinna być widoczna bezwładność obrazka */
             if (e.IsInertial)
             {
 
                 /* wyliczenie współczynnika bezwładności na podstawie prędkości przesuwania palca */
-                double dx2 = e.FinalVelocities.LinearVelocity.X / 2.0;  //4.0;
+                double dx2 = e.FinalVelocities.LinearVelocity.X / 2.0;
+                double dy2 = e.FinalVelocities.LinearVelocity.Y / 2.0;
 
                 /* utworzenie nowego wątku - ma to na celu opuszczenie Handlera (zwolnienie Dispatchera), aby móc odświeżać ekran. 
                    Odświeżanie okranu odbywa się po ZAKOŃCZENIU metody, którą obsługuje wątek UI, czyli Dispatcher.
                    Handler jest metodą Dispatchera, dlatego nie można wewnątrz niej odświeżać ekranu.
                 */
                 System.Threading.Thread startupThread =
-                new System.Threading.Thread(new System.Threading.ThreadStart(delegate { ComputeInertia(dx2); }));
+                new System.Threading.Thread(new System.Threading.ThreadStart(delegate { ComputeInertia(dx2, dy2); }));
                 startupThread.Start();
 
             }
@@ -240,30 +217,59 @@ namespace Wanderer
 
 
         /* Metoda wyliczająca kolejne (coraz mniejsze) "kroki" bezwładności i odświeża PanoramaImage */
-        private void ComputeInertia(double dx2)
+        private void ComputeInertia(double dx2, double dy2)
         {
-            double singleStep;
-            dx2 *= currentScale;
-            //dx2 /= 1.3;
-            while (Math.Abs(dx2) > 1.0)
+            if (Math.Abs(dx2) < 500.0)
             {
-                dx2 = dx2 / 1.45;
+                dx2 /= 10.0;
+                dy2 /= 10.0;
+            }
+            else
+            {
+                dx2 /= 3.0;
+                dy2 /= 3.0;
+            }
+
+            double singleStep;
+            bool executeAtLeastOnce;
+
+            while ((Math.Abs(dx2) > 1.0) || (Math.Abs(dy2) > 1.0))
+            {
+                dx2 /= 1.45;
+
                 singleStep = dx2;
+
+                executeAtLeastOnce = true;
 
                 /* wywołanie metody odpowiedzialnej za przesuwanie musi odbywać się wewnątrz wątku Dispatchera, 
                  * aby po jej zakończeniu wygenerowany został Event aktualizujący View.
                  */
-                while (Math.Abs(singleStep) > 0)
+                while ((Math.Abs(singleStep) > 0) || executeAtLeastOnce)
                 {
+                    executeAtLeastOnce = false;
+                    dy2 /= 1.45;
                     Deployment.Current.Dispatcher.BeginInvoke(delegate
                     {
-                        singleStep = MoveHorizontial(singleStep);
+                        if (Math.Abs(singleStep) > 0)
+                            singleStep = MoveHorizontial(singleStep);
+
+                        if (Math.Abs(dy2) > 1.0)
+                        {
+                            MoveVertical(dy2);
+                        }
                     });
 
                     /* Cykliczne wstrzymanie aktualizacji jest konieczne, aby efekt zmniejszania inercjii był widoczny. */
                     System.Threading.Thread.Sleep(30);
                 }
             }
+        }
+
+        private void MoveVertical(double dy2)
+        {
+            PanoramaTransformLeft.TranslateY += dy2;
+            PanoramaTransformRight.TranslateY += dy2;
+            updateImagesBounds();
         }
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.Synchronized)]
@@ -313,7 +319,6 @@ namespace Wanderer
            *   - nastąpiło zbyt duże przesunięcie w prawo, 
            *  wtedy oba zdjęcia przesuwamy do środka, o długość zdjęcia
            */
-
             if (PanoramaTransformLeft.TranslateX >= 0)
             {
                 PanoramaTransformLeft.TranslateX -= width * currentScale;
@@ -349,7 +354,7 @@ namespace Wanderer
             {
                 double scale = currentScale;
                 scaleImages(MAX_SCALE, 0.8);
-                PanoramaTransformLeft.TranslateX -= (screenWidth * 0.3) * ( (MAX_SCALE - scale));
+                PanoramaTransformLeft.TranslateX -= (screenWidth * 0.3) * ((MAX_SCALE - scale));
                 PanoramaTransformRight.TranslateX = PanoramaTransformLeft.TranslateX + (width * MAX_SCALE);
             }
             updateImagesBounds();
