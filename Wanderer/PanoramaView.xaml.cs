@@ -17,6 +17,7 @@ using System.Windows.Input;
 using System.Diagnostics;
 using Microsoft.Phone;
 
+
 namespace Wanderer
 {
     public partial class PanoramaView : PhoneApplicationPage
@@ -56,11 +57,11 @@ namespace Wanderer
             //LoadImage("/PołoninaWetlińska.jpg");
             //LoadImage("/PołoninaWetlińska.jpg", 800, 480, true);
 
-            LoadImage("/foto4.jpg", 800, 480, true);
+            LoadImage("/foto4.jpg", 800, 480, true,100);
             //LoadImage("/foto4.jpg");
         }
 
-        private async void LoadImage(string filename, int screenResolutionWidth, int screenResolutionHeight, bool isImageFullyPanoramic)
+        private async void LoadImage(string filename, int screenResolutionWidth, int screenResolutionHeight, bool isImageFullyPanoramic, int panoramaPercentage)
         {
             screenWidth = screenResolutionWidth;
             screenHeight = screenResolutionHeight;
@@ -68,6 +69,26 @@ namespace Wanderer
             using (var stream = await LoadImageAsync(filename))
             {
                 WriteableBitmap bitmapImage = PictureDecoder.DecodeJpeg(await LoadImageAsync(filename));
+
+                if (panoramaPercentage < 100)
+                {
+
+                    int additionalPixels = bitmapImage.PixelWidth * (100 - panoramaPercentage) / panoramaPercentage;
+                    int offset = 0;
+                    WriteableBitmap newBitmapImage = new WriteableBitmap(bitmapImage.PixelWidth+additionalPixels,bitmapImage.PixelHeight);
+                    int [] bitmapPixels = bitmapImage.Pixels;
+                    int[] newBitmapPixels = newBitmapImage.Pixels;
+
+                    for (int i = 0; i < bitmapPixels.Length; i++)
+                    {
+                        if (i % bitmapImage.PixelWidth == 0)
+                            offset += additionalPixels;
+                        newBitmapPixels[i+offset] = bitmapPixels[i];
+                    }
+
+                    bitmapImage = newBitmapImage;
+                }
+
 
                 ImageSource = bitmapImage;
                 PanoramaImageLeft.DataContext = ImageSource;
