@@ -57,7 +57,7 @@ namespace Wanderer
             //LoadImage("/PołoninaWetlińska.jpg");
             //LoadImage("/PołoninaWetlińska.jpg", 800, 480, true);
 
-            LoadImage("/foto4.jpg", 800, 480, true,100);
+            LoadImage("/foto4.jpg", 800, 480, true,90);
             //LoadImage("/foto4.jpg");
         }
 
@@ -71,23 +71,7 @@ namespace Wanderer
                 WriteableBitmap bitmapImage = PictureDecoder.DecodeJpeg(await LoadImageAsync(filename));
 
                 if (panoramaPercentage < 100)
-                {
-
-                    int additionalPixels = bitmapImage.PixelWidth * (100 - panoramaPercentage) / panoramaPercentage;
-                    int offset = 0;
-                    WriteableBitmap newBitmapImage = new WriteableBitmap(bitmapImage.PixelWidth+additionalPixels,bitmapImage.PixelHeight);
-                    int [] bitmapPixels = bitmapImage.Pixels;
-                    int[] newBitmapPixels = newBitmapImage.Pixels;
-
-                    for (int i = 0; i < bitmapPixels.Length; i++)
-                    {
-                        if (i % bitmapImage.PixelWidth == 0)
-                            offset += additionalPixels;
-                        newBitmapPixels[i+offset] = bitmapPixels[i];
-                    }
-
-                    bitmapImage = newBitmapImage;
-                }
+                    bitmapImage = GetNewImage(bitmapImage,panoramaPercentage);
 
 
                 ImageSource = bitmapImage;
@@ -110,6 +94,24 @@ namespace Wanderer
 
                 Debug.WriteLine("Size: " + bitmapImage.PixelWidth + " x " + bitmapImage.PixelHeight);
             }
+        }
+
+        private WriteableBitmap GetNewImage(WriteableBitmap bitmapImage, int panoramaPercentage)
+        {
+            int additionalPixels = bitmapImage.PixelWidth * (100 - panoramaPercentage) / panoramaPercentage;
+            int offset = 0;
+            WriteableBitmap newBitmapImage = new WriteableBitmap(bitmapImage.PixelWidth + additionalPixels, bitmapImage.PixelHeight);
+            int[] bitmapPixels = bitmapImage.Pixels;
+            int[] newBitmapPixels = newBitmapImage.Pixels;
+
+            for (int i = 0; i < bitmapPixels.Length; i++)
+            {
+                if (i % bitmapImage.PixelWidth == 0)
+                    offset += additionalPixels;
+                newBitmapPixels[i + offset] = bitmapPixels[i];
+            }
+
+            return newBitmapImage;
         }
 
         private Task<Stream> LoadImageAsync(string filename)
