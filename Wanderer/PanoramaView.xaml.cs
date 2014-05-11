@@ -16,6 +16,9 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Diagnostics;
 using Microsoft.Phone;
+using System.ComponentModel;
+using ImageTools.IO.Gif;
+using ImageTools;
 
 
 namespace Wanderer
@@ -52,28 +55,43 @@ namespace Wanderer
             PanoramaImageRight.DataContext = null;
             imageSource = null;
             GC.Collect();
+            GC.WaitForPendingFinalizers();
+
+            MaxSizeReachedMessage.Visibility = Visibility.Collapsed;
+            LoadingAnimation.Visibility = Visibility.Visible;
 
             StorageFolder localRoot = ApplicationData.Current.LocalFolder;
             //LoadImage("/PołoninaWetlińska.jpg");
             //LoadImage("/PołoninaWetlińska.jpg", 800, 480, true);
 
-            LoadImage("/foto4.jpg", 800, 480, true,90);
-            //LoadImage("/foto4.jpg");
+            LoadImage("/foto4.jpg", 800, 480, true, 80);
+            //LoadImage("/foto4.jpg");         
+
         }
 
         private async void LoadImage(string filename, int screenResolutionWidth, int screenResolutionHeight, bool isImageFullyPanoramic, int panoramaPercentage)
         {
+            MaxSizeReachedMessage.Visibility = Visibility.Collapsed;
             screenWidth = screenResolutionWidth;
             screenHeight = screenResolutionHeight;
 
             using (var stream = await LoadImageAsync(filename))
             {
-                WriteableBitmap bitmapImage = PictureDecoder.DecodeJpeg(await LoadImageAsync(filename));
+                try
+                {
+                    SetImageResolution(filename, panoramaPercentage);
+                }
+                catch(PossibleMemoryAccessViolationException) {
+                    Debug.WriteLine("Żądanie zostało odrzucone ze względu na rozmiar panoramy.");
+                    MaxSizeReachedMessage.Visibility = Visibility.Visible;
+                    LoadingAnimation.Visibility = Visibility.Collapsed;
+                    return;
+                }
 
-                if (panoramaPercentage < 100)
-                    bitmapImage = GetNewImage(bitmapImage,panoramaPercentage);
+                WriteableBitmap bitmapImage = new WriteableBitmap(width, height);
 
-
+                bitmapImage.LoadJpeg(stream);
+                
                 ImageSource = bitmapImage;
                 PanoramaImageLeft.DataContext = ImageSource;
                 PanoramaImageRight.DataContext = ImageSource;
@@ -84,34 +102,58 @@ namespace Wanderer
                 MIN_SCALE = (double)screenHeight / (double)bitmapImage.PixelHeight;
                 currentScale = MIN_SCALE;
 
-                width = bitmapImage.PixelWidth;
-                height = bitmapImage.PixelHeight;
-
                 PanoramaImageLeft.Width = width * currentScale;
                 PanoramaImageLeft.Height = height * currentScale;
                 PanoramaImageRight.Width = width * currentScale;
                 PanoramaImageRight.Height = height * currentScale;
 
+                LoadingAnimation.Visibility = Visibility.Collapsed;
+
                 Debug.WriteLine("Size: " + bitmapImage.PixelWidth + " x " + bitmapImage.PixelHeight);
             }
         }
 
-        private WriteableBitmap GetNewImage(WriteableBitmap bitmapImage, int panoramaPercentage)
+        /* Metoda obliczająca atrybuty width i height, jakie musi przyjąć kostruktor klasy WriteableBitmap.
+         * Jest to konieczne, do ustawienia odpowiedniego dopełnienia (gdy panorama nie jest dookolna).
+         * Nie można tego zadania zrealizować za pomocą przepisania WritableBitmap do WritableBitmap, ponieważ 
+         * dwa obiekty tej klasy, nie mogą jednocześnie egzystować w pamięci (zajmują dużo miejsca -> możliwy OutOfMemoryException).
+         * 
+         * @throws PossibleMemoryAccessViolationException - jeśli stworzenie zdjęcia w danym rozmiarze, może naruszyć pamięć.
+         *          Wartość 34.500.000 została przetestowana i jest bezpieczna, każda powyżej jest ryzykowna i należy zakończyć operację.
+         */
+        /* NOTE: plik JPG musi zostać zdekodowany, wielkość nie jest w nim przechowywana excplicite.
+         */
+        private void SetImageResolution(string filename, int panoramaPercentage)
         {
-            int additionalPixels = bitmapImage.PixelWidth * (100 - panoramaPercentage) / panoramaPercentage;
-            int offset = 0;
-            WriteableBitmap newBitmapImage = new WriteableBitmap(bitmapImage.PixelWidth + additionalPixels, bitmapImage.PixelHeight);
-            int[] bitmapPixels = bitmapImage.Pixels;
-            int[] newBitmapPixels = newBitmapImage.Pixels;
-
-            for (int i = 0; i < bitmapPixels.Length; i++)
+            using (IsolatedStorageFile isoStore = IsolatedStorageFile.GetUserStoreForApplication())
             {
-                if (i % bitmapImage.PixelWidth == 0)
-                    offset += additionalPixels;
-                newBitmapPixels[i + offset] = bitmapPixels[i];
-            }
+                if (isoStore.FileExists(filename))
+                {
+                    using (var stream = isoStore.OpenFile(filename, System.IO.FileMode.Open, FileAccess.Read))
+                    {
+                        WriteableBitmap bitmapImage = PictureDecoder.DecodeJpeg(stream);
+                        
+                        width = bitmapImage.PixelWidth;
+                        height = bitmapImage.PixelHeight;
+                        
+                        if(panoramaPercentage < 100){
+                            width += (width * (100 - panoramaPercentage) / panoramaPercentage);
+                        }
 
-            return newBitmapImage;
+                        /* Rzuć wyjątek, jeśli wyświetlenie zdjęcia może skutkować zamknięciem aplikacji. */
+                        if(width * height > 34500000){
+                            throw new PossibleMemoryAccessViolationException();
+                        }
+
+                        /* Usuń z pamięci obiekt WriteableBitmap, aby móc utworzyć kolejny w metodzie wywołującej tą metodę. */
+                        bitmapImage = null;
+                        GC.Collect();
+                        GC.WaitForPendingFinalizers();
+                    }
+                }
+            }
+            GC.Collect();
+            GC.WaitForPendingFinalizers();      
         }
 
         private Task<Stream> LoadImageAsync(string filename)
@@ -381,6 +423,11 @@ namespace Wanderer
                 PanoramaTransformRight.TranslateX = PanoramaTransformLeft.TranslateX + (width * MAX_SCALE);
             }
             updateImagesBounds();
+        }
+
+        private void MediaElement_Loaded(object sender, RoutedEventArgs e)
+        {
+
         }
 
     }
