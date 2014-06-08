@@ -48,5 +48,12 @@ namespace Wanderer
             NavigationService.Navigate(new Uri("/PanoramaView.xaml", UriKind.Relative));  
         }
 
+        private void showListOfPlaces(Object sender, RoutedEventArgs e)
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            NavigationService.Navigate(new Uri("/ListOfPlaces.xaml", UriKind.Relative));
+        }
+
     }
 }
