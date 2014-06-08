@@ -48,6 +48,8 @@
             </TextBlock>
             <TextBlock Text="page name" Margin="9,-7,0,0" Style="{StaticResource PhoneTextTitle1Style}"/>
             <Button Content="Kliknij mnie" Click="showPanoramaViewPage"/>
+            <Button Content="Pokaz liste" Click="showListOfPlaces"/>
+
         </StackPanel>
 
         <!--ContentPanel - place additional content here-->
