@@ -25,7 +25,6 @@ namespace Wanderer
 {
     public partial class PanoramaView : PhoneApplicationPage
     {
-        private readonly DAO dao = new DAO();
         private readonly List<TextBlock> labels = new List<TextBlock>();
 
         private double MIN_SCALE;
