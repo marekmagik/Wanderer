@@ -25,6 +25,9 @@ namespace Wanderer
 {
     public partial class PanoramaView : PhoneApplicationPage
     {
+        private readonly DAO dao = new DAO();
+        private readonly List<TextBlock> labels = new List<TextBlock>();
+
         private double MIN_SCALE;
         private readonly double MAX_SCALE = 1.0;
 
@@ -36,7 +39,6 @@ namespace Wanderer
         private int screenHeight;
 
         private ImageSource imageSource;
-
         public ImageSource ImageSource
         {
             get { return imageSource; }
@@ -45,6 +47,8 @@ namespace Wanderer
                 imageSource = value;
             }
         }
+
+
 
 
         public PanoramaView()
@@ -64,9 +68,15 @@ namespace Wanderer
             //LoadImage("/PołoninaWetlińska.jpg");
             //LoadImage("/PołoninaWetlińska.jpg", 800, 480, true);
 
-            LoadImage("/foto4.jpg", 800, 480, true, 80);
+            //LoadImage("/foto4.jpg", 800, 480, true, 80);
+            LoadImage("/Panorama_z_Barańca_a2.jpg", 800, 480, true, 70);
+
             //LoadImage("/foto4.jpg");         
 
+        }
+
+        private void LoadLabels(){
+            
         }
 
         private async void LoadImage(string filename, int screenResolutionWidth, int screenResolutionHeight, bool isImageFullyPanoramic, int panoramaPercentage)
