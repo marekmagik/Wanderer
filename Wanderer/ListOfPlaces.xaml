@@ -28,12 +28,12 @@
 
         <!--ContentPanel - place additional content here-->
         <Grid x:Name="ContentPanel" Grid.Row="1" Margin="12,0,12,0">
-            <ListBox ItemsSource="{Binding}" Height="600" Name="PlacesListBox" Width="440">
+            <ListBox ItemsSource="{Binding}" Height="600" Name="PlacesListBox" Width="440" SelectionChanged="PlacesListBox_SelectionChanged">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <StackPanel Orientation="Vertical">
+                        <StackPanel Orientation="Vertical" >
                             <StackPanel>
-                                <Image Name="Thumbnail" Source="{Binding Image}" />
+                                <Image Name="Thumbnail" Source="{Binding Image}"  />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="{Binding Desc}" TextWrapping="Wrap" FontSize="35" Margin="10"/>

@@ -18,110 +18,58 @@ namespace Wanderer
     {
         private List<Place> places;
         private List<ImageMetadata> points;
-        private const string address = "192.168.1.100";//"10.20.120.151";//"10.22.115.27";.
         private Place actualPlace;
+        private DAO dao;
+        private int actualIndex;
 
         public ListOfPlaces()
         {
             InitializeComponent();
             places = new List<Place>();
-            GetDataFromServer(20.5,40.6,1000000);
+            dao = new DAO();
+            dao.GetDataFromServer(this,20.5,40.6,1000000);
             this.DataContext = places;
-            this.points = DAO.getPointsInRange(20.5, 40.6, 1000000);
-            //this.DataContext = points;
+            actualIndex = 0;
         }
 
-        //tymczasowo, zeby cos sie wypisalo, na razie jeszcze nie ma sciagania obrazka
-        private void GetData(double lon, double lat, int distance)
-        {
-            Place place = new Place();
-            place.Desc = " Super Gory";
-            place.Distance = 1.0;
-            place.Image = null;
-
-            places.Add(place);
-
-            Place place2 = new Place();
-            place2.Desc = " Bar mleczny ";
-            place.Distance = 2.6;
-            place.Image = null;
-
-            places.Add(place2);
+        public void ReloadContent(){
+            Deployment.Current.Dispatcher.BeginInvoke(delegate
+                    {
+                        PlacesListBox.ItemsSource = null;
+                        PlacesListBox.ItemsSource = places;
+                    });
         }
 
-        // nie przetestowane, testowalem na desktopie i dzialalo ale tam sie to robilo inaczej wiec ten kod moze byc wyjatkogenny ;)
-        // zamiast localhost oczywiscie jakis tam adres :P
-        private void GetDataFromServer(double lon, double lat, int distance)
+        public void RequestCallback(IAsyncResult result)
         {
-            //string uri = "http://"+address+":7001/Wanderer/api/places/get/" + lon + "/" + lat + "/" + distance;
-            string longitude = Convert.ToString(lon).Replace(',', '.');
-            string latitude = Convert.ToString(lat).Replace(',', '.');
-
-            string uri = "http://" + address + ":7001/Wanderer/api/places/get/" + longitude + "/" + latitude + "/" + distance;
-
-            HttpWebRequest request =
-                (HttpWebRequest)HttpWebRequest.Create(uri);
-            request.Method = "GET";
-            request.BeginGetResponse(new AsyncCallback(RequestCallback), request);
-
-        }
-
-
-        void RequestCallback(IAsyncResult result)
-        {
-            Debug.WriteLine("Hello2");
             HttpWebRequest request = result.AsyncState as HttpWebRequest;
             if (request != null)
             {
                 try
                 {
-                    Debug.WriteLine("Hello!");
                     WebResponse response = request.EndGetResponse(result);
                     Stream stream = response.GetResponseStream();
                     StreamReader streamReader = new StreamReader(stream);
                     string json = streamReader.ReadToEnd();
                     JSONParser parser = new JSONParser();
-                    List<Place> places2 = parser.ParsePlacesJSON(json);
-                    foreach (Place p in places2)
-                    {
-                        places.Add(p);
-                        Debug.WriteLine(p);
-                    }
-                   
-                    LoadImage(places.ElementAt(4));
+                    places = parser.ParsePlacesJSON(json);
 
-                    Deployment.Current.Dispatcher.BeginInvoke(delegate
+
+                    if (places.Count > 0)
                     {
-                        PlacesListBox.ItemsSource = null;
-                        PlacesListBox.ItemsSource = places2;
-                    });
-                    
-                   
-                    // BeginLoadingImages();
-                     //   
+                        actualIndex = 0;
+                        dao.LoadImage(this,actualIndex);
+                    }
+
                 }
-                catch (WebException e)
+                catch (WebException )
                 {
                     return;
                 }
             }
         }
 
-
-
-        private void BeginLoadingImages(){
-        }
-
-        private void LoadImage(Place place)
-        {
-            actualPlace = place;
-            string uri = "http://" + address + ":7001/Wanderer/api/photos/get/thumbnail/" + place.PlaceId;
-            HttpWebRequest request =
-                (HttpWebRequest)HttpWebRequest.Create(uri);
-            request.BeginGetResponse(ThumbRequestCallback, request);
-        }
-
-        void ThumbRequestCallback(IAsyncResult result)
+        public void ThumbRequestCallback(IAsyncResult result)
         {
             HttpWebRequest request = result.AsyncState as HttpWebRequest;
             if (request != null)
@@ -130,28 +78,40 @@ namespace Wanderer
                 {
                     WebResponse response = request.EndGetResponse(result);
                     Stream stream = response.GetResponseStream();
-                   // BitmapImage image = new BitmapImage();
-                   // image.SetSource(stream);
-                   // actualPlace.Image = image;
+                    BitmapImage image = new BitmapImage();
+                    image.SetSource(stream);
+                    places.ElementAt(actualIndex).Image = image;
 
-                    Deployment.Current.Dispatcher.BeginInvoke(delegate
+                    if (actualIndex == places.Count-1)
                     {
-                        BitmapImage image = new BitmapImage();
-                        image.SetSource(stream);
-                        actualPlace.Image = image;
+                        ReloadContent();
+                    }
+                    else
+                    {
+                        actualIndex++;
+                        dao.LoadImage(this,actualIndex);
+                    }
 
-                        PlacesListBox.ItemsSource = null;
-                        PlacesListBox.ItemsSource = places;
-                    });
-
-                    Debug.WriteLine("obrazek pobrany!");
 
                 }
-                catch (WebException e)
+                catch (WebException)
                 {
                     return;
                 }
             }
         }
+
+        private void PlacesListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+        }
+
+        void PlacesListBox_SelectionChanged(object sender, SelectionChangedEventArgs args)
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            NavigationService.Navigate(new Uri("/PanoramaView.xaml", UriKind.Relative));
+        }
+        
     }
 }
