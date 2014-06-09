@@ -14,13 +14,15 @@ namespace Wanderer
     public partial class ListOfPlaces : PhoneApplicationPage
     {
         private List<Place> places;
+        private List<Point> points;
 
         public ListOfPlaces()
         {
             places = new List<Place>();
             GetData(20.5,40.6,10000);
             this.DataContext = places;
-
+            this.points = DAO.getPointsInRange(20.5, 40.6, 10000);
+            //this.DataContext = points;
             InitializeComponent();
 
         }

@@ -6,15 +6,16 @@ using System.Threading.Tasks;
 
 namespace Wanderer
 {
-    class DAO
+    
+    public class DAO
     {
 
-        public List<LabeledPoint> getPointsInRange(double longitude, double latitude, double range)
+        public static List<Point> getPointsInRange(double longitude, double latitude, double range)
         {
-            List<LabeledPoint> list = new List<LabeledPoint>();
+            List<Point> list = new List<Point>();
 
-            list.Add(new LabeledPoint(100, 100, LabeledPointType.MOUNTAIN_PEAK, "Napis1 BOLD", "napis1 normal"));
-            list.Add(new LabeledPoint(300, 100, LabeledPointType.MOUNTAIN_PEAK, "Napis2 BOLD", "napis2 normal"));
+            list.Add(new Point(100.0, 100.0, new Category("Szczyty"), "Wielka góra", "napis1 normal"));
+            list.Add(new Point(300.0, 100.0, new Category("Szczyty"), "Też duża", "napis2 normal"));
 
 
             return list;
