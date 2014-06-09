@@ -58,7 +58,7 @@ namespace Wanderer
                     if (places.Count > 0)
                     {
                         actualIndex = 0;
-                        dao.LoadImage(actualIndex);
+                        dao.LoadImage(this,actualIndex);
                     }
 
                 }
@@ -82,14 +82,14 @@ namespace Wanderer
                     image.SetSource(stream);
                     places.ElementAt(actualIndex).Image = image;
 
-                    if (actualIndex == places.Count)
+                    if (actualIndex == places.Count-1)
                     {
                         ReloadContent();
                     }
                     else
                     {
                         actualIndex++;
-                        dao.LoadImage(actualIndex);
+                        dao.LoadImage(this,actualIndex);
                     }
 
 

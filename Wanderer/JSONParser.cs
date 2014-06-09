@@ -44,5 +44,34 @@ namespace Wanderer
                 place.Distance = Convert.ToDouble(property.Value.ToString());
 
         }
+
+        public ImageMetadata ParsePhotoMetadataJSON(string json)
+        {
+            ImageMetadata metadata = new ImageMetadata();
+
+            JArray jsonArray = JArray.Parse(json);
+
+            foreach (JObject obj in jsonArray.Children<JObject>())
+            {
+
+                foreach (JProperty property in obj.Properties())
+                {
+                    SetMetadata(property, metadata);
+                }
+
+            }
+
+            return metadata;
+        }
+
+        private void SetMetadata(JProperty property, ImageMetadata metadata)
+        {
+            if (property.Name.Equals("perc"))
+                metadata.CoverageInPercent = Convert.ToDouble(property.Value.ToString());
+            else if (property.Name.Equals("width"))
+                metadata.Width = Convert.ToInt32(property.Value.ToString());
+            else if (property.Name.Equals("height"))
+                metadata.Height = Convert.ToInt32(property.Value.ToString());
+        }
     }
 }

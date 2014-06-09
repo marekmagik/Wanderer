@@ -37,6 +37,9 @@ namespace Wanderer
         private int screenWidth;
         private int screenHeight;
 
+        private ImageMetadata metadata;
+        private DAO dao;
+
         private ImageSource imageSource;
         public ImageSource ImageSource
         {
@@ -68,10 +71,28 @@ namespace Wanderer
             //LoadImage("/PołoninaWetlińska.jpg", 800, 480, true);
 
             //LoadImage("/foto4.jpg", 800, 480, true, 80);
-            LoadImage("/Panorama_z_Barańca_a2.jpg", 800, 480, true, 70);
+            //LoadImage("/Panorama_z_Barańca_a2.jpg", 800, 480, true, 70);
+
+            dao = new DAO();
+            LoadImageFromServer(800,480,true,100);
 
             //LoadImage("/foto4.jpg");         
 
+        }
+
+        private void LoadImageFromServer(int screenResolutionWidth, int screenResolutionHeight, bool isImageFullyPanoramic, int panoramaPercentage)
+        {
+            MaxSizeReachedMessage.Visibility = Visibility.Collapsed;
+            screenWidth = screenResolutionWidth;
+            screenHeight = screenResolutionHeight;
+            dao.GetPhotoDescById(this, GetPhotoId());
+
+            
+        }
+
+        private int GetPhotoId()
+        {
+            return 1;
         }
 
         private void LoadLabels(){
@@ -437,6 +458,96 @@ namespace Wanderer
         private void MediaElement_Loaded(object sender, RoutedEventArgs e)
         {
 
+        }
+
+        public void DescRequestCallback(IAsyncResult result)
+        {
+            HttpWebRequest request = result.AsyncState as HttpWebRequest;
+            if (request != null)
+            {
+                try
+                {
+                    WebResponse response = request.EndGetResponse(result);
+                    Stream stream = response.GetResponseStream();
+                    StreamReader streamReader = new StreamReader(stream);
+                    string json = streamReader.ReadToEnd();
+                    JSONParser parser = new JSONParser();
+                    metadata = parser.ParsePhotoMetadataJSON(json);
+
+                    width = metadata.Width;
+                    height = metadata.Height;
+
+                    if (metadata.CoverageInPercent < 100)
+                    {
+                        width += (int)(width * (100 - metadata.CoverageInPercent) / metadata.CoverageInPercent);
+                    }
+
+                    /* Rzuć wyjątek, jeśli wyświetlenie zdjęcia może skutkować zamknięciem aplikacji. */
+                    if (width * height > 34500000)
+                    {
+                        throw new PossibleMemoryAccessViolationException();
+                    }
+
+                    dao.GetPhotoById(this, GetPhotoId());
+
+                }
+                catch (WebException)
+                {
+                    return;
+                }
+            }
+        }
+
+        public void ImageRequestCallback(IAsyncResult result)
+        {
+            HttpWebRequest request = result.AsyncState as HttpWebRequest;
+            if (request != null)
+            {
+                try
+                {
+                    WebResponse response = request.EndGetResponse(result);
+                    Stream stream = response.GetResponseStream();
+
+                    WriteableBitmap bitmapImage = new WriteableBitmap(width, height);
+
+                    bitmapImage.LoadJpeg(stream);
+
+                    ImageSource = bitmapImage;
+                    PanoramaImageLeft.DataContext = ImageSource;
+                    PanoramaImageRight.DataContext = ImageSource;
+
+                    CompositeTransform transformLeft = (CompositeTransform)PanoramaImageLeft.RenderTransform;
+                    CompositeTransform transformRight = (CompositeTransform)PanoramaImageRight.RenderTransform;
+
+                    MIN_SCALE = (double)screenHeight / (double)bitmapImage.PixelHeight;
+                    currentScale = MIN_SCALE;
+
+                    PanoramaImageLeft.Width = width * currentScale;
+                    PanoramaImageLeft.Height = height * currentScale;
+                    PanoramaImageRight.Width = width * currentScale;
+                    PanoramaImageRight.Height = height * currentScale;
+
+                    LoadingAnimation.Visibility = Visibility.Collapsed;
+
+                    Debug.WriteLine("Size: " + bitmapImage.PixelWidth + " x " + bitmapImage.PixelHeight);
+
+                }
+                catch (WebException)
+                {
+                    return;
+                }
+            }
+        }
+
+        public void ReloadContent()
+        {
+            Deployment.Current.Dispatcher.BeginInvoke(delegate
+            {
+                PanoramaImageLeft.Source = null;
+                PanoramaImageLeft.Source = imageSource;
+                PanoramaImageRight.Source = null;
+                PanoramaImageRight.Source = imageSource;
+            });
         }
 
     }
