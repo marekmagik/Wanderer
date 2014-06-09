@@ -26,7 +26,7 @@ Desktop.ini
 # Eclipse
 ######################
 *.pydevproject
-.project
+
 .metadata
 bin/**
 tmp/**
