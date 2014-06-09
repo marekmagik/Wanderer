@@ -56,4 +56,16 @@ public class Photos {
 		
 		
 	}
+	
+	@Path("/get/meta/{id}")
+	@GET
+	@Produces(MediaType.TEXT_PLAIN)
+	public String getPhotoMetadata(@PathParam("id") String id) throws Exception {
+
+		System.out.println(" received message ");
+		PostgresDB dao = new PostgresDB();
+		String myString = dao.getPhotoMetadata(Integer.parseInt(id));
+
+		return myString;
+	}
 }

@@ -31,6 +31,30 @@ public class PostgresDB extends DBConnection {
 
 		return result;
 	}
+	
+	
+	public String getPhotoMetadata(int placeId) {
+		PreparedStatement query;
+		Connection conn;
+		String result = "";
+
+		try {
+			conn = getConnection();
+			query = conn
+					.prepareStatement("select ph.perc, ph.width, ph.height from photos as ph where ph.place_id=?");
+			query.setInt(1, placeId);
+			ResultSet resultSet = query.executeQuery();
+			ToJSON toJSON = new ToJSON();
+			JSONArray json = toJSON.toJSONArray(resultSet);
+			result=json.toString();
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+
+		return result;
+	}
+	
 
 	public byte[] getPhoto(int photoId) {
 		Connection connection = getConnection();
