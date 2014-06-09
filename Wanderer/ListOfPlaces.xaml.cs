@@ -16,7 +16,7 @@ namespace Wanderer
     {
         private List<Place> places;
         private List<Point> points;
-        private const string address = "localhost";
+        private const string address = "10.22.115.27";
         private Place actualPlace;
 
         public ListOfPlaces()
@@ -73,8 +73,8 @@ namespace Wanderer
                     JSONParser parser = new JSONParser();
                     places = parser.ParsePlacesJSON(json);
 
-                    //foreach (Place place in places)
-                     //   LoadImage(place);
+                    // BeginLoadingImages();
+                     //   
                 }
                 catch (WebException e)
                 {
@@ -82,6 +82,8 @@ namespace Wanderer
                 }
             }
         }
+
+        private void BeginLoadingImages();
 
         private void LoadImage(Place place)
         {
