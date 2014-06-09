@@ -8,16 +8,21 @@ using System.Windows.Navigation;
 using Microsoft.Phone.Controls;
 using Microsoft.Phone.Shell;
 using System.IO;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace Wanderer
 {
     public partial class ListOfPlaces : PhoneApplicationPage
     {
         private List<Place> places;
+        private Place actualPlace;
+        private const string address="localhost";
 
         public ListOfPlaces()
         {
             places = new List<Place>();
+            actualPlace = null;
             GetData(20.5,40.6,10000);
             this.DataContext = places;
 
@@ -31,21 +36,24 @@ namespace Wanderer
             Place place = new Place();
             place.Desc = " Super Gory";
             place.Distance = 1.0;
+            place.Image = null;
 
             places.Add(place);
 
             Place place2 = new Place();
             place2.Desc = " Bar mleczny ";
-            place.Distance = 2.6;
+            place2.Distance = 2.6;
+            place2.Image=null;
+            
 
             places.Add(place2);
         }
 
         // nie przetestowane, testowalem na desktopie i dzialalo ale tam sie to robilo inaczej wiec ten kod moze byc wyjatkogenny ;)
         // zamiast localhost oczywiscie jakis tam adres :P
-        /*private void GetData(double lon, double lat, int distance)
+        private void GetDataFromServer(double lon, double lat, int distance)
         {
-            string uri = "http://localhost:7001/Wanderer/api/places/get/" + lon + "/" + lat + "/" + distance;
+            string uri = "http://"+address+":7001/Wanderer/api/places/get/" + lon + "/" + lat + "/" + distance;
             HttpWebRequest request =
                 (HttpWebRequest)HttpWebRequest.Create(uri);
             request.BeginGetResponse(RequestCallback, request);
@@ -65,12 +73,44 @@ namespace Wanderer
                     string json = streamReader.ReadToEnd();
                     JSONParser parser = new JSONParser();
                     places = parser.ParsePlacesJSON(json);
+
+                    foreach(Place place in places)
+                        LoadImage(place);
                 }
                 catch (WebException e)
                 {
                     return;
                 }
             }
-        }*/
+        }
+
+        private void LoadImage(Place place)
+        {
+            actualPlace = place;
+            string uri = "http://"+address+":7001/Wanderer/api/photos/get/thumbnail/" + place.PlaceId;
+            HttpWebRequest request =
+                (HttpWebRequest)HttpWebRequest.Create(uri);
+            request.BeginGetResponse(ThumbRequestCallback, request);
+        }
+
+        void ThumbRequestCallback(IAsyncResult result)
+        {
+            HttpWebRequest request = result.AsyncState as HttpWebRequest;
+            if (request != null)
+            {
+                try
+                {
+                    WebResponse response = request.EndGetResponse(result);
+                    Stream stream = response.GetResponseStream();
+                    BitmapImage image = new BitmapImage();
+                    image.SetSource(stream);
+                    actualPlace.Image = image;
+                }
+                catch (WebException e)
+                {
+                    return;
+                }
+            }
+        }
     }
 }

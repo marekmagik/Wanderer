@@ -33,7 +33,7 @@
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">
                             <StackPanel>
-                                <Image Name="Thumbnail" Visibility="Collapsed" /> 
+                                <Image Name="Thumbnail" Source="{Binding Image}" /> 
                             </StackPanel>
                             <TextBlock Text="{Binding Desc}" TextWrapping="Wrap" FontSize="35" Margin="10"/>
                             <TextBlock Text="{Binding Distance}" TextWrapping="Wrap" FontSize="35" Margin="10"/>
