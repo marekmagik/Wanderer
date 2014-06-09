@@ -10,15 +10,22 @@ namespace Wanderer
     public class DAO
     {
 
-        public static List<Point> getPointsInRange(double longitude, double latitude, double range)
+        public static List<ImageMetadata> getPointsInRange(double longitude, double latitude, double range)
         {
-            List<Point> list = new List<Point>();
+            List<Point> listOfPoints = new List<Point>();
+            Category category = new Category("Szczyty");
 
-            list.Add(new Point(100.0, 100.0, new Category("Szczyty"), "Wielka góra", "napis1 normal"));
-            list.Add(new Point(300.0, 100.0, new Category("Szczyty"), "Też duża", "napis2 normal"));
+            listOfPoints.Add(new Point(100.0, 100.0, category, "Wielka góra", "napis1 normal"));
+            listOfPoints.Add(new Point(300.0, 100.0, category, "Też duża", "napis2 normal"));
 
+            ImageMetadata image1 = new ImageMetadata();
+            image1.addCategory(category);
+            image1.Points = listOfPoints;
+            image1.PictureDescription = "Stacja kosmiczna Mir";
+            List<ImageMetadata> listOfMetadata = new List<ImageMetadata>();
+            listOfMetadata.Add(image1);
 
-            return list;
+            return listOfMetadata;
         }
 
     }

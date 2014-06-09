@@ -16,10 +16,11 @@ namespace Wanderer
         public double Distance { get; set; }
         public ImageSource Image { get; set; }
 
-        public void Print()
+        public override string ToString()
         {
-            Console.WriteLine(PlaceId + " " + Lon + " " + Lat + " " + Desc+ " " + Distance);
+            return (PlaceId + " " + Lon + " " + Lat + " " + Desc+ " " + Distance);
         }
+
 
     }
 }
