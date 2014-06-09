@@ -530,6 +530,7 @@ namespace Wanderer
                     LoadingAnimation.Visibility = Visibility.Collapsed;
 
                     Debug.WriteLine("Size: " + bitmapImage.PixelWidth + " x " + bitmapImage.PixelHeight);
+                    ReloadContent();
 
                 }
                 catch (WebException)
