@@ -100,6 +100,18 @@ namespace Wanderer
                 }
             }
         }
+
+        private void PlacesListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+        }
+
+        void PlacesListBox_SelectionChanged(object sender, SelectionChangedEventArgs args)
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            NavigationService.Navigate(new Uri("/PanoramaView.xaml", UriKind.Relative));
+        }
         
     }
 }
