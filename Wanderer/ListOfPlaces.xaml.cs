@@ -18,7 +18,7 @@ namespace Wanderer
     {
         private List<Place> places;
         private List<ImageMetadata> points;
-        private const string address = "10.20.120.151";//"10.22.115.27";.
+        private const string address = "192.168.1.100";//"10.20.120.151";//"10.22.115.27";.
         private Place actualPlace;
 
         public ListOfPlaces()

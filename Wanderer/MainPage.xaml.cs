@@ -13,6 +13,8 @@ namespace Wanderer
 {
     public partial class MainPage : PhoneApplicationPage
     {
+        private static GPSTracker gpsTracker = new GPSTracker();
+        
         // Constructor
         public MainPage()
         {
