@@ -92,6 +92,9 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Category.cs" />
+    <Compile Include="DAO.cs" />
+    <Compile Include="ImageMetadata.cs" />
     <Compile Include="JSONParser.cs" />
     <Compile Include="ListOfPlaces.xaml.cs">
       <DependentUpon>ListOfPlaces.xaml</DependentUpon>
@@ -104,6 +107,7 @@
       <DependentUpon>PanoramaView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Place.cs" />
+    <Compile Include="Point.cs" />
     <Compile Include="PossibleMemoryAccessViolationException.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Resources\AppResources.Designer.cs">
@@ -157,7 +161,6 @@
     <Content Include="Assets\Tiles\IconicTileSmall.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="README_FIRST.txt" />
     <Content Include="Toolkit.Content\ApplicationBar.Add.png" />
     <Content Include="Toolkit.Content\ApplicationBar.Cancel.png" />
     <Content Include="Toolkit.Content\ApplicationBar.Check.png" />
