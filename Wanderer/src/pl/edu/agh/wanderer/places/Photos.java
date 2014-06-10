@@ -21,6 +21,7 @@ public class Photos {
 	@Produces({"image/jpeg"})
 	public Response getPlaceDesc(@PathParam("id") String photoId) throws Exception {
 		
+		System.out.println(" sending photo, place id: "+photoId);
 		PostgresDB dao = new PostgresDB();
 		byte [] result = dao.getPhoto(Integer.parseInt(photoId));
 		return Response.ok(result).build();
@@ -33,7 +34,7 @@ public class Photos {
 	@Produces({"image/jpeg"})
 	public Response getPlaceThumbnail(@PathParam("id") String photoId) throws Exception {
 		
-		
+		System.out.println("Searching id "+photoId);
 		PostgresDB dao = new PostgresDB();
 		byte [] result = dao.getThumbnail(Integer.parseInt(photoId));
 		System.out.println(" sending photo, bytes: "+result.length);
@@ -62,7 +63,7 @@ public class Photos {
 	@Produces(MediaType.TEXT_PLAIN)
 	public String getPhotoMetadata(@PathParam("id") String id) throws Exception {
 
-		System.out.println(" received message ");
+		System.out.println(" sending description, place id: "+id);
 		PostgresDB dao = new PostgresDB();
 		String myString = dao.getPhotoMetadata(Integer.parseInt(id));
 

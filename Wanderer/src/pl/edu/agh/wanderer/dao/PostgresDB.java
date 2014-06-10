@@ -25,10 +25,11 @@ public class PostgresDB extends DBConnection {
 			while (resultSet.next()) {
 				result = resultSet.getString(1);
 			}
+			conn.close();
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
-
+		
 		return result;
 	}
 	
@@ -47,6 +48,7 @@ public class PostgresDB extends DBConnection {
 			ToJSON toJSON = new ToJSON();
 			JSONArray json = toJSON.toJSONArray(resultSet);
 			result=json.toString();
+			conn.close();
 			
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -72,6 +74,7 @@ public class PostgresDB extends DBConnection {
 				rs.close();
 			}
 			ps.close();
+			connection.close();
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
@@ -95,6 +98,7 @@ public class PostgresDB extends DBConnection {
 				rs.close();
 			}
 			ps.close();
+			connection.close();
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
@@ -115,6 +119,7 @@ public class PostgresDB extends DBConnection {
 			ToJSON toJSON = new ToJSON();
 			JSONArray json = toJSON.toJSONArray(rs);
 			result=json.toString();
+			connection.close();
 					
 		} catch (Exception e) {
 			e.printStackTrace();

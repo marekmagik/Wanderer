@@ -16,7 +16,7 @@ public class Places {
 	@Produces(MediaType.TEXT_PLAIN)
 	public String getPlaceDesc(@PathParam("id") String id) throws Exception {
 
-		System.out.println(" received message ");
+		System.out.println(" sending description for "+id);
 		PostgresDB dao = new PostgresDB();
 		String myString = dao.getPlaceDesc(Integer.parseInt(id));
 
