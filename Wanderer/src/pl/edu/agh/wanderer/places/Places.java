@@ -16,7 +16,7 @@ public class Places {
 	@Produces(MediaType.TEXT_PLAIN)
 	public String getPlaceDesc(@PathParam("id") String id) throws Exception {
 
-		System.out.println(" sending description for "+id);
+		System.out.println(" sending description for " + id);
 		PostgresDB dao = new PostgresDB();
 		String myString = dao.getPlaceDesc(Integer.parseInt(id));
 
@@ -30,16 +30,35 @@ public class Places {
 			@PathParam("lat") String lat, @PathParam("range") String range)
 			throws Exception {
 		System.out.println(" received message ");
-		System.out.println(lon+" "+lat+" "+range);
+		System.out.println(lon + " " + lat + " " + range);
 		PostgresDB dao = new PostgresDB();
 		String myString = dao.getPointsWithinRannge(lon, lat, range);
-		
-		if(myString==null)
+
+		if (myString == null)
 			System.out.println("null ;/");
 		else
 			System.out.println(myString);
-			
-		
+
+		return myString;
+	}
+
+	@Path("/get/{lon}/{lat}/{range}/{hash}")
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public String getPointsInRangeWithHash(@PathParam("lon") String lon,
+			@PathParam("lat") String lat, @PathParam("range") String range,
+			@PathParam("hash") String hash) throws Exception {
+		System.out.println(" received message ");
+		System.out.println(lon + " " + lat + " " + range);
+		System.out.println("hash" + hash);
+		PostgresDB dao = new PostgresDB();
+		String myString = dao.getPointsWithinRanngeWithHash(lon, lat, range,hash);
+
+		if (myString == null)
+			System.out.println("null ;/");
+		else
+			System.out.println(myString);
+
 		return myString;
 	}
 
