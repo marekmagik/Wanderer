@@ -19,7 +19,7 @@ public class PostgresDB extends DBConnection {
 		try {
 			conn = getConnection();
 			query = conn
-					.prepareStatement("select \"desc\" from places where place_id=?");
+					.prepareStatement("select \"primary description\" from metadata where metadata_id=?");
 			query.setInt(1, placeId);
 			ResultSet resultSet = query.executeQuery();
 			while (resultSet.next()) {
@@ -63,7 +63,7 @@ public class PostgresDB extends DBConnection {
 		byte[] result = null;
 		try {
 			PreparedStatement ps = connection
-					.prepareStatement("SELECT photos.photo FROM photos inner join places on places.place_id=photos.place_id where places.place_id=?");
+					.prepareStatement("SELECT photos.photo FROM photos inner join places on metadata.metadata_id=photos.metadata_id where metadata.metadata_id=?");
 			ps.setInt(1, photoId);
 			ResultSet rs = ps.executeQuery();
 			if (rs != null) {
@@ -87,7 +87,7 @@ public class PostgresDB extends DBConnection {
 		byte[] result = null;
 		try {
 			PreparedStatement ps = connection
-					.prepareStatement("SELECT photos.thumbnail FROM photos inner join places on places.place_id=photos.place_id where places.place_id=?");
+					.prepareStatement("SELECT photos.thumbnail FROM photos inner join metadata on metadata.metadata_id=photos.metadata_id where metadata.metadata_id=?");
 			ps.setInt(1, photoId);
 			ResultSet rs = ps.executeQuery();
 			if (rs != null) {
@@ -106,12 +106,12 @@ public class PostgresDB extends DBConnection {
 		return result;
 	}
 	
-	public String getPointsWithinRannge(String lon, String lat, String range){
+	public String getPointsWithinRange(String lon, String lat, String range){
 		Connection connection = getConnection();
 		String result = null;
-		
+		System.out.println("got an query");
 		try {
-			PreparedStatement querry = connection.prepareStatement("select place_id,lon,lat,\"desc\", st_distance(places.geog,st_geogfromtext(?)) as distance from places where st_dwithin(places.geog,st_geogfromtext(?),?) order by 5;");
+			PreparedStatement querry = connection.prepareStatement("select metadata_id,longitude,latitude,\"primary_description\", \"secondary_description\", st_distance(metadata.geog,st_geogfromtext(?)) as distance from metadata where st_dwithin(metadata.geog,st_geogfromtext(?),?) order by 6;");
 			querry.setString(1, "srid=4326;point("+lon+" "+lat+")");
 			querry.setString(2, "srid=4326;point("+lon+" "+lat+")");
 			querry.setInt(3, Integer.parseInt(range));

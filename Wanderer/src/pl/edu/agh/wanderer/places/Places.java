@@ -32,7 +32,7 @@ public class Places {
 		System.out.println(" received message ");
 		System.out.println(lon+" "+lat+" "+range);
 		PostgresDB dao = new PostgresDB();
-		String myString = dao.getPointsWithinRannge(lon, lat, range);
+		String myString = dao.getPointsWithinRange(lon, lat, range);
 		
 		if(myString==null)
 			System.out.println("null ;/");

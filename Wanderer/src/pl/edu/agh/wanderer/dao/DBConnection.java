@@ -20,7 +20,7 @@ public class DBConnection {
 			if (context == null) {
 				context = new InitialContext();
 			}
-			postgresDB = (DataSource) context.lookup("postgis");
+			postgresDB = (DataSource) context.lookup("postgres");
 
 		} catch (Exception e) {
 			e.printStackTrace();
