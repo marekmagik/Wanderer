@@ -57,6 +57,7 @@ namespace Wanderer
         }
 
         public void InitializePanoramaLocal(string path) {
+            Debug.WriteLine("InitializePanoramaLocal");
             PanoramaImageLeft.DataContext = null;
             PanoramaImageRight.DataContext = null;
             imageSource = null;
@@ -552,7 +553,8 @@ namespace Wanderer
                         IsolatedStorageDAO.CachePhoto(stream, width, height);
 
                         WriteableBitmap bitmapImage = new WriteableBitmap(width, height);
-
+                        Debug.WriteLine(width + " x " + height);
+                        //stream.Position = 0;
                         bitmapImage.LoadJpeg(stream);
 
                         ImageSource = bitmapImage;

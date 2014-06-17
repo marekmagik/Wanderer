@@ -22,6 +22,7 @@ namespace Wanderer
         //private Place actualPlace;
         //private DAO dao;
         private int actualIndex;
+        private NavigationService navigationService;
 
         public ListOfPlaces()
         {
@@ -116,8 +117,16 @@ namespace Wanderer
         {
             GC.Collect();
             GC.WaitForPendingFinalizers();
+            Uri uri = new Uri("/PanoramaView.xaml?photoID=" + places.ElementAt(PlacesListBox.SelectedIndex).IdInDatabase + "&hash="+places.ElementAt(PlacesListBox.SelectedIndex).PictureSHA256+"&useLocalDatabase=false", UriKind.Relative);
+            
             Debug.WriteLine("photo_id=" + places.ElementAt(PlacesListBox.SelectedIndex).IdInDatabase);
-            NavigationService.Navigate(new Uri("/PanoramaView.xaml?photoID=" + places.ElementAt(PlacesListBox.SelectedIndex).IdInDatabase + "&hash="+places.ElementAt(PlacesListBox.SelectedIndex).PictureSHA256+"&useLocalDatabase=false", UriKind.Relative));
+            Debug.WriteLine("HASH: " + places.ElementAt(PlacesListBox.SelectedIndex).PictureSHA256);
+         //   NavigationService.Navigate(new Uri("/PanoramaView.xaml?photoID=" + places.ElementAt(PlacesListBox.SelectedIndex).IdInDatabase + "&hash="+places.ElementAt(PlacesListBox.SelectedIndex).PictureSHA256+"&useLocalDatabase=false", UriKind.Relative));
+           if(NavigationService == null){
+               Debug.WriteLine("Ni huja");
+           }
+            NavigationService.Navigate(uri);
+          //  navigationService.Navigate(uri);
         }
 
     }

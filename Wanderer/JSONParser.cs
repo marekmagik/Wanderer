@@ -90,6 +90,10 @@ namespace Wanderer
                 metadata.Longitude = Convert.ToDouble(property.Value.ToString());
             else if (property.Name.Equals("latitude"))
                 metadata.Latitude = Convert.ToDouble(property.Value.ToString());
+            else if (property.Name.Equals("width"))
+                metadata.Width = Convert.ToInt32(property.Value.ToString());
+            else if (property.Name.Equals("height"))
+                metadata.Height = Convert.ToInt32(property.Value.ToString());
             else if (property.Name.Equals("primary_description"))
                 metadata.PictureDescription = property.Value.ToString();
             else if (property.Name.Equals("secondary_description"))
@@ -103,17 +107,6 @@ namespace Wanderer
             else if (property.Name.Equals("picture_hash"))
                 metadata.PictureSHA256 = property.Value.ToString();
 
-
-
-
-        }
-
-
-        private byte[] GetBytes(string str)
-        {
-            byte[] bytes = new byte[str.Length * sizeof(char)];
-            System.Buffer.BlockCopy(str.ToCharArray(), 0, bytes, 0, bytes.Length);
-            return bytes;
         }
 
     }

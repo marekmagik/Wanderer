@@ -17,16 +17,16 @@ namespace Wanderer
 
         private const string filename = "places_data.txt";
         //private List<Place> places;
-        private static List<string> cachedPhotos;
-        private static List<string> cachedThumbnails;
+        private static List<string> cachedPhotos = new List<string>();
+        private static List<string> cachedThumbnails = new List<string>();
 
         public static void InitIsolatedStorageDAO()
         {
             //places = new List<Place>();
-            cachedPhotos = new List<string>();
-            cachedThumbnails = new List<string>();
+            /*cachedPhotos 
+            cachedThumbnails 
             LoadPlacesData();
-            LoadNewFiles();
+            LoadNewFiles();*/
         }
 
         public static void LoadPlacesData()
@@ -108,6 +108,11 @@ namespace Wanderer
 
         public static bool IsPhotoCached(string hash)
         {
+            foreach (string photo in cachedPhotos) {
+                Debug.WriteLine(photo);
+            }
+            Debug.WriteLine(" arg " + hash);
+
             if(cachedPhotos.Contains(hash))
                 return true;
             else
@@ -125,10 +130,14 @@ namespace Wanderer
         public static void CachePhoto(Stream image, int width, int height)
         {
 
+
             byte[] bytes = new byte[image.Length];
             image.Read(bytes, 0, bytes.Length);
             string hash = GenerateHash(bytes);
             image.Position = 0;
+
+            Debug.WriteLine(" starting creating cache "+hash);
+
 
             using (IsolatedStorageFile storage = IsolatedStorageFile.GetUserStoreForApplication())
             {
@@ -142,6 +151,7 @@ namespace Wanderer
             }
 
             cachedPhotos.Add(hash);
+            Debug.WriteLine(" size of list " + cachedPhotos.Count);
         }
 
         public static void CacheThumbnail(Stream image, int width, int height, string hash)
