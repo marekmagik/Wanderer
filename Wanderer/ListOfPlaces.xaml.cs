@@ -22,31 +22,21 @@ namespace Wanderer
         //private Place actualPlace;
         //private DAO dao;
         private int actualIndex;
-        private NavigationService navigationService;
+        private MainPage mainPage;
 
-        public ListOfPlaces()
+
+        public ListOfPlaces(MainPage mainPage)
         {
             InitializeComponent();
             places = new List<ImageMetadata>();
-            //places = new List<Place>();
-            //dao = new DAO();
+            
             DAO.GetDataFromServer(this, 20.5, 40.6, 100000000);
             this.DataContext = places;
             actualIndex = 0;
+
+            this.mainPage = mainPage;
         }
 
-        protected override void OnNavigatedTo(NavigationEventArgs e)
-        {
-           
-            this.DataContext = null;
-            base.OnNavigatedTo(e);
-            this.DataContext = places;
-        }
-
-        protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)
-        {
-            base.OnNavigatingFrom(e);
-        }
 
         public void ReloadContent()
         {
@@ -80,8 +70,8 @@ namespace Wanderer
                 }
                 catch (WebException)
                 {
-                  // odkomentuj do testów:
-                  //  DAO.LoadImage(this, 0);
+                    // odkomentuj do testów:
+                    //  DAO.LoadImage(this, 0);
                     return;
                 }
             }
@@ -103,10 +93,13 @@ namespace Wanderer
                             image.SetSource(stream);
                             Debug.WriteLine(actualIndex);
                             places.ElementAt(actualIndex).Image = image;
-
-                            if (actualIndex != places.Count - 1)
+                            ReloadContent();
+                            if (actualIndex == places.Count - 1)
                             {
-                                ReloadContent();
+                                return;
+                            }
+                            else
+                            {
                                 actualIndex++;
                                 DAO.LoadImage(this, places.ElementAt(actualIndex).IdInDatabase);
                             }
@@ -124,18 +117,24 @@ namespace Wanderer
 
         void PlacesListBox_SelectionChanged(object sender, SelectionChangedEventArgs args)
         {
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            Uri uri = new Uri("/PanoramaView.xaml?photoID=" + places.ElementAt(PlacesListBox.SelectedIndex).IdInDatabase + "&hash="+places.ElementAt(PlacesListBox.SelectedIndex).PictureSHA256+"&useLocalDatabase=false", UriKind.Relative);
-            
-            Debug.WriteLine("photo_id=" + places.ElementAt(PlacesListBox.SelectedIndex).IdInDatabase);
-            Debug.WriteLine("HASH: " + places.ElementAt(PlacesListBox.SelectedIndex).PictureSHA256);
-            //   NavigationService.Navigate(new Uri("/PanoramaView.xaml?photoID=" + places.ElementAt(PlacesListBox.SelectedIndex).IdInDatabase + "&hash="+places.ElementAt(PlacesListBox.SelectedIndex).PictureSHA256+"&useLocalDatabase=false", UriKind.Relative));
-           if(NavigationService == null){
-               Debug.WriteLine("Ni huja");
-           }
-            NavigationService.Navigate(uri);
-          //  navigationService.Navigate(uri);
+            if (PlacesListBox.SelectedIndex != -1)
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                Uri uri = new Uri("/PanoramaView.xaml?photoID=" + places.ElementAt(PlacesListBox.SelectedIndex).IdInDatabase + "&hash=" + places.ElementAt(PlacesListBox.SelectedIndex).PictureSHA256 + "&useLocalDatabase=false", UriKind.Relative);
+
+                Debug.WriteLine("photo_id=" + places.ElementAt(PlacesListBox.SelectedIndex).IdInDatabase);
+                Debug.WriteLine("HASH: " + places.ElementAt(PlacesListBox.SelectedIndex).PictureSHA256);
+                //   NavigationService.Navigate(new Uri("/PanoramaView.xaml?photoID=" + places.ElementAt(PlacesListBox.SelectedIndex).IdInDatabase + "&hash="+places.ElementAt(PlacesListBox.SelectedIndex).PictureSHA256+"&useLocalDatabase=false", UriKind.Relative));
+                if (NavigationService == null)
+                {
+                    Debug.WriteLine("Ni huja");
+                }
+                //MainPage.navigateToPage(uri);
+                PlacesListBox.SelectedIndex = -1;
+                mainPage.NavigationService.Navigate(uri);
+                //  navigationService.Navigate(uri);
+            }
         }
 
 

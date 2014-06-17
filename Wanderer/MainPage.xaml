@@ -29,8 +29,8 @@
             	        <Run Text="Wanderer"/>
             	        <LineBreak/>
                     </TextBlock>
-                    <Button Content="Kliknij mnie" Click="showPanoramaViewPage"/>
-                    <Button Content="Pokaz liste" Click="showListOfPlaces"/>
+                    <Button Content="Konfiguracja" Click="showPanoramaViewPage" IsEnabled="False" />
+                    <Button Content="Pokaz liste" Click="showListOfPlaces" IsEnabled="False"/>
 
                 </StackPanel>
 

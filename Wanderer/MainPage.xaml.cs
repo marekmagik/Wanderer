@@ -20,7 +20,7 @@ namespace Wanderer
         {
             InitializeComponent();
 
-            ListOfPlacesPanoraaItem.Content = (new ListOfPlaces());
+            ListOfPlacesPanoraaItem.Content = (new ListOfPlaces(this));
             IsolatedStorageDAO.InitIsolatedStorageDAO();
             // Sample code to localize the ApplicationBar
             //BuildLocalizedApplicationBar();
@@ -58,6 +58,7 @@ namespace Wanderer
             GC.WaitForPendingFinalizers();
             NavigationService.Navigate(new Uri("/ListOfPlaces.xaml", UriKind.Relative));
         }
+
 
     }
 }
