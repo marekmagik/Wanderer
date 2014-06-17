@@ -104,12 +104,9 @@ namespace Wanderer
                             Debug.WriteLine(actualIndex);
                             places.ElementAt(actualIndex).Image = image;
 
-                            if (actualIndex == places.Count - 1)
+                            if (actualIndex != places.Count - 1)
                             {
                                 ReloadContent();
-                            }
-                            else
-                            {
                                 actualIndex++;
                                 DAO.LoadImage(this, places.ElementAt(actualIndex).IdInDatabase);
                             }

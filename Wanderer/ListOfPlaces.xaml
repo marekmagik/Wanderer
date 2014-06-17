@@ -28,7 +28,7 @@
 
         <!--ContentPanel - place additional content here-->
         <Grid x:Name="ContentPanel" Grid.Row="1" Margin="12,0,12,0">
-            <ListBox ItemsSource="{Binding}" Height="600" Name="PlacesListBox" Width="440" SelectionChanged="PlacesListBox_SelectionChanged">
+            <ListBox ItemsSource="{Binding}" Height="600" Name="PlacesListBox" Width="440" Tap="PlacesListBox_SelectionChanged">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Background="DimGray" Margin="0,15,0,15"  Orientation="Vertical">
