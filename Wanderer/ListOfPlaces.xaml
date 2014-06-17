@@ -31,9 +31,9 @@
             <ListBox ItemsSource="{Binding}" Height="600" Name="PlacesListBox" Width="440" SelectionChanged="PlacesListBox_SelectionChanged">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <StackPanel Orientation="Vertical" Background="Red">
+                        <StackPanel Background="DimGray" Margin="0,15,0,15"  Orientation="Vertical">
                             <StackPanel>
-                                <Image Name="Thumbnail" Source="{Binding Image}"  />
+                                <Image Name="Thumbnail" Source="{Binding Image}" />
                             </StackPanel>
                             <StackPanel Orientation="Vertical">
                                 <TextBlock Text="{Binding PictureDescription}" MaxWidth="380" TextWrapping="Wrap" FontSize="30" Margin="0,0,40,0"/>

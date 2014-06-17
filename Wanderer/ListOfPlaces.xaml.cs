@@ -30,9 +30,22 @@ namespace Wanderer
             places = new List<ImageMetadata>();
             //places = new List<Place>();
             //dao = new DAO();
-            DAO.GetDataFromServer(this, 20.5, 40.6, 1000000);
+            DAO.GetDataFromServer(this, 20.5, 40.6, 100000000);
             this.DataContext = places;
             actualIndex = 0;
+        }
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+           
+            this.DataContext = null;
+            base.OnNavigatedTo(e);
+            this.DataContext = places;
+        }
+
+        protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)
+        {
+            base.OnNavigatingFrom(e);
         }
 
         public void ReloadContent()
@@ -120,13 +133,14 @@ namespace Wanderer
             
             Debug.WriteLine("photo_id=" + places.ElementAt(PlacesListBox.SelectedIndex).IdInDatabase);
             Debug.WriteLine("HASH: " + places.ElementAt(PlacesListBox.SelectedIndex).PictureSHA256);
-         //   NavigationService.Navigate(new Uri("/PanoramaView.xaml?photoID=" + places.ElementAt(PlacesListBox.SelectedIndex).IdInDatabase + "&hash="+places.ElementAt(PlacesListBox.SelectedIndex).PictureSHA256+"&useLocalDatabase=false", UriKind.Relative));
+            //   NavigationService.Navigate(new Uri("/PanoramaView.xaml?photoID=" + places.ElementAt(PlacesListBox.SelectedIndex).IdInDatabase + "&hash="+places.ElementAt(PlacesListBox.SelectedIndex).PictureSHA256+"&useLocalDatabase=false", UriKind.Relative));
            if(NavigationService == null){
                Debug.WriteLine("Ni huja");
            }
             NavigationService.Navigate(uri);
           //  navigationService.Navigate(uri);
         }
+
 
     }
 }
