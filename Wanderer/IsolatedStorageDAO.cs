@@ -16,17 +16,18 @@ namespace Wanderer
     {
 
         private const string filename = "places_data.txt";
-        //private List<Place> places;
-        private static List<string> cachedPhotos = new List<string>();
-        private static List<string> cachedThumbnails = new List<string>();
+        private static List<string> cachedPhotos;
+        private static List<string> cachedThumbnails;
 
         public static void InitIsolatedStorageDAO()
         {
-            //places = new List<Place>();
-            /*cachedPhotos 
-            cachedThumbnails 
+            if(cachedPhotos==null)
+                cachedPhotos = new List<string>();
+            if(cachedThumbnails==null)
+                cachedThumbnails = new List<string>();
+
             LoadPlacesData();
-            LoadNewFiles();*/
+            LoadNewFiles();
         }
 
         public static void LoadPlacesData()
@@ -54,7 +55,7 @@ namespace Wanderer
         {
             using (IsolatedStorageFile storage = IsolatedStorageFile.GetUserStoreForApplication())
             {
-                string[] photos = storage.GetFileNames(".\\photos");
+                string[] photos = storage.GetFileNames("/photos");
                 foreach(string photo in photos)
                 {
                     if (!cachedPhotos.Contains(photo))
@@ -62,7 +63,7 @@ namespace Wanderer
                         //ProcessFile(file);
                 }
 
-                string[] thumbnails = storage.GetFileNames(".\\thumbnails");
+                string[] thumbnails = storage.GetFileNames("/thumbnails");
                 foreach (string thumbnail in thumbnails)
                 {
                     if (!cachedPhotos.Contains(thumbnail))

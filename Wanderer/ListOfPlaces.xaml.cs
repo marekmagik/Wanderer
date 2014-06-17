@@ -30,7 +30,6 @@ namespace Wanderer
             places = new List<ImageMetadata>();
             //places = new List<Place>();
             //dao = new DAO();
-            IsolatedStorageDAO.InitIsolatedStorageDAO();
             DAO.GetDataFromServer(this, 20.5, 40.6, 1000000);
             this.DataContext = places;
             actualIndex = 0;
