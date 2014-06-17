@@ -63,7 +63,7 @@ public class PostgresDB extends DBConnection {
 		byte[] result = null;
 		try {
 			PreparedStatement ps = connection
-					.prepareStatement("SELECT photos.photo FROM photos inner join places on metadata.metadata_id=photos.metadata_id where metadata.metadata_id=?");
+					.prepareStatement("SELECT photos.photo FROM photos inner join metadata on metadata.metadata_id=photos.metadata_id where metadata.metadata_id=?");
 			ps.setInt(1, photoId);
 			ResultSet rs = ps.executeQuery();
 			if (rs != null) {
@@ -111,7 +111,7 @@ public class PostgresDB extends DBConnection {
 		String result = null;
 		System.out.println("got an query");
 		try {
-			PreparedStatement querry = connection.prepareStatement("select metadata_id,longitude,latitude,\"primary_description\", \"secondary_description\", st_distance(metadata.geog,st_geogfromtext(?)) as distance from metadata where st_dwithin(metadata.geog,st_geogfromtext(?),?) order by 6;");
+			PreparedStatement querry = connection.prepareStatement("select metadata_id,longitude,latitude,\"primary_description\", \"secondary_description\", picture_hash , st_distance(metadata.geog,st_geogfromtext(?)) as distance from metadata where st_dwithin(metadata.geog,st_geogfromtext(?),?) order by 7;");
 			querry.setString(1, "srid=4326;point("+lon+" "+lat+")");
 			querry.setString(2, "srid=4326;point("+lon+" "+lat+")");
 			querry.setInt(3, Integer.parseInt(range));
