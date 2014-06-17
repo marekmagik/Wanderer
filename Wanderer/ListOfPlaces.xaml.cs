@@ -29,6 +29,7 @@ namespace Wanderer
             places = new List<ImageMetadata>();
             //places = new List<Place>();
             //dao = new DAO();
+            IsolatedStorageDAO.InitIsolatedStorageDAO();
             DAO.GetDataFromServer(this, 20.5, 40.6, 1000000);
             this.DataContext = places;
             actualIndex = 0;
@@ -116,7 +117,7 @@ namespace Wanderer
             GC.Collect();
             GC.WaitForPendingFinalizers();
             Debug.WriteLine("photo_id=" + places.ElementAt(PlacesListBox.SelectedIndex).IdInDatabase);
-            NavigationService.Navigate(new Uri("/PanoramaView.xaml?photoID=" + places.ElementAt(PlacesListBox.SelectedIndex).IdInDatabase + "&useLocalDatabase=false", UriKind.Relative));
+            NavigationService.Navigate(new Uri("/PanoramaView.xaml?photoID=" + places.ElementAt(PlacesListBox.SelectedIndex).IdInDatabase + "&hash="+places.ElementAt(PlacesListBox.SelectedIndex).PictureSHA256+"&useLocalDatabase=false", UriKind.Relative));
         }
 
     }

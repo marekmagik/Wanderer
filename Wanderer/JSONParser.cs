@@ -101,10 +101,8 @@ namespace Wanderer
             else if (property.Name.Equals("version"))
                 metadata.Version = Convert.ToDouble(property.Value.ToString());
             else if (property.Name.Equals("picture_hash"))
-            {
-                metadata.PictureSHA256 = GetBytes(property.Value.ToString());
+                metadata.PictureSHA256 = property.Value.ToString();
 
-            }
 
 
 

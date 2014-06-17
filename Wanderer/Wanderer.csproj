@@ -97,6 +97,7 @@
     <Compile Include="Configuration.cs" />
     <Compile Include="DAO.cs" />
     <Compile Include="ImageMetadata.cs" />
+    <Compile Include="IsolatedStorageDAO.cs" />
     <Compile Include="JSONParser.cs" />
     <Compile Include="ListOfPlaces.xaml.cs">
       <DependentUpon>ListOfPlaces.xaml</DependentUpon>
