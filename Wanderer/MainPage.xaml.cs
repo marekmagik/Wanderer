@@ -13,12 +13,14 @@ namespace Wanderer
 {
     public partial class MainPage : PhoneApplicationPage
     {
-        private static GPSTracker gpsTracker = new GPSTracker();
+        //private static GPSTracker gpsTracker = new GPSTracker();
         
         // Constructor
         public MainPage()
         {
             InitializeComponent();
+
+            ListOfPlacesPanoraaItem.Content = (new ListOfPlaces());
 
             // Sample code to localize the ApplicationBar
             //BuildLocalizedApplicationBar();
@@ -47,7 +49,7 @@ namespace Wanderer
              */
             GC.Collect();
             GC.WaitForPendingFinalizers();
-            NavigationService.Navigate(new Uri("/PanoramaView.xaml", UriKind.Relative));  
+            NavigationService.Navigate(new Uri("/PanoramaView.xaml?photoID=1&useLocalDatabase=true", UriKind.Relative));  
         }
 
         private void showListOfPlaces(Object sender, RoutedEventArgs e)

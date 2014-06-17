@@ -5,134 +5,44 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media;
 
 namespace Wanderer
 {
     public class ImageMetadata
     {
-        private List<Point> points;
-        private List<Category> categories;
-        private double orientationOfLeftBorder;
-        private double coverageInPercent;
-        private double longitude;
-        private double latitude;
-        private String pictureDescription;
-        private int idFromServerDatabase;
 
-        public int Width { get; set; }
+        public List<Point> Points { get; set; }
+        public List<Category> Categories { get; set; }
+        public double OrientationOfLeftBorder { get; set; }
+        public double CoverageInPercent { get; set; }
+        public String PictureDescription { get; set; }
+        public String PictureAdditionalDescription { get; set; }
+        public int IdInDatabase { get; set; }
+        public double Longitude { get; set; }
+        public double Latitude { get; set; }
+        public double Version { get; set; }
         public int Height { get; set; }
+        public int Width { get; set; }
+        public ImageSource Image { get; set; }
+        public byte[] PictureSHA256 { get; set; }
 
-
-        public List<Point> Points
-        {
-            get
-            {
-                return points;
-            }
-            set
-            {
-                points = value;
-            }
-        }
-
-        public List<Category> Categories
-        {
-            get
-            {
-                return categories;
-            }
-            set
-            {
-                categories = value;
-            }
-        }
-
-        public double OrientationOfLeftBorder
-        {
-            get
-            {
-                return orientationOfLeftBorder;
-            }
-            set
-            {
-                orientationOfLeftBorder = value;
-            }
-        }
-
-
-        public double CoverageInPercent
-        {
-            get
-            {
-                return coverageInPercent;
-            }
-            set
-            {
-                coverageInPercent = value;
-            }
-        }
-        public String PictureDescription
-        {
-            get
-            {
-                return pictureDescription;
-            }
-            set
-            {
-                pictureDescription = value;
-            }
-        }
-        public int IdFromServerDatabase
-        {
-            get
-            {
-                return idFromServerDatabase;
-            }
-            set
-            {
-                idFromServerDatabase = value;
-            }
-        }
-
-        public double Longitude
-        {
-            get
-            {
-                return longitude;
-            }
-            set
-            {
-                longitude = value;
-            }
-        }
-
-        public double Latitude
-        {
-            get
-            {
-                return latitude;
-            }
-            set
-            {
-                latitude = value;
-            }
-        }
 
         public ImageMetadata()
         {
-            points = new List<Point>();
-            categories = new List<Category>();
+            Points = new List<Point>();
+            Categories = new List<Category>();
         }
 
         public bool addCategory(Category category)
         {
-            if (categories.Contains(category))
+            if (Categories.Contains(category))
             {
                 return false;
             }
             else
             {
-                categories.Add(category);
+                Categories.Add(category);
                 return true;
             }
         }
@@ -140,7 +50,7 @@ namespace Wanderer
         public bool addPoint(Point point)
         {
             bool canAddPoint = true;
-            foreach (Point p in points)
+            foreach (Point p in Points)
             {
                 if (Math.Abs(p.X - point.X) < 10 && Math.Abs(p.Y - point.Y) < 10)
                 {
@@ -149,7 +59,7 @@ namespace Wanderer
             }
             if (canAddPoint)
             {
-                points.Add(point);
+                Points.Add(point);
                 return true;
             }
             else
@@ -162,7 +72,7 @@ namespace Wanderer
         internal bool removeCategory(Category category)
         {
             bool canDelete = true;
-            foreach (Point p in points)
+            foreach (Point p in Points)
             {
                 if (p.Category.Equals(category))
                 {
@@ -171,7 +81,7 @@ namespace Wanderer
             }
             if (canDelete)
             {
-                return categories.Remove(category);
+                return Categories.Remove(category);
             }
             else
             {

@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Device.Location;
+//using System.Device.Location;
+using System.ComponentModel;
+using System.Windows.Controls;
 
 namespace Wanderer
 {
-    public class GPSTracker
+    public class GPSTracker : UserControl
     {
         private bool useGPS;
         public double longitude;
@@ -22,13 +24,13 @@ namespace Wanderer
             {
                 if (useGPS && !value)
                 {
-                    gpsTracker.Stop();
+ //                   gpsTracker.Stop();
                 }
                 else
                 {
                     if (!useGPS && value)
                     {
-                        gpsTracker.Start();
+//                        gpsTracker.Start();
                     }
                 }
                 useGPS = value;
@@ -58,22 +60,28 @@ namespace Wanderer
         }
 
 
-        private readonly GeoCoordinateWatcher gpsTracker;
+//        private readonly GeoCoordinateWatcher gpsTracker;
 
         public GPSTracker()
         {
-            gpsTracker = new GeoCoordinateWatcher(GeoPositionAccuracy.High);
-            gpsTracker.MovementThreshold = 100;
-            gpsTracker.PositionChanged += gpsTrackerPositionChanged;
+            if (!DesignerProperties.GetIsInDesignMode(this))
+            {
+//                gpsTracker = new GeoCoordinateWatcher(GeoPositionAccuracy.High) { MovementThreshold = 100 };
+//                gpsTracker.PositionChanged += gpsTrackerPositionChanged;
+            }
+
+ //           gpsTracker = new GeoCoordinateWatcher(GeoPositionAccuracy.High);
+ //           gpsTracker.MovementThreshold = 100;
             useGPS = false;
         }
-
+/*
         private void gpsTrackerPositionChanged(object sender, GeoPositionChangedEventArgs<GeoCoordinate> e)
         {
             longitude = e.Position.Location.Longitude;
             latitude = e.Position.Location.Latitude;
             altitude = e.Position.Location.Altitude;
         }
+*/
 
         public static double computeDistance(double x1, double y1, double x2, double y2)
         {

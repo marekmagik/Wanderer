@@ -16,23 +16,26 @@ namespace Wanderer
 {
     public partial class ListOfPlaces : PhoneApplicationPage
     {
-        private List<Place> places;
+        //private List<Place> places;
+        private List<ImageMetadata> places;
         private List<ImageMetadata> points;
-        private Place actualPlace;
-        private DAO dao;
+        //private Place actualPlace;
+        //private DAO dao;
         private int actualIndex;
 
         public ListOfPlaces()
         {
             InitializeComponent();
-            places = new List<Place>();
-            dao = new DAO();
-            dao.GetDataFromServer(this,20.5,40.6,1000000);
+            places = new List<ImageMetadata>();
+            //places = new List<Place>();
+            //dao = new DAO();
+            DAO.GetDataFromServer(this, 20.5, 40.6, 1000000);
             this.DataContext = places;
             actualIndex = 0;
         }
 
-        public void ReloadContent(){
+        public void ReloadContent()
+        {
             Deployment.Current.Dispatcher.BeginInvoke(delegate
                     {
                         PlacesListBox.ItemsSource = null;
@@ -54,16 +57,17 @@ namespace Wanderer
                     JSONParser parser = new JSONParser();
                     places = parser.ParsePlacesJSON(json);
 
-
                     if (places.Count > 0)
                     {
                         actualIndex = 0;
-                        dao.LoadImage(this,actualIndex);
+                        DAO.LoadImage(this, places.ElementAt(actualIndex).IdInDatabase);
                     }
 
                 }
-                catch (WebException )
+                catch (WebException)
                 {
+                  // odkomentuj do testów:
+                  //  DAO.LoadImage(this, 0);
                     return;
                 }
             }
@@ -74,44 +78,46 @@ namespace Wanderer
             HttpWebRequest request = result.AsyncState as HttpWebRequest;
             if (request != null)
             {
-                try
-                {
-                    WebResponse response = request.EndGetResponse(result);
-                    Stream stream = response.GetResponseStream();
-                    BitmapImage image = new BitmapImage();
-                    image.SetSource(stream);
-                    places.ElementAt(actualIndex).Image = image;
-
-                    if (actualIndex == places.Count-1)
+                Deployment.Current.Dispatcher.BeginInvoke(delegate
                     {
-                        ReloadContent();
-                    }
-                    else
-                    {
-                        actualIndex++;
-                        dao.LoadImage(this,actualIndex);
-                    }
+                        try
+                        {
+                            WebResponse response = request.EndGetResponse(result);
+                            Stream stream = response.GetResponseStream();
 
+                            BitmapImage image = new BitmapImage();
+                            image.SetSource(stream);
+                            Debug.WriteLine(actualIndex);
+                            places.ElementAt(actualIndex).Image = image;
 
-                }
-                catch (WebException)
-                {
-                    return;
-                }
+                            if (actualIndex == places.Count - 1)
+                            {
+                                ReloadContent();
+                            }
+                            else
+                            {
+                                actualIndex++;
+                                DAO.LoadImage(this, places.ElementAt(actualIndex).IdInDatabase);
+                            }
+                        }
+                        catch (WebException)
+                        {
+                            Debug.WriteLine("wyjatek wewnatrz UI!");
+                            return;
+                        }
+
+                    });
+
             }
-        }
-
-        private void PlacesListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-
         }
 
         void PlacesListBox_SelectionChanged(object sender, SelectionChangedEventArgs args)
         {
             GC.Collect();
             GC.WaitForPendingFinalizers();
-            NavigationService.Navigate(new Uri("/PanoramaView.xaml", UriKind.Relative));
+            Debug.WriteLine("photo_id=" + places.ElementAt(PlacesListBox.SelectedIndex).IdInDatabase);
+            NavigationService.Navigate(new Uri("/PanoramaView.xaml?photoID=" + places.ElementAt(PlacesListBox.SelectedIndex).IdInDatabase + "&useLocalDatabase=false", UriKind.Relative));
         }
-        
+
     }
 }

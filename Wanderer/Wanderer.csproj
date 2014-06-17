@@ -108,7 +108,6 @@
     <Compile Include="PanoramaView.xaml.cs">
       <DependentUpon>PanoramaView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Place.cs" />
     <Compile Include="Point.cs" />
     <Compile Include="PossibleMemoryAccessViolationException.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -202,6 +201,7 @@
     <Reference Include="ImageTools.Utils">
       <HintPath>..\packages\ImageTools.0.3.1\lib\sl3-wp\ImageTools.Utils.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Phone.Controls, Version=8.0.0.0, Culture=neutral, PublicKeyToken=24eec0d8c86cda1e, processorArchitecture=MSIL" />
     <Reference Include="Microsoft.Phone.Controls.Toolkit">
       <HintPath>..\packages\WPtoolkit.4.2013.08.16\lib\wp8\Microsoft.Phone.Controls.Toolkit.dll</HintPath>
     </Reference>
