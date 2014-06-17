@@ -56,7 +56,7 @@ namespace Wanderer
             InitializeComponent();
         }
 
-        public void InitializePanoramaLocal() {
+        public void InitializePanoramaLocal(string path) {
             PanoramaImageLeft.DataContext = null;
             PanoramaImageRight.DataContext = null;
             imageSource = null;
@@ -70,7 +70,7 @@ namespace Wanderer
             //LoadImage("/PołoninaWetlińska.jpg", 800, 480, true);
 
             //LoadImage("/foto4.jpg", 800, 480, true, 80);
-            LoadImage("/Panorama_z_Barańca_a2.jpg", 800, 480, true, 70);
+            LoadImage(path, 800, 480, true, 70);
         
         }
 
@@ -105,11 +105,12 @@ namespace Wanderer
             Debug.WriteLine("On navigated TO");
             base.OnNavigatedTo(e);
 
-            bool getFromLocalDatabase = Convert.ToBoolean(NavigationContext.QueryString["useLocalDatabase"]);
+            //bool getFromLocalDatabase = Convert.ToBoolean(NavigationContext.QueryString["useLocalDatabase"]);
+            string hash = NavigationContext.QueryString["hash"];
             photoID = Convert.ToInt32(NavigationContext.QueryString["photoID"]);
-            if (getFromLocalDatabase)
+            if (IsolatedStorageDAO.IsPhotoCached(hash))
             {
-                InitializePanoramaLocal();
+                InitializePanoramaLocal("/photos/"+hash+".jpg");
             }
             else
             {
@@ -547,6 +548,9 @@ namespace Wanderer
                         WebResponse response = request.EndGetResponse(result);
 
                         Stream stream = response.GetResponseStream();
+
+                        IsolatedStorageDAO.CachePhoto(stream, width, height);
+
                         WriteableBitmap bitmapImage = new WriteableBitmap(width, height);
 
                         bitmapImage.LoadJpeg(stream);
