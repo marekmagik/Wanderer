@@ -73,16 +73,6 @@ namespace Wanderer
 
         private void SetMetadata(JProperty property, ImageMetadata metadata)
         {
-/*
-            if (property.Name.Equals("perc"))
-                metadata.CoverageInPercent = Convert.ToDouble(property.Value.ToString());
-            else if (property.Name.Equals("width"))
-                metadata.Width = Convert.ToInt32(property.Value.ToString());
-            else if (property.Name.Equals("height"))
-                metadata.Height = Convert.ToInt32(property.Value.ToString());
-*/
-
-
 
             if (property.Name.Equals("metadata_id"))
                 metadata.IdInDatabase = Convert.ToInt32(property.Value.ToString());
@@ -102,20 +92,11 @@ namespace Wanderer
                 metadata.Version = Convert.ToDouble(property.Value.ToString());
             else if (property.Name.Equals("picture_hash"))
             {
-                metadata.PictureSHA256 = GetBytes(property.Value.ToString());
-
+                metadata.PictureSHA256 = property.Value.ToString();
             }
 
 
 
-        }
-
-
-        private byte[] GetBytes(string str)
-        {
-            byte[] bytes = new byte[str.Length * sizeof(char)];
-            System.Buffer.BlockCopy(str.ToCharArray(), 0, bytes, 0, bytes.Length);
-            return bytes;
         }
 
     }

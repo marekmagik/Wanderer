@@ -25,7 +25,7 @@ namespace Wanderer
         public int Height { get; set; }
         public int Width { get; set; }
         public ImageSource Image { get; set; }
-        public byte[] PictureSHA256 { get; set; }
+        public string PictureSHA256 { get; set; }
 
 
         public ImageMetadata()
