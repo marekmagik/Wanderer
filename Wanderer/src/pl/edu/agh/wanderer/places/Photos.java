@@ -34,7 +34,7 @@ public class Photos {
 	@Produces({"image/jpeg"})
 	public Response getPlaceThumbnail(@PathParam("id") String photoId) throws Exception {
 		
-		System.out.println("Searching id "+photoId);
+		System.out.println("Sending thumbnail with id  "+photoId);
 		PostgresDB dao = new PostgresDB();
 		byte [] result = dao.getThumbnail(Integer.parseInt(photoId));
 		System.out.println(" sending photo, bytes: "+result.length);

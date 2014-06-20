@@ -42,7 +42,7 @@ public class PostgresDB extends DBConnection {
 		try {
 			conn = getConnection();
 			query = conn
-					.prepareStatement("select ph.perc, ph.width, ph.height from photos as ph where ph.place_id=?");
+					.prepareStatement("select md.coverage, ph.width, ph.height from photos as ph inner join metadata as md on md.metadata_id=ph.metadata_id where ph.metadata_id=?");
 			query.setInt(1, placeId);
 			ResultSet resultSet = query.executeQuery();
 			ToJSON toJSON = new ToJSON();
