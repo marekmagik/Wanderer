@@ -19,6 +19,10 @@ using Microsoft.Phone;
 using System.ComponentModel;
 using ImageTools.IO.Gif;
 using ImageTools;
+using Microsoft.Devices.Sensors;
+using Microsoft.Xna.Framework;
+using System.Windows.Threading;
+
 
 
 namespace Wanderer
@@ -27,9 +31,22 @@ namespace Wanderer
     {
         private readonly List<TextBlock> labels = new List<TextBlock>();
 
+        private Compass compass;
+        private DispatcherTimer timer;
+
+        private double trueHeading;
+        private double headingAccuracy;
+        private int convertedHeading;
+
+        private bool isDataValid;
+        private bool isCalibrationInProgress;
+
+        private double PIXELS_PER_DEGREE;
+        private double currentShift;
+
         private double MIN_SCALE;
         private readonly double MAX_SCALE = 1.0;
-      
+
         private double currentScale;
 
         private int height;
@@ -38,25 +55,32 @@ namespace Wanderer
         private int screenHeight;
 
         private ImageMetadata metadata;
-      //  private DAO dao;
+        //  private DAO dao;
         private int photoID;
 
         private ImageSource imageSource;
+
+        public bool UseCompass { get; set; }
+
         public ImageSource ImageSource
         {
-            get { return imageSource; }
+            get
+            {
+                return imageSource;
+            }
             set
             {
                 imageSource = value;
             }
         }
 
-
-        public PanoramaView() {
+        public PanoramaView()
+        {
             InitializeComponent();
         }
 
-        public void InitializePanoramaLocal(string path) {
+        public void InitializePanoramaLocal(string path)
+        {
             Debug.WriteLine("InitializePanoramaLocal");
             PanoramaImageLeft.DataContext = null;
             PanoramaImageRight.DataContext = null;
@@ -72,7 +96,7 @@ namespace Wanderer
 
             //LoadImage("/foto4.jpg", 800, 480, true, 80);
             LoadImage(path, 800, 480, true, 70);
-        
+
         }
 
         public void InitializePanoramaRemote()
@@ -94,16 +118,120 @@ namespace Wanderer
 
             //dao = new DAO();
 
-            LoadImageFromServer(800,480,true,100);
+            LoadImageFromServer(800, 480, true, 100);
 
             //LoadImage("/foto4.jpg");         
 
         }
 
+        private void setPixelsPerDegree(){
+            PIXELS_PER_DEGREE = ((width) / (360.0));
+        }
+
+        protected override void OnLostFocus(RoutedEventArgs e)
+        {
+
+            if (compass != null && compass.IsDataValid)
+            {
+                // Stop data acquisition from the compass.
+                compass.Stop();
+                timer.Stop();
+
+                Debug.WriteLine("---------------------Compass stopped.");
+            }
+
+            base.OnLostFocus(e);
+
+        }
+
+
+        private void compassCurrentValueChanged(object sender, SensorReadingEventArgs<CompassReading> e)
+        {
+            isDataValid = compass.IsDataValid;
+
+            trueHeading = e.SensorReading.TrueHeading;
+            headingAccuracy = Math.Abs(e.SensorReading.HeadingAccuracy);
+
+        }
+
+        private void timerTick(object sender, EventArgs e)
+        {
+            if (!isCalibrationInProgress && UseCompass)
+            {
+                int newConvertedHeading = Convert.ToInt32(trueHeading + 90.0);
+                if (newConvertedHeading >= 360)
+                {
+                    newConvertedHeading -= 360;
+                }
+                if (Math.Abs(convertedHeading - newConvertedHeading) > 1) {
+                    Debug.WriteLine("------Magnetic:------" + convertedHeading);
+
+                    double newShift = ((-1.0) * newConvertedHeading * PIXELS_PER_DEGREE) * currentScale;
+
+                    Debug.WriteLine("LEFT BORDER: " + metadata.OrientationOfLeftBorder);
+
+                    double constantShift = (metadata.OrientationOfLeftBorder * PIXELS_PER_DEGREE) * currentScale;
+
+                    newShift += constantShift;
+
+                    PanoramaTransformLeft.TranslateX = newShift;
+                    PanoramaTransformRight.TranslateX = newShift + (width * currentScale);
+
+                    updateImagesBounds();
+
+                    convertedHeading = newConvertedHeading;
+                }
+                // TODO: napisać metodę przesuwającą zdjęcie                
+            }
+            else
+            {
+                if (headingAccuracy <= 5)
+                {
+                    calibrationTextBlock.Foreground = new SolidColorBrush(Colors.Green);
+                    calibrationTextBlock.Text = headingAccuracy.ToString("0.0");
+                    FinishCalibrationButton.IsEnabled = true;
+                }
+                else
+                {
+                    calibrationTextBlock.Foreground = new SolidColorBrush(Colors.Red);
+                    calibrationTextBlock.Text = headingAccuracy.ToString("0.0");
+                }
+            }
+        }
+
+        private void compass_Calibrate(object sender, CalibrationEventArgs e)
+        {
+            Dispatcher.BeginInvoke(() =>
+            {
+                CalibrationStackPanel.Visibility = Visibility.Visible;
+                FinishCalibrationButton.IsEnabled = false;
+            });
+            isCalibrationInProgress = true;
+        }
+
         protected override void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
         {
-            
+
             Debug.WriteLine("On navigated TO");
+
+            UseCompass = true;
+            useCompassCheckBox.IsChecked = true;
+            isCalibrationInProgress = false;
+
+
+            timer = new DispatcherTimer();
+            timer.Interval = TimeSpan.FromMilliseconds(100);
+            timer.Tick += new EventHandler(timerTick);
+
+
+            compass = new Compass();
+            compass.TimeBetweenUpdates = TimeSpan.FromMilliseconds(100);
+            Debug.WriteLine(compass.TimeBetweenUpdates.TotalMilliseconds + " ms");
+            compass.CurrentValueChanged +=
+                new EventHandler<SensorReadingEventArgs<CompassReading>>(compassCurrentValueChanged);
+            compass.Calibrate +=
+                new EventHandler<CalibrationEventArgs>(compass_Calibrate);
+
             base.OnNavigatedTo(e);
 
             //bool getFromLocalDatabase = Convert.ToBoolean(NavigationContext.QueryString["useLocalDatabase"]);
@@ -111,7 +239,7 @@ namespace Wanderer
             photoID = Convert.ToInt32(NavigationContext.QueryString["photoID"]);
             if (IsolatedStorageDAO.IsPhotoCached(hash))
             {
-                InitializePanoramaLocal("/photos/"+hash+".jpg");
+                InitializePanoramaLocal("/photos/" + hash + ".jpg");
             }
             else
             {
@@ -124,7 +252,7 @@ namespace Wanderer
             MaxSizeReachedMessage.Visibility = Visibility.Collapsed;
             screenWidth = screenResolutionWidth;
             screenHeight = screenResolutionHeight;
-            DAO.GetPhotoDescById(this, photoID);         
+            DAO.GetPhotoDescById(this, photoID);
         }
 
         private int GetPhotoId()
@@ -132,8 +260,9 @@ namespace Wanderer
             return photoID;
         }
 
-        private void LoadLabels(){
-            
+        private void LoadLabels()
+        {
+
         }
 
         private async void LoadImage(string filename, int screenResolutionWidth, int screenResolutionHeight, bool isImageFullyPanoramic, int panoramaPercentage)
@@ -148,35 +277,36 @@ namespace Wanderer
                 {
                     SetImageResolution(filename, panoramaPercentage);
                 }
-                catch(PossibleMemoryAccessViolationException) {
+                catch (PossibleMemoryAccessViolationException)
+                {
                     Debug.WriteLine("Żądanie zostało odrzucone ze względu na rozmiar panoramy.");
                     MaxSizeReachedMessage.Visibility = Visibility.Visible;
                     LoadingAnimation.Visibility = Visibility.Collapsed;
                     return;
                 }
 
-                       WriteableBitmap bitmapImage = new WriteableBitmap(width, height);
+                WriteableBitmap bitmapImage = new WriteableBitmap(width, height);
 
-                       bitmapImage.LoadJpeg(stream);
+                bitmapImage.LoadJpeg(stream);
 
-                       ImageSource = bitmapImage;
-                       PanoramaImageLeft.DataContext = ImageSource;
-                       PanoramaImageRight.DataContext = ImageSource;
+                ImageSource = bitmapImage;
+                PanoramaImageLeft.DataContext = ImageSource;
+                PanoramaImageRight.DataContext = ImageSource;
 
-                       CompositeTransform transformLeft = (CompositeTransform)PanoramaImageLeft.RenderTransform;
-                       CompositeTransform transformRight = (CompositeTransform)PanoramaImageRight.RenderTransform;
+                CompositeTransform transformLeft = (CompositeTransform)PanoramaImageLeft.RenderTransform;
+                CompositeTransform transformRight = (CompositeTransform)PanoramaImageRight.RenderTransform;
 
-                       MIN_SCALE = (double)screenHeight / (double)bitmapImage.PixelHeight;
-                       currentScale = MIN_SCALE;
+                MIN_SCALE = (double)screenHeight / (double)bitmapImage.PixelHeight;
+                currentScale = MIN_SCALE;
 
-                       PanoramaImageLeft.Width = width * currentScale;
-                       PanoramaImageLeft.Height = height * currentScale;
-                       PanoramaImageRight.Width = width * currentScale;
-                       PanoramaImageRight.Height = height * currentScale;
+                PanoramaImageLeft.Width = width * currentScale;
+                PanoramaImageLeft.Height = height * currentScale;
+                PanoramaImageRight.Width = width * currentScale;
+                PanoramaImageRight.Height = height * currentScale;
 
-                       LoadingAnimation.Visibility = Visibility.Collapsed;
+                LoadingAnimation.Visibility = Visibility.Collapsed;
 
-                       Debug.WriteLine("Size: " + bitmapImage.PixelWidth + " x " + bitmapImage.PixelHeight);
+                Debug.WriteLine("Size: " + bitmapImage.PixelWidth + " x " + bitmapImage.PixelHeight);
             }
         }
 
@@ -199,16 +329,18 @@ namespace Wanderer
                     using (var stream = isoStore.OpenFile(filename, System.IO.FileMode.Open, FileAccess.Read))
                     {
                         WriteableBitmap bitmapImage = PictureDecoder.DecodeJpeg(stream);
-                        
+
                         width = bitmapImage.PixelWidth;
                         height = bitmapImage.PixelHeight;
-                        
-                        if(panoramaPercentage < 100){
+
+                        if (panoramaPercentage < 100)
+                        {
                             width += (width * (100 - panoramaPercentage) / panoramaPercentage);
                         }
 
                         /* Rzuć wyjątek, jeśli wyświetlenie zdjęcia może skutkować zamknięciem aplikacji. */
-                        if(width * height > 34500000){
+                        if (width * height > 34500000)
+                        {
                             throw new PossibleMemoryAccessViolationException();
                         }
 
@@ -220,7 +352,7 @@ namespace Wanderer
                 }
             }
             GC.Collect();
-            GC.WaitForPendingFinalizers();      
+            GC.WaitForPendingFinalizers();
         }
 
         private Task<Stream> LoadImageAsync(string filename)
@@ -471,8 +603,23 @@ namespace Wanderer
                 PanoramaTransformLeft.TranslateY = (-1.0) * height * currentScale + screenHeight;
                 PanoramaTransformRight.TranslateY = (-1.0) * height * currentScale + screenHeight;
             }
+
+            currentShift = computeShift();
+            //Debug.WriteLine("updateBounds, right.X = " + currentShift);
         }
 
+        private double computeShift() {
+            double shift;
+            if (PanoramaTransformRight.TranslateX > 0)
+            {
+                shift = ((PanoramaTransformRight.TranslateX / currentScale) - width);// *(-1.0);
+            }
+            else
+            {
+                shift = (PanoramaTransformRight.TranslateX / currentScale);// *(-1.0);
+            }
+            return shift;
+        } 
 
         private void doubleTapHandler(object sender, System.Windows.Input.GestureEventArgs e)
         {
@@ -531,7 +678,11 @@ namespace Wanderer
                 }
                 catch (WebException)
                 {
-                    return;
+                    Deployment.Current.Dispatcher.BeginInvoke(delegate
+                   {
+                       LoadingAnimation.Visibility = Visibility.Collapsed;
+                       ConnectionErrorMessage.Visibility = Visibility.Visible;
+                   });
                 }
             }
         }
@@ -541,11 +692,11 @@ namespace Wanderer
             HttpWebRequest request = result.AsyncState as HttpWebRequest;
             if (request != null)
             {
-                try
+                Deployment.Current.Dispatcher.BeginInvoke(delegate
                 {
-
-                    Deployment.Current.Dispatcher.BeginInvoke(delegate
+                    try
                     {
+
                         WebResponse response = request.EndGetResponse(result);
 
                         Stream stream = response.GetResponseStream();
@@ -576,38 +727,25 @@ namespace Wanderer
 
                         Debug.WriteLine("Size: " + bitmapImage.PixelWidth + " x " + bitmapImage.PixelHeight);
                         ReloadContent();
-                    });
-/*
-                    WriteableBitmap bitmapImage = new WriteableBitmap(width, height);
+                        try
+                        {
+                            setPixelsPerDegree();
+                            compass.Start();
+                            timer.Start();
+                        }
+                        catch (InvalidOperationException){}
+                    }
+                    catch (WebException)
+                    {
+                        LoadingAnimation.Visibility = Visibility.Collapsed;
+                        ConnectionErrorMessage.Visibility = Visibility.Visible;
+                    }
 
-                    bitmapImage.LoadJpeg(stream);
+                });
 
-                    ImageSource = bitmapImage;
-                    PanoramaImageLeft.DataContext = ImageSource;
-                    PanoramaImageRight.DataContext = ImageSource;
-
-                    CompositeTransform transformLeft = (CompositeTransform)PanoramaImageLeft.RenderTransform;
-                    CompositeTransform transformRight = (CompositeTransform)PanoramaImageRight.RenderTransform;
-
-                    MIN_SCALE = (double)screenHeight / (double)bitmapImage.PixelHeight;
-                    currentScale = MIN_SCALE;
-
-                    PanoramaImageLeft.Width = width * currentScale;
-                    PanoramaImageLeft.Height = height * currentScale;
-                    PanoramaImageRight.Width = width * currentScale;
-                    PanoramaImageRight.Height = height * currentScale;
-
-                    LoadingAnimation.Visibility = Visibility.Collapsed;
-
-                    Debug.WriteLine("Size: " + bitmapImage.PixelWidth + " x " + bitmapImage.PixelHeight);
-                    ReloadContent();
-*/
-                }
-                catch (WebException)
-                {
-                    return;
-                }
             }
+
+
         }
 
         public void ReloadContent()
@@ -619,6 +757,34 @@ namespace Wanderer
                 PanoramaImageRight.Source = null;
                 PanoramaImageRight.Source = imageSource;
             });
+        }
+
+        protected override void OnBackKeyPress(CancelEventArgs e)
+        {
+            if (!isCalibrationInProgress)
+            {
+                base.OnBackKeyPress(e);
+            }
+            else
+            {
+                e.Cancel = true;
+            }
+        }
+
+        private void useCompassCheckBoxChecked(object sender, RoutedEventArgs e)
+        {
+            UseCompass = true;
+        }
+
+        private void useCompassCheckBoxUnchecked(object sender, RoutedEventArgs e)
+        {
+            UseCompass = false;
+        }
+
+        private void FinishCalibrationButtonClick(object sender, RoutedEventArgs e)
+        {
+            CalibrationStackPanel.Visibility = Visibility.Collapsed;
+            isCalibrationInProgress = false;
         }
 
     }

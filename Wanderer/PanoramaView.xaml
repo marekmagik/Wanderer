@@ -2,6 +2,7 @@
     x:Class="Wanderer.PanoramaView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:imagetools="clr-namespace:ImageTools.Controls;assembly=ImageTools.Controls"
+    xmlns:toolkit="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone.Controls.Toolkit"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:phone="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone"
     xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
@@ -13,27 +14,40 @@
     SupportedOrientations="Landscape" Orientation="Landscape"
     mc:Ignorable="d"
     shell:SystemTray.IsVisible="False">
-    
+
     <phone:PhoneApplicationPage.Resources>
         <imagetools:ImageConverter x:Key="ImageConverter" />
     </phone:PhoneApplicationPage.Resources>
 
-    <Grid x:Name="LayoutRoot" Background="Green" Width="Auto" >
+    <Grid x:Name="LayoutRoot" Background="Green" Width="Auto">
+
+        <toolkit:ContextMenuService.ContextMenu>
+            <toolkit:ContextMenu IsZoomEnabled="True" x:Name="ContextMenu" Background="Black" Opacity="0.6">
+                <CheckBox Background="Teal" Checked="useCompassCheckBoxChecked"  IsChecked="{Binding Path=UseCompass, Mode=TwoWay}" Name="useCompassCheckBox" Unchecked="useCompassCheckBoxUnchecked" Width="400">Użyj kompasu</CheckBox>
+            </toolkit:ContextMenu>
+        </toolkit:ContextMenuService.ContextMenu>
+
         <Canvas Background="Black">
             <Image Name="PanoramaImageLeft" Source="{Binding}" HorizontalAlignment="Left"  Visibility="Visible" ManipulationDelta="manipulationDeltaHandler" ManipulationCompleted="manipulationCompletedHandler" DoubleTap="doubleTapHandler">
                 <Image.RenderTransform>
                     <CompositeTransform x:Name="PanoramaTransformLeft"></CompositeTransform>
                 </Image.RenderTransform>
             </Image>
-            
+
         </Canvas>
-        
+
+
         <TextBlock Name="MaxSizeReachedMessage" FontSize="24" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Center" Height="200" Width="550" Visibility="Collapsed">
                 Wystąpił błąd podczas wczytywania obrazka. 
                 Rozmiar zdjęcia przekracza dopuszczalny zakres.
         </TextBlock>
         <ProgressBar Foreground="White" Name="LoadingAnimation" IsIndeterminate="True" Width="400" Height="50" />
-            
+
+        <TextBlock Name="ConnectionErrorMessage" FontSize="24" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Center" Height="200" Width="460" Visibility="Collapsed">
+                Wystąpił błąd podczas pobierania obrazka z serwera.
+        </TextBlock>
+
+
         <Canvas>
             <Image Name="PanoramaImageRight" Source="{Binding}"  HorizontalAlignment="Right" Visibility="Visible" ManipulationDelta="manipulationDeltaHandler" ManipulationCompleted="manipulationCompletedHandler" DoubleTap="doubleTapHandler">
                 <Image.RenderTransform>
@@ -41,6 +55,26 @@
                 </Image.RenderTransform>
             </Image>
         </Canvas>
+
+
+        <StackPanel Background="DarkGray" Name="CalibrationStackPanel" Visibility="Collapsed">
+            <Image HorizontalAlignment="Center" Margin="0, 20" Source="/Images/CompassCalibration.png" Width="300"/>
+            <TextBlock Margin="10" TextWrapping="Wrap" TextAlignment="Center">
+                    Kompas musi zostać skalibrowany.
+                    Przytrzymaj urządzenie skierowane przodem do Ciebie i obracaj je zataczając ósemki dotąd, 
+                    aż kalibracja dobiegnie końca.
+            </TextBlock>
+            <TextBlock Margin="10" TextWrapping="Wrap" TextAlignment="Center">
+                    Kalibracja zakończy się w momencie osiągnięcia dokładności &lt; 5.0°
+            </TextBlock>
+            <StackPanel HorizontalAlignment="Center" Margin="0,10" Orientation="Horizontal">
+                <TextBlock>Osiągnięta dokładność:</TextBlock>
+                <TextBlock Margin="10,0,0,0" Name="calibrationTextBlock">0.0°</TextBlock>
+            </StackPanel>
+            <Button IsEnabled="False" Name="FinishCalibrationButton" Margin="0,20" Content="Zakończ" Click="FinishCalibrationButtonClick" Width="450"/>
+        </StackPanel>
+
+
 
     </Grid>
 
