@@ -156,45 +156,50 @@ namespace Wanderer
 
         private void timerTick(object sender, EventArgs e)
         {
-            if (!isCalibrationInProgress && UseCompass)
+            if (UseCompass)
             {
-                int newConvertedHeading = Convert.ToInt32(trueHeading + 90.0);
-                if (newConvertedHeading >= 360)
+                if (!isCalibrationInProgress)
                 {
-                    newConvertedHeading -= 360;
-                }
-                if (Math.Abs(convertedHeading - newConvertedHeading) > 1) {
-                    Debug.WriteLine("------Magnetic:------" + convertedHeading);
+                    int newConvertedHeading = Convert.ToInt32(trueHeading + 90.0);
+                    if (newConvertedHeading >= 360)
+                    {
+                        newConvertedHeading -= 360;
+                    }
+                    if (Math.Abs(convertedHeading - newConvertedHeading) > 1)
+                    {
+                        Debug.WriteLine("------Magnetic:------" + convertedHeading);
 
-                    double newShift = ((-1.0) * newConvertedHeading * PIXELS_PER_DEGREE) * currentScale;
+                        double newShift = ((-1.0) * newConvertedHeading * PIXELS_PER_DEGREE) * currentScale;
 
-                    Debug.WriteLine("LEFT BORDER: " + metadata.OrientationOfLeftBorder);
+                        Debug.WriteLine("LEFT BORDER: " + metadata.OrientationOfLeftBorder);
 
-                    double constantShift = (metadata.OrientationOfLeftBorder * PIXELS_PER_DEGREE) * currentScale;
+                        double constantShift = (metadata.OrientationOfLeftBorder * PIXELS_PER_DEGREE) * currentScale;
 
-                    newShift += constantShift;
+                        newShift += constantShift;
 
-                    PanoramaTransformLeft.TranslateX = newShift;
-                    PanoramaTransformRight.TranslateX = newShift + (width * currentScale);
+                        PanoramaTransformLeft.TranslateX = newShift;
+                        PanoramaTransformRight.TranslateX = newShift + (width * currentScale);
 
-                    updateImagesBounds();
+                        updateImagesBounds();
 
-                    convertedHeading = newConvertedHeading;
-                }
-                // TODO: napisać metodę przesuwającą zdjęcie                
-            }
-            else
-            {
-                if (headingAccuracy <= 5)
-                {
-                    calibrationTextBlock.Foreground = new SolidColorBrush(Colors.Green);
-                    calibrationTextBlock.Text = headingAccuracy.ToString("0.0");
-                    FinishCalibrationButton.IsEnabled = true;
+                        convertedHeading = newConvertedHeading;
+                    }
+                    // TODO: napisać metodę przesuwającą zdjęcie                
                 }
                 else
                 {
-                    calibrationTextBlock.Foreground = new SolidColorBrush(Colors.Red);
-                    calibrationTextBlock.Text = headingAccuracy.ToString("0.0");
+                    if (headingAccuracy <= 10)
+                    {
+                        Debug.WriteLine("dokładność osiągnięta");
+                        calibrationTextBlock.Foreground = new SolidColorBrush(Colors.Green);
+                        calibrationTextBlock.Text = headingAccuracy.ToString("0.0");
+                        FinishCalibrationButton.IsEnabled = true;
+                    }
+                    else
+                    {
+                        calibrationTextBlock.Foreground = new SolidColorBrush(Colors.Red);
+                        calibrationTextBlock.Text = headingAccuracy.ToString("0.0");
+                    }
                 }
             }
         }
