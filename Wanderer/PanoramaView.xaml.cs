@@ -43,6 +43,7 @@ namespace Wanderer
 
         private double PIXELS_PER_DEGREE;
         private double currentShift;
+        private double currentPageOrientationFactor;
 
         private double MIN_SCALE;
         private readonly double MAX_SCALE = 1.0;
@@ -128,18 +129,30 @@ namespace Wanderer
             PIXELS_PER_DEGREE = ((width) / (360.0));
         }
 
-        protected override void OnLostFocus(RoutedEventArgs e)
+        protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)
         {
 
             if (compass != null && compass.IsDataValid)
             {
-                // Stop data acquisition from the compass.
                 compass.Stop();
                 timer.Stop();
 
                 Debug.WriteLine("---------------------Compass stopped.");
             }
+            base.OnNavigatingFrom(e);
+        }
 
+        protected override void OnLostFocus(RoutedEventArgs e)
+        {
+/*
+            if (compass != null && compass.IsDataValid)
+            {
+                compass.Stop();
+                timer.Stop();
+
+                Debug.WriteLine("---------------------Compass stopped.");
+            }
+*/
             base.OnLostFocus(e);
 
         }
@@ -149,7 +162,8 @@ namespace Wanderer
         {
             isDataValid = compass.IsDataValid;
 
-            trueHeading = e.SensorReading.TrueHeading;
+ //           trueHeading = e.SensorReading.TrueHeading;
+            trueHeading = e.SensorReading.MagneticHeading;
             headingAccuracy = Math.Abs(e.SensorReading.HeadingAccuracy);
 
         }
@@ -161,6 +175,7 @@ namespace Wanderer
                 if (!isCalibrationInProgress)
                 {
                     int newConvertedHeading = Convert.ToInt32(trueHeading + 90.0);
+
                     if (newConvertedHeading >= 360)
                     {
                         newConvertedHeading -= 360;
@@ -171,9 +186,18 @@ namespace Wanderer
 
                         double newShift = ((-1.0) * newConvertedHeading * PIXELS_PER_DEGREE) * currentScale;
 
+
                         Debug.WriteLine("LEFT BORDER: " + metadata.OrientationOfLeftBorder);
 
-                        double constantShift = (metadata.OrientationOfLeftBorder * PIXELS_PER_DEGREE) * currentScale;
+                        double constantShift;
+                        if (currentPageOrientationFactor == -1)
+                        {
+                            constantShift = (metadata.OrientationOfLeftBorder * PIXELS_PER_DEGREE) * currentScale;
+                        }
+                        else {
+                            constantShift = ((180.0 + metadata.OrientationOfLeftBorder) * PIXELS_PER_DEGREE) * currentScale;
+                        }
+
 
                         newShift += constantShift;
 
@@ -184,7 +208,6 @@ namespace Wanderer
 
                         convertedHeading = newConvertedHeading;
                     }
-                    // TODO: napisać metodę przesuwającą zdjęcie                
                 }
                 else
                 {
@@ -204,14 +227,26 @@ namespace Wanderer
             }
         }
 
+        protected override void OnOrientationChanged(OrientationChangedEventArgs e)
+        {
+//            Debug.WriteLine("--------------------------------------------------------orientation changed !");
+            if(e.Orientation.Equals(PageOrientation.LandscapeLeft)){
+                currentPageOrientationFactor = -1.0;
+//                Debug.WriteLine("LANDSCAPE LEFT");
+            }else{
+                currentPageOrientationFactor = 1.0;
+            }
+            base.OnOrientationChanged(e);
+        }
+
         private void compass_Calibrate(object sender, CalibrationEventArgs e)
         {
-            Dispatcher.BeginInvoke(() =>
+            isCalibrationInProgress = true;
+            Deployment.Current.Dispatcher.BeginInvoke(() =>
             {
                 CalibrationStackPanel.Visibility = Visibility.Visible;
                 FinishCalibrationButton.IsEnabled = false;
             });
-            isCalibrationInProgress = true;
         }
 
         protected override void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
@@ -219,9 +254,7 @@ namespace Wanderer
 
             Debug.WriteLine("On navigated TO");
 
-            UseCompass = true;
-            useCompassCheckBox.IsChecked = true;
-            isCalibrationInProgress = false;
+//            UseCompass = true;
 
 
             timer = new DispatcherTimer();
@@ -236,6 +269,9 @@ namespace Wanderer
                 new EventHandler<SensorReadingEventArgs<CompassReading>>(compassCurrentValueChanged);
             compass.Calibrate +=
                 new EventHandler<CalibrationEventArgs>(compass_Calibrate);
+
+            useCompassCheckBox.IsChecked = true;
+            isCalibrationInProgress = false;
 
             base.OnNavigatedTo(e);
 
@@ -260,6 +296,7 @@ namespace Wanderer
             DAO.GetPhotoDescById(this, photoID);
         }
 
+/*
         private int GetPhotoId()
         {
             return photoID;
@@ -269,6 +306,7 @@ namespace Wanderer
         {
 
         }
+*/
 
         private async void LoadImage(string filename, int screenResolutionWidth, int screenResolutionHeight, bool isImageFullyPanoramic, int panoramaPercentage)
         {
@@ -678,7 +716,7 @@ namespace Wanderer
                     }
 
                     Debug.WriteLine("getPhotoById");
-                    DAO.GetPhotoById(this, GetPhotoId());
+                    DAO.GetPhotoById(this, photoID);
 
                 }
                 catch (WebException)
@@ -779,17 +817,31 @@ namespace Wanderer
         private void useCompassCheckBoxChecked(object sender, RoutedEventArgs e)
         {
             UseCompass = true;
+            compass.Start();
         }
 
         private void useCompassCheckBoxUnchecked(object sender, RoutedEventArgs e)
         {
             UseCompass = false;
+            compass.Stop();
         }
 
         private void FinishCalibrationButtonClick(object sender, RoutedEventArgs e)
         {
             CalibrationStackPanel.Visibility = Visibility.Collapsed;
             isCalibrationInProgress = false;
+        }
+
+        private void PanoramaHold(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            ContextMenu.Visibility = Visibility.Visible;
+            useCompassCheckBox.Focus();
+         //   Debug.WriteLine("panorama holded!");
+        }
+
+        private void ContextMenuLostFocus(object sender, RoutedEventArgs e)
+        {
+            ContextMenu.Visibility = Visibility.Collapsed;
         }
 
     }

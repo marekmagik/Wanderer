@@ -14,7 +14,7 @@ namespace Wanderer
     public class DAO
     {
 
-        private const string address = "192.168.1.12";//"10.20.121.203";//"10.20.116.217";// "10.20.120.151";//"10.22.115.27";.
+        private const string address = "192.168.1.101";//"10.20.101.23";//"10.20.116.217";// "10.20.120.151";//"10.22.115.27";.
 
         public static List<ImageMetadata> getPointsInRange(double longitude, double latitude, double range)
         {
