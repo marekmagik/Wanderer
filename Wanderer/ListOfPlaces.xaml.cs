@@ -18,6 +18,7 @@ namespace Wanderer
     {
         //private List<Place> places;
         private List<ImageMetadata> places;
+        private List<ImageMetadata> notCachedPlaces;
         private List<ImageMetadata> points;
         //private Place actualPlace;
         //private DAO dao;
@@ -29,7 +30,7 @@ namespace Wanderer
         {
             InitializeComponent();
             places = new List<ImageMetadata>();
-            
+            notCachedPlaces = new List<ImageMetadata>();
             DAO.GetDataFromServer(this, 20.5, 40.6, 100000000);
             this.DataContext = places;
             actualIndex = 0;
@@ -64,7 +65,7 @@ namespace Wanderer
                     if (places.Count > 0)
                     {
                         actualIndex = 0;
-                        DAO.LoadImage(this, places.ElementAt(actualIndex).IdInDatabase);
+                        ProcessNextPlace();
                     }
 
                 }
@@ -75,6 +76,35 @@ namespace Wanderer
                     return;
                 }
             }
+        }
+
+        private void ProcessNextPlace()
+        {
+            if (actualIndex != places.Count)
+            {
+                ImageMetadata place = places.ElementAt(actualIndex);
+                if (IsolatedStorageDAO.IsThumbnailCached(place.PictureSHA256))
+                {
+                    LoadPhotoFromIsolatedStorage(place);
+                }
+                else
+                {
+                    DAO.LoadImage(this, places.ElementAt(actualIndex).IdInDatabase);
+                }
+            }   
+        }
+
+        private void LoadPhotoFromIsolatedStorage(ImageMetadata place)
+        {
+            Debug.WriteLine(" Loading from iso ");
+            Deployment.Current.Dispatcher.BeginInvoke(delegate
+            {
+                WriteableBitmap bitmapImage = IsolatedStorageDAO.loadThumbnail(place.PictureSHA256);
+                place.Image = bitmapImage;
+                ReloadContent();
+                actualIndex++;
+                ProcessNextPlace();
+            });
         }
 
         public void ThumbRequestCallback(IAsyncResult result)
@@ -89,20 +119,18 @@ namespace Wanderer
                             WebResponse response = request.EndGetResponse(result);
                             Stream stream = response.GetResponseStream();
 
+                            ImageMetadata place = places.ElementAt(actualIndex);
+                            IsolatedStorageDAO.CacheThumbnail(stream, place.Width, place.Height, place.PictureSHA256);
+
                             BitmapImage image = new BitmapImage();
                             image.SetSource(stream);
                             Debug.WriteLine(actualIndex);
-                            places.ElementAt(actualIndex).Image = image;
+                            place.Image = image;
+
                             ReloadContent();
-                            if (actualIndex == places.Count - 1)
-                            {
-                                return;
-                            }
-                            else
-                            {
-                                actualIndex++;
-                                DAO.LoadImage(this, places.ElementAt(actualIndex).IdInDatabase);
-                            }
+                            Debug.WriteLine("elemebts returned " + places.Count);
+                            actualIndex++;
+                            ProcessNextPlace();
                         }
                         catch (WebException)
                         {

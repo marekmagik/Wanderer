@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Phone;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -21,9 +22,9 @@ namespace Wanderer
 
         public static void InitIsolatedStorageDAO()
         {
-            if(cachedPhotos==null)
+            if (cachedPhotos == null)
                 cachedPhotos = new List<string>();
-            if(cachedThumbnails==null)
+            if (cachedThumbnails == null)
                 cachedThumbnails = new List<string>();
 
             LoadPlacesData();
@@ -55,19 +56,20 @@ namespace Wanderer
         {
             using (IsolatedStorageFile storage = IsolatedStorageFile.GetUserStoreForApplication())
             {
-                string[] photos = storage.GetFileNames("/photos");
-                foreach(string photo in photos)
+                string[] photos = storage.GetFileNames("photos\\*");
+                foreach (string photo in photos)
                 {
                     if (!cachedPhotos.Contains(photo))
-                        cachedPhotos.Add(photo.Remove(64,4));
-                        //ProcessFile(file);
+                        cachedPhotos.Add(photo.Remove(64, 4));
+                    //ProcessFile(file);
                 }
 
-                string[] thumbnails = storage.GetFileNames("/thumbnails");
+                string[] thumbnails = storage.GetFileNames("thumbnails\\*");
                 foreach (string thumbnail in thumbnails)
                 {
-                    if (!cachedPhotos.Contains(thumbnail))
-                        cachedPhotos.Add(thumbnail.Remove(64, 4));
+                    Debug.WriteLine(thumbnail);
+                    if (!cachedThumbnails.Contains(thumbnail))
+                        cachedThumbnails.Add(thumbnail.Remove(64, 4));
                     //ProcessFile(file);
                 }
 
@@ -80,7 +82,7 @@ namespace Wanderer
             {
                 using (var stream = storage.OpenFile(filename, System.IO.FileMode.Open, FileAccess.Read))
                 {
-                    byte [] buffer = new byte[stream.Length];
+                    byte[] buffer = new byte[stream.Length];
                     stream.Read(buffer, 0, buffer.Length);
                     string hash = GenerateHash(buffer);
                     cachedPhotos.Add(hash);
@@ -109,12 +111,13 @@ namespace Wanderer
 
         public static bool IsPhotoCached(string hash)
         {
-            foreach (string photo in cachedPhotos) {
+            foreach (string photo in cachedPhotos)
+            {
                 Debug.WriteLine(photo);
             }
             Debug.WriteLine(" arg " + hash);
 
-            if(cachedPhotos.Contains(hash))
+            if (cachedPhotos.Contains(hash))
                 return true;
             else
                 return false;
@@ -137,12 +140,12 @@ namespace Wanderer
             string hash = GenerateHash(bytes);
             image.Position = 0;
 
-            Debug.WriteLine(" starting creating cache "+hash);
+            Debug.WriteLine(" starting creating cache " + hash);
 
 
             using (IsolatedStorageFile storage = IsolatedStorageFile.GetUserStoreForApplication())
             {
-                IsolatedStorageFileStream fileStream = storage.CreateFile("/photos/"+hash + ".jpg");
+                IsolatedStorageFileStream fileStream = storage.CreateFile("/photos/" + hash + ".jpg");
                 byte[] buffer = new byte[image.Length];
                 image.Read(buffer, 0, buffer.Length);
                 fileStream.Write(buffer, 0, buffer.Length);
@@ -159,7 +162,7 @@ namespace Wanderer
         {
             using (IsolatedStorageFile storage = IsolatedStorageFile.GetUserStoreForApplication())
             {
-                IsolatedStorageFileStream fileStream = storage.CreateFile("/thumbnails/"+hash + ".jpg");
+                IsolatedStorageFileStream fileStream = storage.CreateFile("/thumbnails/" + hash + ".jpg");
                 byte[] buffer = new byte[image.Length];
                 image.Read(buffer, 0, buffer.Length);
                 fileStream.Write(buffer, 0, buffer.Length);
@@ -168,20 +171,23 @@ namespace Wanderer
                 image.Position = 0;
             }
 
+            Debug.WriteLine(" thumbnail cached ");
             cachedThumbnails.Add(hash);
         }
 
-        private static Stream loadThumbnail(string hash)
+        public static WriteableBitmap loadThumbnail(string hash)
         {
             using (IsolatedStorageFile storage = IsolatedStorageFile.GetUserStoreForApplication())
             {
-                IsolatedStorageFileStream fileStream = storage.OpenFile("thumbnails\\" + hash + ".jpg",System.IO.FileMode.Open, FileAccess.Read);
-                return fileStream;
-                
+                IsolatedStorageFileStream fileStream = storage.OpenFile("thumbnails\\" + hash + ".jpg", System.IO.FileMode.Open, FileAccess.Read);
+
+                WriteableBitmap bitmapImage = PictureDecoder.DecodeJpeg(fileStream);
+                return bitmapImage;
+
             }
         }
 
-        private static Stream loadPhoto(string hash)
+        public static Stream loadPhoto(string hash)
         {
             using (IsolatedStorageFile storage = IsolatedStorageFile.GetUserStoreForApplication())
             {
@@ -191,20 +197,20 @@ namespace Wanderer
             }
         }
 
-        private static List<ImageMetadata> getCachedPlaces(List<ImageMetadata> places)
+        public static List<ImageMetadata> getCachedPlaces(List<ImageMetadata> places)
         {
             List<ImageMetadata> cachedPlaces = new List<ImageMetadata>();
 
             foreach (ImageMetadata place in places)
             {
-                if(cachedThumbnails.Contains(place.PictureSHA256))
+                if (cachedThumbnails.Contains(place.PictureSHA256))
                     cachedPlaces.Add(place);
             }
 
             return cachedPlaces;
         }
 
-        private static List<ImageMetadata> getNotCachedPlaces(List<ImageMetadata> places)
+        public static List<ImageMetadata> getNotCachedPlaces(List<ImageMetadata> places)
         {
             List<ImageMetadata> cachedPlaces = new List<ImageMetadata>();
 
