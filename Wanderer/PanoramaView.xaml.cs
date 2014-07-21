@@ -22,6 +22,7 @@ using ImageTools;
 using Microsoft.Devices.Sensors;
 using Microsoft.Xna.Framework;
 using System.Windows.Threading;
+using System.Windows.Shapes;
 
 
 
@@ -40,6 +41,10 @@ namespace Wanderer
 
         private bool isDataValid;
         private bool isCalibrationInProgress;
+
+        private readonly int HEADING_DIFF_TO_UPDATE_PANORAMA = 5;
+        private readonly int HEADING_DIFF_TO_UPDATE_PANORAMA_INCREASED = 30;
+        private int headingDiffToUpdate = 5;
 
         private double PIXELS_PER_DEGREE;
         private double currentShift;
@@ -92,9 +97,7 @@ namespace Wanderer
             MaxSizeReachedMessage.Visibility = Visibility.Collapsed;
             LoadingAnimation.Visibility = Visibility.Visible;
 
-            StorageFolder localRoot = ApplicationData.Current.LocalFolder;
             //LoadImage("/PołoninaWetlińska.jpg", 800, 480, true);
-
             //LoadImage("/foto4.jpg", 800, 480, true, 80);
             LoadImage(path, 800, 480, true, 70);
 
@@ -111,27 +114,21 @@ namespace Wanderer
             MaxSizeReachedMessage.Visibility = Visibility.Collapsed;
             LoadingAnimation.Visibility = Visibility.Visible;
 
-            StorageFolder localRoot = ApplicationData.Current.LocalFolder;
             //LoadImage("/PołoninaWetlińska.jpg", 800, 480, true);
-
             //LoadImage("/foto4.jpg", 800, 480, true, 80);
             //LoadImage("/Panorama_z_Barańca_a2.jpg", 800, 480, true, 70);
-
             //dao = new DAO();
-
             LoadImageFromServer(800, 480, true, 100);
-
             //LoadImage("/foto4.jpg");         
-
         }
 
-        private void setPixelsPerDegree(){
+        private void setPixelsPerDegree()
+        {
             PIXELS_PER_DEGREE = ((width) / (360.0));
         }
 
         protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)
         {
-
             if (compass != null && compass.IsDataValid)
             {
                 compass.Stop();
@@ -139,22 +136,18 @@ namespace Wanderer
 
                 Debug.WriteLine("---------------------Compass stopped.");
             }
+            /*
+             * Usuń naniesione punkty przy powrocie do poprzedniego widoku.
+             */
+            foreach (Point p in metadata.Points)
+            {
+                LayoutRoot.Children.Remove(p.LeftCanvas);
+                LayoutRoot.Children.Remove(p.LeftPanoramaLine);
+                LayoutRoot.Children.Remove(p.RightCanvas);
+                LayoutRoot.Children.Remove(p.RightPanoramaLine);
+            }
+            LoadingAnimation.Visibility = Visibility.Visible;
             base.OnNavigatingFrom(e);
-        }
-
-        protected override void OnLostFocus(RoutedEventArgs e)
-        {
-/*
-            if (compass != null && compass.IsDataValid)
-            {
-                compass.Stop();
-                timer.Stop();
-
-                Debug.WriteLine("---------------------Compass stopped.");
-            }
-*/
-            base.OnLostFocus(e);
-
         }
 
 
@@ -162,8 +155,8 @@ namespace Wanderer
         {
             isDataValid = compass.IsDataValid;
 
- //           trueHeading = e.SensorReading.TrueHeading;
-            trueHeading = e.SensorReading.MagneticHeading;
+            trueHeading = e.SensorReading.TrueHeading;
+            //            trueHeading = e.SensorReading.MagneticHeading;
             headingAccuracy = Math.Abs(e.SensorReading.HeadingAccuracy);
 
         }
@@ -172,6 +165,7 @@ namespace Wanderer
         {
             if (UseCompass)
             {
+                ///Debug.WriteLine("timer tick");
                 if (!isCalibrationInProgress)
                 {
                     int newConvertedHeading = Convert.ToInt32(trueHeading + 90.0);
@@ -180,21 +174,23 @@ namespace Wanderer
                     {
                         newConvertedHeading -= 360;
                     }
-                    if (Math.Abs(convertedHeading - newConvertedHeading) > 1)
+                    if (Math.Abs(convertedHeading - newConvertedHeading) > headingDiffToUpdate)
                     {
-                        Debug.WriteLine("------Magnetic:------" + convertedHeading);
+                        headingDiffToUpdate = HEADING_DIFF_TO_UPDATE_PANORAMA;
+//                        Debug.WriteLine("------Magnetic:------" + convertedHeading);
 
                         double newShift = ((-1.0) * newConvertedHeading * PIXELS_PER_DEGREE) * currentScale;
 
-
-                        Debug.WriteLine("LEFT BORDER: " + metadata.OrientationOfLeftBorder);
+                        //return;
+                        //Debug.WriteLine("LEFT BORDER: " + metadata.OrientationOfLeftBorder);
 
                         double constantShift;
                         if (currentPageOrientationFactor == -1)
                         {
                             constantShift = (metadata.OrientationOfLeftBorder * PIXELS_PER_DEGREE) * currentScale;
                         }
-                        else {
+                        else
+                        {
                             constantShift = ((180.0 + metadata.OrientationOfLeftBorder) * PIXELS_PER_DEGREE) * currentScale;
                         }
 
@@ -211,6 +207,7 @@ namespace Wanderer
                 }
                 else
                 {
+                    Debug.WriteLine("heading accuracy: " + headingAccuracy);
                     if (headingAccuracy <= 10)
                     {
                         Debug.WriteLine("dokładność osiągnięta");
@@ -227,13 +224,20 @@ namespace Wanderer
             }
         }
 
+        /* Metoda wyznacza współczynnik orientacji używany podczas przesuwania zdjęcia 
+         * za pomocą kompasu. Zdjęcie może być wyświetlane tylko w trybie "landscape", 
+         * możliwe za to jest skierowanie urządzenia "górą w prawo lub w lewo".
+         * Gdy urządzenie jest skierowane "w lewo" przesuwamy przeciwnie niż gdy jest 
+         * skierowane "w prawo".
+         */
         protected override void OnOrientationChanged(OrientationChangedEventArgs e)
         {
-//            Debug.WriteLine("--------------------------------------------------------orientation changed !");
-            if(e.Orientation.Equals(PageOrientation.LandscapeLeft)){
+            if (e.Orientation.Equals(PageOrientation.LandscapeLeft))
+            {
                 currentPageOrientationFactor = -1.0;
-//                Debug.WriteLine("LANDSCAPE LEFT");
-            }else{
+            }
+            else
+            {
                 currentPageOrientationFactor = 1.0;
             }
             base.OnOrientationChanged(e);
@@ -249,29 +253,51 @@ namespace Wanderer
             });
         }
 
-        protected override void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
+        private double computeShift()
         {
+            double shift;
+            if (PanoramaTransformRight.TranslateX > 0)
+            {
+                shift = ((PanoramaTransformRight.TranslateX / currentScale) - width);
+            }
+            else
+            {
+                shift = (PanoramaTransformRight.TranslateX / currentScale);
+            }
+            return shift;
+        }
 
-            Debug.WriteLine("On navigated TO");
 
-//            UseCompass = true;
-
-
-            timer = new DispatcherTimer();
-            timer.Interval = TimeSpan.FromMilliseconds(100);
-            timer.Tick += new EventHandler(timerTick);
-
+        private void startCompass()
+        {
+            isCalibrationInProgress = false;
 
             compass = new Compass();
+            compass.Start();
             compass.TimeBetweenUpdates = TimeSpan.FromMilliseconds(100);
-            Debug.WriteLine(compass.TimeBetweenUpdates.TotalMilliseconds + " ms");
+            //            Debug.WriteLine(compass.TimeBetweenUpdates.TotalMilliseconds + " ms");
             compass.CurrentValueChanged +=
                 new EventHandler<SensorReadingEventArgs<CompassReading>>(compassCurrentValueChanged);
             compass.Calibrate +=
                 new EventHandler<CalibrationEventArgs>(compass_Calibrate);
 
             useCompassCheckBox.IsChecked = true;
-            isCalibrationInProgress = false;
+        }
+
+
+        protected override void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
+        {
+
+            Debug.WriteLine("On navigated TO");
+
+            timer = new DispatcherTimer();
+            timer.Interval = TimeSpan.FromMilliseconds(100);
+            timer.Tick += new EventHandler(timerTick);
+            UseCompass = false;
+            timer.Start();
+            //compass.Start();
+
+
 
             base.OnNavigatedTo(e);
 
@@ -295,18 +321,6 @@ namespace Wanderer
             screenHeight = screenResolutionHeight;
             DAO.GetPhotoDescById(this, photoID);
         }
-
-/*
-        private int GetPhotoId()
-        {
-            return photoID;
-        }
-
-        private void LoadLabels()
-        {
-
-        }
-*/
 
         private async void LoadImage(string filename, int screenResolutionWidth, int screenResolutionHeight, bool isImageFullyPanoramic, int panoramaPercentage)
         {
@@ -335,9 +349,6 @@ namespace Wanderer
                 ImageSource = bitmapImage;
                 PanoramaImageLeft.DataContext = ImageSource;
                 PanoramaImageRight.DataContext = ImageSource;
-
-                CompositeTransform transformLeft = (CompositeTransform)PanoramaImageLeft.RenderTransform;
-                CompositeTransform transformRight = (CompositeTransform)PanoramaImageRight.RenderTransform;
 
                 MIN_SCALE = (double)screenHeight / (double)bitmapImage.PixelHeight;
                 currentScale = MIN_SCALE;
@@ -424,7 +435,7 @@ namespace Wanderer
 
         private void manipulationDeltaHandler(object sender, ManipulationDeltaEventArgs e)
         {
-
+            headingDiffToUpdate = HEADING_DIFF_TO_UPDATE_PANORAMA_INCREASED;
             if (e.DeltaManipulation.Scale.X > 0.0 && e.DeltaManipulation.Scale.Y > 0.0)
             {
 
@@ -648,21 +659,81 @@ namespace Wanderer
             }
 
             currentShift = computeShift();
-            //Debug.WriteLine("updateBounds, right.X = " + currentShift);
+            /*
+             * Zaktualizuj współrzędne opisów i linii na zdjęciu.
+             */
+            foreach (Point point in metadata.Points)
+            {
+                updateDescriptionCanvasProperties(point);
+            }
+
         }
 
-        private double computeShift() {
-            double shift;
-            if (PanoramaTransformRight.TranslateX > 0)
+
+
+        private double computeRelativeX(double realX)
+        {
+
+            CompositeTransform translateTransform = PanoramaImageRight.RenderTransform as CompositeTransform;
+            return translateTransform.TranslateX + realX * currentScale;
+        }
+
+        private double computeRelativeY(double realY)
+        {
+            CompositeTransform translateTransform = PanoramaImageRight.RenderTransform as CompositeTransform;
+            return translateTransform.TranslateY + realY * currentScale;
+        }
+
+
+        private void updateDescriptionCanvasProperties(Point point)
+        {
+            System.Threading.Thread.Sleep(1);
+            /* test */
+            point.LeftPrimaryDescriptionTextBlock.FontSize = Configuration.PrimaryDescriptionFontSize * currentScale;
+            point.LeftSecondaryDescriptionTextBlock.FontSize = Configuration.SecondaryDescriptionFontSize * currentScale;
+            point.RightPrimaryDescriptionTextBlock.FontSize = Configuration.PrimaryDescriptionFontSize * currentScale;
+            point.RightSecondaryDescriptionTextBlock.FontSize = Configuration.SecondaryDescriptionFontSize * currentScale;
+
+            /* test */
+            point.RightPanoramaLine.X1 = computeRelativeX(point.X);
+            point.RightPanoramaLine.X2 = point.RightPanoramaLine.X1;
+
+            point.RightPanoramaLine.Y1 = computeRelativeY(point.Y);
+            point.RightPanoramaLine.Y2 = point.RightPanoramaLine.Y1 - currentScale * point.LineLength;
+
+            point.LeftPanoramaLine.X1 = point.RightPanoramaLine.X1 - width * currentScale;
+            point.LeftPanoramaLine.X2 = point.LeftPanoramaLine.X1;
+            point.LeftPanoramaLine.Y1 = point.RightPanoramaLine.Y1;
+            point.LeftPanoramaLine.Y2 = point.RightPanoramaLine.Y2;
+
+            double translateX = 0;
+            double translateY = 0;
+
+            if (point.Alignment == 0)
             {
-                shift = ((PanoramaTransformRight.TranslateX / currentScale) - width);// *(-1.0);
+                translateX = point.RightPanoramaLine.X2;
+                translateY = point.RightPanoramaLine.Y2 - (point.RightStackPanel.ActualHeight + 5);
             }
-            else
+            else if (point.Alignment == 1)
             {
-                shift = (PanoramaTransformRight.TranslateX / currentScale);// *(-1.0);
+                translateX = point.RightPanoramaLine.X2 - (point.RightStackPanel.ActualWidth / 2.0);
+                translateY = point.RightPanoramaLine.Y2 - (point.RightStackPanel.ActualHeight + 5);
             }
-            return shift;
-        } 
+            else if (point.Alignment == 2)
+            {
+                translateX = point.RightPanoramaLine.X2 - (point.RightStackPanel.ActualWidth);
+                translateY = point.RightPanoramaLine.Y2 - (point.RightStackPanel.ActualHeight + 5);
+            }
+
+            TranslateTransform LeftCanvasTranslateTransform = point.LeftCanvas.RenderTransform as TranslateTransform;
+            TranslateTransform RightCanvasTranslateTransform = point.RightCanvas.RenderTransform as TranslateTransform;
+            RightCanvasTranslateTransform.X = translateX;
+            RightCanvasTranslateTransform.Y = translateY;
+
+            LeftCanvasTranslateTransform.X = translateX - (width * currentScale);
+            LeftCanvasTranslateTransform.Y = translateY;
+        }
+
 
         private void doubleTapHandler(object sender, System.Windows.Input.GestureEventArgs e)
         {
@@ -682,10 +753,7 @@ namespace Wanderer
             updateImagesBounds();
         }
 
-        private void MediaElement_Loaded(object sender, RoutedEventArgs e)
-        {
-
-        }
+        #region DAOCallbacksMethods
 
         public void DescRequestCallback(IAsyncResult result)
         {
@@ -715,6 +783,31 @@ namespace Wanderer
                         throw new PossibleMemoryAccessViolationException();
                     }
 
+                    Point point1 = new Point(961.0, 420.0, null, "Zamek", "Baszta stracenców");
+                    point1.Alignment = 0;
+                    point1.LineLength = 122.0;
+                    point1.Angle = -45.0;
+                    point1.Color = Colors.Black;
+
+                    Point point2 = new Point(1314.0, 622.0, null, "Nabrzeże portowe", "");
+                    point2.Alignment = 1;
+                    point2.LineLength = 339.2;
+                    point2.Angle = 0;
+                    point2.Color = Colors.Yellow;
+
+                    Point point3 = new Point(1292.0, 430.7, null, "Zadar", "Wybrzeże zachodnie");
+                    point3.Alignment = 2;
+                    point3.LineLength = 59.3;
+                    point3.Angle = 0;
+                    point3.Color = Colors.White;
+
+                    metadata.Points.Add(point1);
+                    metadata.Points.Add(point2);
+                    metadata.Points.Add(point3);
+
+
+                    generateUIElementsForPoints(metadata.Points);
+
                     Debug.WriteLine("getPhotoById");
                     DAO.GetPhotoById(this, photoID);
 
@@ -722,13 +815,127 @@ namespace Wanderer
                 catch (WebException)
                 {
                     Deployment.Current.Dispatcher.BeginInvoke(delegate
-                   {
-                       LoadingAnimation.Visibility = Visibility.Collapsed;
-                       ConnectionErrorMessage.Visibility = Visibility.Visible;
-                   });
+                    {
+                        LoadingAnimation.Visibility = Visibility.Collapsed;
+                        ConnectionErrorMessage.Visibility = Visibility.Visible;
+                    });
+                }
+                catch (PossibleMemoryAccessViolationException)
+                {
+                    LoadingAnimation.Visibility = Visibility.Collapsed;
+                    MaxSizeReachedMessage.Visibility = Visibility.Visible;
                 }
             }
         }
+
+        private void generateUIElementsForPoints(List<Point> points)
+        {
+            foreach (Point point in points)
+            {
+                Deployment.Current.Dispatcher.BeginInvoke(delegate
+                {
+                    /*
+                     * Tworzenie komponenów linii i granic opisów.
+                     */
+                    point.LeftPanoramaLine = new Line();
+                    point.RightPanoramaLine = new Line();
+                    point.LeftCanvas = new Canvas();
+                    point.RightCanvas = new Canvas();
+
+ 
+                    point.LeftStackPanel = new StackPanel();
+                    point.RightStackPanel = new StackPanel();
+
+                    point.LeftStackPanel.RenderTransform = new RotateTransform();
+                    point.RightStackPanel.RenderTransform = new RotateTransform();
+
+
+
+
+                    TextBlock PrimaryDescriptionTextBlockLeft = new TextBlock() { FontSize = Configuration.PrimaryDescriptionFontSize, FontWeight = FontWeights.Bold, TextAlignment = TextAlignment.Center };
+                    TextBlock SecondaryDescriptionTextBlockLeft = new TextBlock() { FontSize = Configuration.SecondaryDescriptionFontSize, Margin = new Thickness(0, 0, 0, 0), TextAlignment = TextAlignment.Center };
+                    point.LeftPrimaryDescriptionTextBlock = PrimaryDescriptionTextBlockLeft;
+                    point.LeftSecondaryDescriptionTextBlock = SecondaryDescriptionTextBlockLeft;
+
+
+                    TextBlock PrimaryDescriptionTextBlockRight = new TextBlock() { FontSize = Configuration.PrimaryDescriptionFontSize, FontWeight = FontWeights.Bold, TextAlignment = TextAlignment.Center };
+                    TextBlock SecondaryDescriptionTextBlockRight = new TextBlock() { FontSize = Configuration.SecondaryDescriptionFontSize, Margin = new Thickness(0, 0, 0, 0), TextAlignment = TextAlignment.Center };
+                    point.RightPrimaryDescriptionTextBlock = PrimaryDescriptionTextBlockRight;
+                    point.RightSecondaryDescriptionTextBlock = SecondaryDescriptionTextBlockRight;
+
+                    /*
+                     * Tworzenie komponentu TranslateTransform, używanego do przesuwania opisu.
+                     */
+                    point.LeftCanvas.RenderTransform = new TranslateTransform();
+                    point.RightCanvas.RenderTransform = new TranslateTransform();
+
+
+                    /*
+                     * Tworzenie odpowiedniej rotacji i zastosowywanie jej do obu komponentów StackPanel.
+                     */
+                    double rotationCenterX = 0;
+                    double rotationCenterY = point.RightPrimaryDescriptionTextBlock.ActualHeight;
+                    if (point.Alignment == 0)
+                    {
+                        rotationCenterX = 0;
+                        point.Angle = (-1.0) * Math.Abs(point.Angle);
+                    }
+                    if (point.Alignment == 1)
+                    {
+                        rotationCenterX = 0.5 * point.RightStackPanel.ActualWidth;
+                        point.Angle = (-1.0) * Math.Abs(point.Angle);
+                    }
+                    if (point.Alignment == 2)
+                    {
+                        rotationCenterX = point.RightStackPanel.ActualWidth;
+                    }
+                    RotateTransform rotateTransform = point.RightStackPanel.RenderTransform as RotateTransform;
+                    rotateTransform.CenterX = rotationCenterX;
+                    rotateTransform.CenterY = rotationCenterY;
+                    rotateTransform.Angle = point.Angle;
+                    point.LeftStackPanel.RenderTransform = rotateTransform;
+                    point.RightStackPanel.RenderTransform = rotateTransform;
+
+                    /*
+                     * Ustawienie tekstu podpisów.
+                     */
+                    point.LeftPrimaryDescriptionTextBlock.Text = point.PrimaryDescription;
+                    point.RightPrimaryDescriptionTextBlock.Text = point.PrimaryDescription;
+                    point.LeftSecondaryDescriptionTextBlock.Text = point.SecondaryDescription;
+                    point.RightSecondaryDescriptionTextBlock.Text = point.SecondaryDescription;
+
+                    /*
+                     * Ustawienie grubości linii oraz kolory linii oraz tekstu.
+                     */
+                    point.LeftPanoramaLine.StrokeThickness = 3;
+                    point.LeftPanoramaLine.Stroke = new SolidColorBrush(point.Color);
+                    point.RightPanoramaLine.StrokeThickness = point.LeftPanoramaLine.StrokeThickness;
+                    point.RightPanoramaLine.Stroke = point.LeftPanoramaLine.Stroke;
+                    point.LeftPrimaryDescriptionTextBlock.Foreground = new SolidColorBrush(point.Color);
+                    point.RightPrimaryDescriptionTextBlock.Foreground = point.LeftPrimaryDescriptionTextBlock.Foreground;
+                    point.LeftSecondaryDescriptionTextBlock.Foreground = point.LeftPrimaryDescriptionTextBlock.Foreground;
+                    point.RightSecondaryDescriptionTextBlock.Foreground = point.LeftPrimaryDescriptionTextBlock.Foreground;
+
+
+                    point.LeftStackPanel.Children.Add(PrimaryDescriptionTextBlockLeft);
+                    point.LeftStackPanel.Children.Add(SecondaryDescriptionTextBlockLeft);
+                    point.RightStackPanel.Children.Add(PrimaryDescriptionTextBlockRight);
+                    point.RightStackPanel.Children.Add(SecondaryDescriptionTextBlockRight);
+                    point.LeftCanvas.Children.Add(point.LeftStackPanel);
+                    point.RightCanvas.Children.Add(point.RightStackPanel);
+
+                    /*
+                     * Umieść przygotowane elementy na ekranie.
+                     */
+                    LayoutRoot.Children.Add(point.LeftCanvas);
+                    LayoutRoot.Children.Add(point.RightCanvas);
+                    LayoutRoot.Children.Add(point.LeftPanoramaLine);
+                    LayoutRoot.Children.Add(point.RightPanoramaLine);
+                });
+
+            }
+        }
+
 
         public void ImageRequestCallback(IAsyncResult result)
         {
@@ -741,22 +948,17 @@ namespace Wanderer
                     {
 
                         WebResponse response = request.EndGetResponse(result);
-
                         Stream stream = response.GetResponseStream();
 
                         IsolatedStorageDAO.CachePhoto(stream, width, height);
 
                         WriteableBitmap bitmapImage = new WriteableBitmap(width, height);
                         Debug.WriteLine(width + " x " + height);
-                        //stream.Position = 0;
                         bitmapImage.LoadJpeg(stream);
 
                         ImageSource = bitmapImage;
                         PanoramaImageLeft.DataContext = ImageSource;
                         PanoramaImageRight.DataContext = ImageSource;
-
-                        CompositeTransform transformLeft = (CompositeTransform)PanoramaImageLeft.RenderTransform;
-                        CompositeTransform transformRight = (CompositeTransform)PanoramaImageRight.RenderTransform;
 
                         MIN_SCALE = (double)screenHeight / (double)bitmapImage.PixelHeight;
                         currentScale = MIN_SCALE;
@@ -770,13 +972,9 @@ namespace Wanderer
 
                         Debug.WriteLine("Size: " + bitmapImage.PixelWidth + " x " + bitmapImage.PixelHeight);
                         ReloadContent();
-                        try
-                        {
-                            setPixelsPerDegree();
-                            compass.Start();
-                            timer.Start();
-                        }
-                        catch (InvalidOperationException){}
+
+                        setPixelsPerDegree();
+                        startCompass();
                     }
                     catch (WebException)
                     {
@@ -787,9 +985,10 @@ namespace Wanderer
                 });
 
             }
-
-
         }
+
+        #endregion
+
 
         public void ReloadContent()
         {
@@ -802,6 +1001,14 @@ namespace Wanderer
             });
         }
 
+
+
+        #region CompassMethods
+
+
+        /* Metoda blokująca przycisk "Wstecz" na czas trwania kalibracji kompasu.
+         * Wymusza to na użytkowniku dokończenie procesu kalibracji.
+         */
         protected override void OnBackKeyPress(CancelEventArgs e)
         {
             if (!isCalibrationInProgress)
@@ -814,35 +1021,54 @@ namespace Wanderer
             }
         }
 
+        /* Metoda uaktywniająca kompas (zaznaczono checkbox w menu kontekstowym).
+         */
         private void useCompassCheckBoxChecked(object sender, RoutedEventArgs e)
         {
             UseCompass = true;
             compass.Start();
         }
 
+        /* Metoda deaktywująca kompas (odznaczono checkbox w menu kontekstowym).
+         */
         private void useCompassCheckBoxUnchecked(object sender, RoutedEventArgs e)
         {
             UseCompass = false;
             compass.Stop();
         }
 
+        /* Metoda zamykająca okno kalibracji kompasu. 
+         * Przywraca normalne działanie kompasu przez usunięcie flagi isCalibrationInProgress.
+         */
         private void FinishCalibrationButtonClick(object sender, RoutedEventArgs e)
         {
             CalibrationStackPanel.Visibility = Visibility.Collapsed;
             isCalibrationInProgress = false;
         }
 
+
+        #endregion
+
+        #region ContextMenuMethods
+
+
+        /* Metoda otwiera menu kontekstowe (długie przytrzymanie zdjęcia).
+         */
         private void PanoramaHold(object sender, System.Windows.Input.GestureEventArgs e)
         {
             ContextMenu.Visibility = Visibility.Visible;
             useCompassCheckBox.Focus();
-         //   Debug.WriteLine("panorama holded!");
         }
 
+        /* Metoda zamyka menu kontekstowe.
+         */
         private void ContextMenuLostFocus(object sender, RoutedEventArgs e)
         {
             ContextMenu.Visibility = Visibility.Collapsed;
         }
+
+
+        #endregion
 
     }
 }

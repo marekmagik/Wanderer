@@ -59,6 +59,9 @@ namespace Wanderer
                     Stream stream = response.GetResponseStream();
                     StreamReader streamReader = new StreamReader(stream);
                     string json = streamReader.ReadToEnd();
+
+                    Debug.WriteLine("---JSON, req : " + json);
+
                     JSONParser parser = new JSONParser();
                     places = parser.ParsePlacesJSON(json);
 

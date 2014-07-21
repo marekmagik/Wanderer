@@ -20,13 +20,6 @@
     </phone:PhoneApplicationPage.Resources>
 
     <Grid x:Name="LayoutRoot" Background="Green" Width="Auto">
-<!--
-        <toolkit:ContextMenuService.ContextMenu>
-            <toolkit:ContextMenu IsZoomEnabled="True" x:Name="ContextMenu" Background="Black" Opacity="0.6">
-               <CheckBox Background="Teal" Checked="useCompassCheckBoxChecked"  IsChecked="{Binding Path=UseCompass, Mode=TwoWay}" Name="useCompassCheckBox" Unchecked="useCompassCheckBoxUnchecked" Width="400">Użyj kompasu</CheckBox>
-           </toolkit:ContextMenu>
-        </toolkit:ContextMenuService.ContextMenu>
--->
         
         <Canvas Background="Black">
             <Image Name="PanoramaImageLeft" Source="{Binding}" HorizontalAlignment="Left" Hold="PanoramaHold" Visibility="Visible" ManipulationDelta="manipulationDeltaHandler" ManipulationCompleted="manipulationCompletedHandler" DoubleTap="doubleTapHandler">
@@ -34,7 +27,6 @@
                     <CompositeTransform x:Name="PanoramaTransformLeft"></CompositeTransform>
                 </Image.RenderTransform>
             </Image>
-
         </Canvas>
     
         <TextBlock Name="MaxSizeReachedMessage" FontSize="24" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Center" Height="200" Width="550" Visibility="Collapsed">
@@ -48,7 +40,7 @@
         </TextBlock>
 
 
-        <Canvas>
+        <Canvas Name="PanoramaRightCanvas">
             <Image Name="PanoramaImageRight" Source="{Binding}"  HorizontalAlignment="Right" Hold="PanoramaHold" Visibility="Visible" ManipulationDelta="manipulationDeltaHandler" ManipulationCompleted="manipulationCompletedHandler" DoubleTap="doubleTapHandler">
                 <Image.RenderTransform>
                     <CompositeTransform x:Name="PanoramaTransformRight"></CompositeTransform>
@@ -56,7 +48,24 @@
             </Image>
         </Canvas>
 
-
+<!--
+        <Canvas Margin="0,0" Name="DescriptionCanvas" Visibility="Collapsed">
+            <StackPanel Name="DescriptionStackPanel">
+                <TextBlock FontSize="18" FontWeight="Bold" Name="PrimaryDescriptionTextBlock" TextAlignment="Center"/>
+                <TextBlock FontSize="13" Margin="0,1,0,0" Name="SecondaryDescriptionTextBlock" TextAlignment="Center"/>
+                <StackPanel.RenderTransform>
+                    <RotateTransform/>
+                </StackPanel.RenderTransform>
+            </StackPanel>
+            <Canvas.RenderTransform>
+                <TranslateTransform/>
+            </Canvas.RenderTransform>
+        </Canvas>
+-->
+<!--
+        <Line Stroke="Black" StrokeThickness="10" Name="PointToTextLine" X1="300" X2="300" Y1="420" Y2="296"></Line>
+-->        
+        
         <StackPanel Background="DarkGray" Name="CalibrationStackPanel" Visibility="Collapsed">
             <Image HorizontalAlignment="Center" Margin="0, 20" Source="/Images/CompassCalibration.png" Width="300"/>
             <TextBlock Margin="10" TextWrapping="Wrap" TextAlignment="Center">
@@ -74,19 +83,13 @@
             <Button IsEnabled="False" Name="FinishCalibrationButton" Margin="0,20" Content="Zakończ" Click="FinishCalibrationButtonClick" Width="450"/>
         </StackPanel>
 
-
+        
         <Border Background="Black" CornerRadius="40" Height="200" LostFocus="ContextMenuLostFocus" Name="ContextMenu" Opacity="0.6" Visibility="Collapsed" Width="400">
             <StackPanel>
                 <TextBlock FontSize="30" HorizontalAlignment="Center" Margin="0,10">Opcje</TextBlock>
                 <CheckBox Background="Teal" Checked="useCompassCheckBoxChecked"  IsChecked="{Binding Path=UseCompass, Mode=TwoWay}" Name="useCompassCheckBox" Unchecked="useCompassCheckBoxUnchecked" Width="400">Użyj kompasu</CheckBox>
             </StackPanel>
         </Border>
-
-
-
-
-
-
 
     </Grid>
 

@@ -67,7 +67,7 @@ namespace Wanderer
                 string[] thumbnails = storage.GetFileNames("thumbnails\\*");
                 foreach (string thumbnail in thumbnails)
                 {
-                    Debug.WriteLine(thumbnail);
+                    Debug.WriteLine("WCZYTUJE MINIATURE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" + thumbnail);
                     if (!cachedThumbnails.Contains(thumbnail))
                         cachedThumbnails.Add(thumbnail.Remove(64, 4));
                     //ProcessFile(file);
@@ -183,7 +183,6 @@ namespace Wanderer
 
                 WriteableBitmap bitmapImage = PictureDecoder.DecodeJpeg(fileStream);
                 return bitmapImage;
-
             }
         }
 
