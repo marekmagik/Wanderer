@@ -9,6 +9,7 @@ using System.IO;
 using System.Diagnostics;
 using System.Windows.Media;
 using System.Windows.Controls;
+using System.Windows;
 
 namespace Wanderer
 {
@@ -17,7 +18,7 @@ namespace Wanderer
 
         private int fontSize = 20;
         private int maxWidth;
-        private int twoLinesWidth = 1000;
+        private int twoLinesWidth = 600;
 
         public List<ImageMetadata> ParsePlacesJSON(string json)
         {
@@ -150,38 +151,44 @@ namespace Wanderer
 
         private void ProcessSecondaryDescripion(ImageMetadata metadata, String fullDescription)
         {
-            int fullDescriptionWidth = fullDescription.Length;
-            String shortDescription = "";
-            Boolean shouldEnd = false;
-            int actualIndex=0;
-            int actualWidth=0;
-
-            while (!shouldEnd)
+            Deployment.Current.Dispatcher.BeginInvoke(delegate
             {
-                if (actualIndex == fullDescriptionWidth - 1)
-                    shouldEnd = true;
 
-                Char actualChar = fullDescription.ElementAt(actualIndex);
-                TextBlock block = new TextBlock();
-                block.Text=actualChar.ToString();
-                block.FontSize=fontSize;
-                int widthOfActualChar = (int)block.ActualWidth;
+                SetMaxWidth();
+                int fullDescriptionWidth = fullDescription.Length;
+                String shortDescription = "";
+                Boolean shouldEnd = false;
+                int actualIndex = 0;
+                int actualWidth = 0;
 
-                if (actualWidth + widthOfActualChar > maxWidth)
+                while (!shouldEnd)
                 {
-                    shouldEnd = true;
-                    shortDescription += "...";
-                }
-                else
-                {
-                    actualIndex++;
-                    actualWidth += widthOfActualChar;
-                    shortDescription += actualChar;
-                }
-            }
+                    if (actualIndex == fullDescriptionWidth - 1)
+                        shouldEnd = true;
 
-            metadata.PictureDescriptionToChange = shortDescription;
-            metadata.PictureAdditionalDescription = fullDescription;
+
+                    Char actualChar = fullDescription.ElementAt(actualIndex);
+                    TextBlock block = new TextBlock();
+                    block.Text = actualChar.ToString();
+                    block.FontSize = fontSize;
+                    int widthOfActualChar = (int)block.ActualWidth;
+
+                    if (actualWidth + widthOfActualChar > maxWidth)
+                    {
+                        shouldEnd = true;
+                        shortDescription += "...";
+                    }
+                    else
+                    {
+                        actualIndex++;
+                        actualWidth += widthOfActualChar;
+                        shortDescription += actualChar;
+                    }
+                }
+
+                metadata.PictureDescriptionToChange = fullDescription;
+                metadata.PictureAdditionalDescription = shortDescription;
+            });
         }
 
         private void SetMaxWidth()
@@ -192,7 +199,8 @@ namespace Wanderer
             maxWidth = twoLinesWidth - (int)text.ActualWidth;
         }
 
-        private Color convertbyteToColor(byte color){
+        private Color convertbyteToColor(byte color)
+        {
             return Colors.Black;
         }
 

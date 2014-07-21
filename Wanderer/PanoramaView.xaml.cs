@@ -165,7 +165,6 @@ namespace Wanderer
         {
             if (UseCompass)
             {
-                ///Debug.WriteLine("timer tick");
                 if (!isCalibrationInProgress)
                 {
                     int newConvertedHeading = Convert.ToInt32(trueHeading + 90.0);
@@ -177,12 +176,8 @@ namespace Wanderer
                     if (Math.Abs(convertedHeading - newConvertedHeading) > headingDiffToUpdate)
                     {
                         headingDiffToUpdate = HEADING_DIFF_TO_UPDATE_PANORAMA;
-//                        Debug.WriteLine("------Magnetic:------" + convertedHeading);
 
                         double newShift = ((-1.0) * newConvertedHeading * PIXELS_PER_DEGREE) * currentScale;
-
-                        //return;
-                        //Debug.WriteLine("LEFT BORDER: " + metadata.OrientationOfLeftBorder);
 
                         double constantShift;
                         if (currentPageOrientationFactor == -1)
@@ -194,6 +189,7 @@ namespace Wanderer
                             constantShift = ((180.0 + metadata.OrientationOfLeftBorder) * PIXELS_PER_DEGREE) * currentScale;
                         }
 
+                        Debug.WriteLine(newConvertedHeading);
 
                         newShift += constantShift;
 
@@ -201,7 +197,7 @@ namespace Wanderer
                         PanoramaTransformRight.TranslateX = newShift + (width * currentScale);
 
                         updateImagesBounds();
-
+                        
                         convertedHeading = newConvertedHeading;
                     }
                 }
@@ -328,6 +324,11 @@ namespace Wanderer
             screenWidth = screenResolutionWidth;
             screenHeight = screenResolutionHeight;
 
+            metadata = new ImageMetadata();
+            metadata.Points = new List<Point>();
+            mock_generatePoints();
+
+
             using (var stream = await LoadImageAsync(filename))
             {
                 try
@@ -360,8 +361,12 @@ namespace Wanderer
 
                 LoadingAnimation.Visibility = Visibility.Collapsed;
 
+                setPixelsPerDegree();
+                startCompass();
+
                 Debug.WriteLine("Size: " + bitmapImage.PixelWidth + " x " + bitmapImage.PixelHeight);
             }
+
         }
 
         /* Metoda obliczająca atrybuty width i height, jakie musi przyjąć kostruktor klasy WriteableBitmap.
@@ -687,7 +692,7 @@ namespace Wanderer
 
         private void updateDescriptionCanvasProperties(Point point)
         {
-            System.Threading.Thread.Sleep(1);
+            //System.Threading.Thread.Sleep(1);
             /* test */
             point.LeftPrimaryDescriptionTextBlock.FontSize = Configuration.PrimaryDescriptionFontSize * currentScale;
             point.LeftSecondaryDescriptionTextBlock.FontSize = Configuration.SecondaryDescriptionFontSize * currentScale;
@@ -783,30 +788,7 @@ namespace Wanderer
                         throw new PossibleMemoryAccessViolationException();
                     }
 
-                    Point point1 = new Point(961.0, 420.0, null, "Zamek", "Baszta stracenców");
-                    point1.Alignment = 0;
-                    point1.LineLength = 122.0;
-                    point1.Angle = -45.0;
-                    point1.Color = Colors.Black;
-
-                    Point point2 = new Point(1314.0, 622.0, null, "Nabrzeże portowe", "");
-                    point2.Alignment = 1;
-                    point2.LineLength = 339.2;
-                    point2.Angle = 0;
-                    point2.Color = Colors.Yellow;
-
-                    Point point3 = new Point(1292.0, 430.7, null, "Zadar", "Wybrzeże zachodnie");
-                    point3.Alignment = 2;
-                    point3.LineLength = 59.3;
-                    point3.Angle = 0;
-                    point3.Color = Colors.White;
-
-                    metadata.Points.Add(point1);
-                    metadata.Points.Add(point2);
-                    metadata.Points.Add(point3);
-
-
-                    generateUIElementsForPoints(metadata.Points);
+                    mock_generatePoints();
 
                     Debug.WriteLine("getPhotoById");
                     DAO.GetPhotoById(this, photoID);
@@ -828,6 +810,37 @@ namespace Wanderer
             }
         }
 
+        private void mock_generatePoints()
+        {
+
+            Point point1 = new Point(961.0, 420.0, null, "Zamek", "Baszta stracenców");
+            point1.Alignment = 0;
+            point1.LineLength = 122.0;
+            point1.Angle = -45.0;
+            point1.Color = Colors.Black;
+
+            Point point2 = new Point(1314.0, 622.0, null, "Nabrzeże portowe", "");
+            point2.Alignment = 1;
+            point2.LineLength = 339.2;
+            point2.Angle = 0;
+            point2.Color = Colors.Yellow;
+
+            Point point3 = new Point(1292.0, 430.7, null, "Zadar", "Wybrzeże zachodnie");
+            point3.Alignment = 2;
+            point3.LineLength = 59.3;
+            point3.Angle = 0;
+            point3.Color = Colors.White;
+
+            metadata.Points.Add(point1);
+            metadata.Points.Add(point2);
+            metadata.Points.Add(point3);
+
+
+            generateUIElementsForPoints(metadata.Points);
+
+        }
+
+
         private void generateUIElementsForPoints(List<Point> points)
         {
             foreach (Point point in points)
@@ -842,7 +855,7 @@ namespace Wanderer
                     point.LeftCanvas = new Canvas();
                     point.RightCanvas = new Canvas();
 
- 
+
                     point.LeftStackPanel = new StackPanel();
                     point.RightStackPanel = new StackPanel();
 
