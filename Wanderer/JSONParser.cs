@@ -8,11 +8,16 @@ using Newtonsoft.Json;
 using System.IO;
 using System.Diagnostics;
 using System.Windows.Media;
+using System.Windows.Controls;
 
 namespace Wanderer
 {
     class JSONParser
     {
+
+        private int fontSize = 20;
+        private int maxWidth;
+        private int twoLinesWidth = 1000;
 
         public List<ImageMetadata> ParsePlacesJSON(string json)
         {
@@ -87,7 +92,9 @@ namespace Wanderer
             else if (property.Name.Equals("primary_description"))
                 metadata.PictureDescription = property.Value.ToString();
             else if (property.Name.Equals("secondary_description"))
-                metadata.PictureAdditionalDescription = property.Value.ToString();
+            {
+                ProcessSecondaryDescripion(metadata, property.Value.ToString());
+            }
             else if (property.Name.Equals("coverage"))
                 metadata.CoverageInPercent = Convert.ToDouble(property.Value.ToString());
             else if (property.Name.Equals("orientation"))
@@ -104,7 +111,7 @@ namespace Wanderer
                 byte alignment = 0, color = 0;
 
                 JArray jsonArray = JArray.Parse(JArray.Parse(property.Value.ToString()).ToString());
-                
+
                 foreach (JObject obj in jsonArray.Children<JObject>())
                 {
                     foreach (JProperty pointProperty in obj.Properties())
@@ -139,6 +146,50 @@ namespace Wanderer
 
             }
 
+        }
+
+        private void ProcessSecondaryDescripion(ImageMetadata metadata, String fullDescription)
+        {
+            int fullDescriptionWidth = fullDescription.Length;
+            String shortDescription = "";
+            Boolean shouldEnd = false;
+            int actualIndex=0;
+            int actualWidth=0;
+
+            while (!shouldEnd)
+            {
+                if (actualIndex == fullDescriptionWidth - 1)
+                    shouldEnd = true;
+
+                Char actualChar = fullDescription.ElementAt(actualIndex);
+                TextBlock block = new TextBlock();
+                block.Text=actualChar.ToString();
+                block.FontSize=fontSize;
+                int widthOfActualChar = (int)block.ActualWidth;
+
+                if (actualWidth + widthOfActualChar > maxWidth)
+                {
+                    shouldEnd = true;
+                    shortDescription += "...";
+                }
+                else
+                {
+                    actualIndex++;
+                    actualWidth += widthOfActualChar;
+                    shortDescription += actualChar;
+                }
+            }
+
+            metadata.PictureDescriptionToChange = shortDescription;
+            metadata.PictureAdditionalDescription = fullDescription;
+        }
+
+        private void SetMaxWidth()
+        {
+            TextBlock text = new TextBlock();
+            text.Text = "...";
+            text.FontSize = fontSize;
+            maxWidth = twoLinesWidth - (int)text.ActualWidth;
         }
 
         private Color convertbyteToColor(byte color){

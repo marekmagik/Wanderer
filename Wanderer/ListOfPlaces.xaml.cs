@@ -201,7 +201,7 @@ namespace Wanderer
                 {
                     FrameworkElement element = (FrameworkElement)sender;
                     ImageMetadata image = (ImageMetadata)element.DataContext;
-                    image.PictureAdditionalDescription = "hejoo";
+                    image.ToggleDescriptions();
                     PlacesListBox.ItemsSource = null;
                     PlacesListBox.ItemsSource = places;
                 }

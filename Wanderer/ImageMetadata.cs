@@ -89,5 +89,13 @@ namespace Wanderer
                 return false;
             }
         }
+
+        public void ToggleDescriptions()
+        {
+            String temp = PictureAdditionalDescription;
+            PictureAdditionalDescription = PictureDescriptionToChange;
+            PictureDescriptionToChange = temp;
+
+        }
     }
 }
