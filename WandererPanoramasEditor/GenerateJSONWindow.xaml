@@ -1,0 +1,37 @@
+﻿<Window x:Class="WandererPanoramasEditor.GenerateJSONWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Generuj plik" Height="380" Width="250">
+    <Grid Background="Beige">
+        <DockPanel>
+             <StackPanel DockPanel.Dock="Top">
+                <TextBlock HorizontalAlignment="Left" Margin="10,0,0,5" Text="Opis zdjęcia:" VerticalAlignment="Top" Width="130"></TextBlock>
+                <TextBox FontWeight="Bold" Height="25" HorizontalAlignment="Left" Margin="10,0,0,0" MaxLength="40" MaxLines="1" Name="ImageDescriptionTextBox" VerticalAlignment="Bottom" Width="220"></TextBox>
+            </StackPanel>
+            <StackPanel DockPanel.Dock="Top">
+                <TextBlock HorizontalAlignment="Left" Margin="10,0,0,5" Text="Dodatkowy opis zdjęcia:" VerticalAlignment="Top" Width="130"></TextBlock>
+                <TextBox FontWeight="Bold" Height="25" HorizontalAlignment="Left" Margin="10,0,0,0" MaxLength="40" MaxLines="1" Name="ImageAdditionalDescriptionTextBox" VerticalAlignment="Bottom" Width="220"></TextBox>
+            </StackPanel>
+            <StackPanel DockPanel.Dock="Top">
+                <TextBlock TextWrapping="Wrap" HorizontalAlignment="Left" Margin="10,10,0,5" Text="Orientacja lewej krawędzi zdjęcia względem bieguna północnego:" VerticalAlignment="Top" Width="200"></TextBlock>
+                <TextBox Height="25" HorizontalAlignment="Left" Margin="10,0,0,0" MaxLength="40" MaxLines="1" Name="ImageOrientationTextBox" VerticalAlignment="Bottom" Width="220"></TextBox>
+            </StackPanel>
+            <StackPanel DockPanel.Dock="Top">
+                <TextBlock HorizontalAlignment="Left" Margin="10,10,0,5" Text="Pokrycie zdjęcia (w %):" VerticalAlignment="Top" Width="200"></TextBlock>
+                <TextBox Height="25" HorizontalAlignment="Left" Margin="10,0,0,0" MaxLength="40" MaxLines="1" Name="PanoramaCoverageTextBox" VerticalAlignment="Bottom" Width="220"></TextBox>
+            </StackPanel>
+            <StackPanel DockPanel.Dock="Top">
+                <TextBlock HorizontalAlignment="Left" Margin="10,10,0,5" Text="Długość i szerokość geograficzna punktu widokowego:" TextWrapping="Wrap" VerticalAlignment="Top" Width="200" ></TextBlock>
+                <DockPanel>
+                    <TextBox Height="25" HorizontalAlignment="Left" Margin="30,0,0,0" MaxLength="40" MaxLines="1" Name="LongitudeTextBox" VerticalAlignment="Bottom" Width="70"></TextBox>
+                    <TextBlock HorizontalAlignment="Center" Margin="17,0,0,0">x </TextBlock>
+                    <TextBox Height="25" HorizontalAlignment="Right" Margin="10,0,30,0" MaxLength="40" MaxLines="1" Name="LatitudeTextBox" VerticalAlignment="Bottom" Width="70"></TextBox>
+                </DockPanel>
+            </StackPanel>
+
+            <DockPanel DockPanel.Dock="Top">
+                <Button Click="GenerateButtonClick" Height="30" Width="150" Name="GenerateButton">Generuj plik metadanych</Button>
+            </DockPanel>
+        </DockPanel>
+    </Grid>
+</Window>

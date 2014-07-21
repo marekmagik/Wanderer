@@ -16,6 +16,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Newtonsoft.Json;
+using System.Diagnostics;
 
 namespace WandererPanoramasEditor
 {
@@ -34,6 +35,7 @@ namespace WandererPanoramasEditor
         private double marginToLeftOfCanvas;
         private ImageMetadata metadata;
         private Point selectedPoint;
+        private string imageFileName;
 
         public ImageSource PanoramaImage
         {
@@ -83,6 +85,7 @@ namespace WandererPanoramasEditor
 
             if (File.Exists(dialog.FileName))
             {
+                imageFileName = dialog.FileName;
                 using (FileStream stream = OpenFileStream(dialog.FileName))
                 {
 
@@ -165,7 +168,6 @@ namespace WandererPanoramasEditor
             ManageCategoriesButton.IsEnabled = true;
         }
 
-
         private FileStream OpenFileStream(string filename)
         {
             if (filename == null || !File.Exists(filename))
@@ -202,47 +204,70 @@ namespace WandererPanoramasEditor
                 }
                 catch (Exception)
                 {
+
+                    // System.Windows.Forms.ToolTip tooltip = new System.Windows.Forms.ToolTip();
+                    //tooltip.SetToolTip((System.Windows.Forms.TextBox) sender, "Podaj liczbę całkowitą z przedziału [10, 100]");
+                    //tooltip.Show("Podaj liczbę całkowitą z przedziału [10, 100]", sender, 1000);
+
                     ToolTip toolTip = new ToolTip() { Content = "Podaj liczbę całkowitą z przedziału [10, 100]" };
                     ScaleTextBox.ToolTip = toolTip;
+
+                    toolTip.IsMouseDirectlyOverChanged += toolTip_IsMouseDirectlyOverChanged;
                     toolTip.IsOpen = true;
+                    //   toolTip.Visibility = Visibility.Visible;
+
+                    if (!toolTip.Focus())
+                    {
+                        Debug.WriteLine("cannot set tooltip focus");
+                    }
+                    //     toolTip.Visibility = Visibility.Visible;
+                    //System.Threading.Thread.Sleep(3000);
+                    //toolTip.IsOpen = false;
                 }
 
             }
         }
 
+        private void toolTip_IsMouseDirectlyOverChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            Debug.WriteLine("toolTip left");
+            ((ToolTip)sender).IsOpen = false;
+
+            ScaleTextBox.ToolTip = null;
+        }
+
         private void rescale(double newScale)
         {
-            ScaleTransform scaleTransform = Panorama.RenderTransform as ScaleTransform;
+            ScaleTransform scaleTransformPanorama = Panorama.RenderTransform as ScaleTransform;
+            ScaleTransform scaleTransformPointToTextLine = PointToTextLine.RenderTransform as ScaleTransform;
+            TranslateTransform translateTransformCross = Cross.RenderTransform as TranslateTransform;
+            TranslateTransform translateTransformPointToTextLine = PointToTextLine.RenderTransform as TranslateTransform;
 
             newScale = ((newScale) / (100.0));
-            scaleTransform.CenterX = width * 0.5;
-            scaleTransform.CenterY = height * 0.5;
-            scaleTransform.ScaleX = newScale;
-            scaleTransform.ScaleY = newScale;
 
-            TranslateTransform transform = Cross.RenderTransform as TranslateTransform;
-
-            double distanceFromCenterToLeftBorderX = currentScale * (width / 2.0);
-            double newDiscanceFromCenterToLeftBorderX = newScale * (width / 2.0);
-            double realX = ((transform.X - marginToLeftOfCanvas - (width / 2.0 - distanceFromCenterToLeftBorderX)) / (currentScale)) + (ScrollViewer.HorizontalOffset / (currentScale));
-            double newX = (newScale * realX) - ScrollViewer.HorizontalOffset + marginToLeftOfCanvas;
-            double newAbsoluteX = (width / 2.0) - newDiscanceFromCenterToLeftBorderX + newX;
+            scaleTransformPanorama.CenterX = width * 0.5;
+            scaleTransformPanorama.CenterY = height * 0.5;
+            scaleTransformPanorama.ScaleX = newScale;
+            scaleTransformPanorama.ScaleY = newScale;
 
 
-            double distanceFromCenterToTopBorderY = currentScale * (height / 2.0);
-            double newDiscanceFromCenterToTopBorderY = newScale * (height / 2.0);
-            double realY = ((transform.Y - marginToTopOfCanvas - (height / 2.0 - distanceFromCenterToTopBorderY)) / (currentScale)) + (ScrollViewer.VerticalOffset / (currentScale));
-            double newY = (newScale * realY) - ScrollViewer.VerticalOffset + marginToTopOfCanvas;
-            double newAbsoluteY = (height / 2.0) - newDiscanceFromCenterToTopBorderY + newY;
+            translateTransformCross.X = computeAbsoluteX(translateTransformCross.X, currentScale, newScale);
+            translateTransformCross.Y = computeAbsoluteY(translateTransformCross.Y, currentScale, newScale);
 
 
-            transform.X = newAbsoluteX;
-            transform.Y = newAbsoluteY;
+            Debug.WriteLine("pointToTextLine: " + Math.Abs(PointToTextLine.X1 - PointToTextLine.X2) / currentScale);
+
+            PointToTextLine.X1 = computeAbsoluteX(PointToTextLine.X1, currentScale, newScale);
+            PointToTextLine.Y1 = computeAbsoluteY(PointToTextLine.Y1, currentScale, newScale);
+            PointToTextLine.X2 = computeAbsoluteX(PointToTextLine.X2, currentScale, newScale);
+            PointToTextLine.Y2 = computeAbsoluteY(PointToTextLine.Y2, currentScale, newScale);
 
             currentScale = newScale;
 
             UpdatePositionDisplay();
         }
+
+        #region CrossManualMovingFunctions
 
         private void CrossMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
@@ -289,53 +314,109 @@ namespace WandererPanoramasEditor
                 moveCursorToSpecifiedPosition(realX, height);
                 UpdatePositionDisplay();
             }
-
-
         }
-
 
         private void CrossMouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
         {
             crossMovingInProgress = false;
         }
 
+        #endregion
+
         private void ScrollViewerScrollChanged(object sender, ScrollChangedEventArgs e)
         {
-            TranslateTransform transform = Cross.RenderTransform as TranslateTransform;
+            TranslateTransform crossTransform = Cross.RenderTransform as TranslateTransform;
+            TranslateTransform descriptionTransform = DescriptionCanvas.RenderTransform as TranslateTransform;
 
-            transform.X -= e.HorizontalChange;
-            transform.Y -= e.VerticalChange;
+            crossTransform.X -= e.HorizontalChange;
+            crossTransform.Y -= e.VerticalChange;
+
+            PointToTextLine.X1 -= e.HorizontalChange;
+            PointToTextLine.Y1 -= e.VerticalChange;
+            PointToTextLine.X2 -= e.HorizontalChange;
+            PointToTextLine.Y2 -= e.VerticalChange;
+
+        //    descriptionTransform.X -= e.HorizontalChange;
+        //    descriptionTransform.Y -= e.VerticalChange;
+
             UpdatePositionDisplay();
         }
 
         private void UpdatePositionDisplay()
         {
+            TranslateTransform transform = Cross.RenderTransform as TranslateTransform;
 
-            realX = computeRealX();
-            realY = computeRealY();
+            realX = computeRealX(transform.X);
+            realY = computeRealY(transform.Y);
 
             xCursorPosition.Text = Convert.ToString((int)realX);
             yCursorPosition.Text = Convert.ToString((int)realY);
         }
 
-        private double computeRealX()
-        {
-            TranslateTransform transform = Cross.RenderTransform as TranslateTransform;
+        #region ComputePositionFunctions
 
+        public double computeRealX(double relativeX)
+        {
             double distanceFromCenterToTopBorderX = currentScale * (width / 2.0);
-            double realX = ((transform.X - (width / 2.0 - distanceFromCenterToTopBorderX)) / (currentScale)) + (ScrollViewer.HorizontalOffset / (currentScale)) - marginToLeftOfCanvas / currentScale;
+            double realX = ((relativeX - (width / 2.0 - distanceFromCenterToTopBorderX)) / (currentScale)) + (ScrollViewer.HorizontalOffset / (currentScale)) - marginToLeftOfCanvas / currentScale;
             return realX;
         }
 
-        private double computeRealY()
+        public double computeRealY(double relativeY)
         {
-            TranslateTransform transform = Cross.RenderTransform as TranslateTransform;
-
             double distanceFromCenterToTopBorderY = currentScale * (height / 2.0);
-            double realY = ((transform.Y - (height / 2.0 - distanceFromCenterToTopBorderY)) / (currentScale)) + (ScrollViewer.VerticalOffset / (currentScale)) - marginToTopOfCanvas / currentScale;
+            double realY = ((relativeY - (height / 2.0 - distanceFromCenterToTopBorderY)) / (currentScale)) + (ScrollViewer.VerticalOffset / (currentScale)) - marginToTopOfCanvas / currentScale;
             return realY;
         }
 
+
+        public double computeAbsoluteX(double transformX, double currentScale, double newScale)
+        {
+
+            double distanceFromCenterToLeftBorderX = currentScale * (width / 2.0);
+            double newDiscanceFromCenterToLeftBorderX = newScale * (width / 2.0);
+            double realX = ((transformX - marginToLeftOfCanvas - (width / 2.0 - distanceFromCenterToLeftBorderX)) / (currentScale)) + (ScrollViewer.HorizontalOffset / (currentScale));
+            double newX = (newScale * realX) - ScrollViewer.HorizontalOffset + marginToLeftOfCanvas;
+            double newAbsoluteX = (width / 2.0) - newDiscanceFromCenterToLeftBorderX + newX;
+
+            return newAbsoluteX;
+        }
+
+        public double computeAbsoluteY(double transformY, double currentScale, double newScale)
+        {
+
+            double distanceFromCenterToTopBorderY = currentScale * (height / 2.0);
+            double newDiscanceFromCenterToTopBorderY = newScale * (height / 2.0);
+            double realY = ((transformY - marginToTopOfCanvas - (height / 2.0 - distanceFromCenterToTopBorderY)) / (currentScale)) + (ScrollViewer.VerticalOffset / (currentScale));
+            double newY = (newScale * realY) - ScrollViewer.VerticalOffset + marginToTopOfCanvas;
+            double newAbsoluteY = (height / 2.0) - newDiscanceFromCenterToTopBorderY + newY;
+
+            return newAbsoluteY;
+        }
+
+        public double computeRelativeX(double realX)
+        {
+
+            double distanceFromCenterToTopBorderX = currentScale * (width / 2.0);
+            double newX = (currentScale * realX) - ScrollViewer.HorizontalOffset + marginToLeftOfCanvas;
+            double newRelativeX = (width / 2.0) - distanceFromCenterToTopBorderX + newX;
+
+            return newRelativeX;
+        }
+
+        public double computeRelativeY(double realY)
+        {
+
+            double distanceFromCenterToTopBorderY = currentScale * (height / 2.0);
+            double newY = (currentScale * realY) - ScrollViewer.VerticalOffset + marginToTopOfCanvas;
+            double newRelativeY = (height / 2.0) - distanceFromCenterToTopBorderY + newY;
+
+            return newRelativeY;
+        }
+
+        #endregion
+
+        #region CrossColorMenuItems
 
         private void blackColorMenuItemClick(object sender, RoutedEventArgs e)
         {
@@ -397,16 +478,16 @@ namespace WandererPanoramasEditor
             }
         }
 
+        #endregion
+
         private void moveCursorToSpecifiedPosition(object sender, System.Windows.Input.KeyEventArgs e)
         {
             if (e.Key.Equals(Key.Enter))
             {
-                int xPosition;
-                int yPosition;
                 try
                 {
-                    xPosition = Convert.ToInt32(xCursorPosition.Text);
-                    yPosition = Convert.ToInt32(yCursorPosition.Text);
+                    int xPosition = Convert.ToInt32(xCursorPosition.Text);
+                    int yPosition = Convert.ToInt32(yCursorPosition.Text);
                     if (xPosition < 0 || yPosition < 0 || xPosition > width || yPosition > height)
                     {
                         throw new Exception();
@@ -423,22 +504,13 @@ namespace WandererPanoramasEditor
             }
         }
 
-        private void moveCursorToSpecifiedPosition(double newXPosition, double newYPosition)
+
+        private void moveCursorToSpecifiedPosition(double newXAbsolutePosition, double newYAbsolutePosition)
         {
             TranslateTransform transform = Cross.RenderTransform as TranslateTransform;
 
-            double distanceFromCenterToTopBorderX = currentScale * (width / 2.0);
-            double realX = newXPosition;
-            double newX = (currentScale * realX) - ScrollViewer.HorizontalOffset + marginToLeftOfCanvas;
-            double newAbsoluteX = (width / 2.0) - distanceFromCenterToTopBorderX + newX;
-
-            double distanceFromCenterToTopBorderY = currentScale * (height / 2.0);
-            double realY = newYPosition;
-            double newY = (currentScale * realY) - ScrollViewer.VerticalOffset + marginToTopOfCanvas;
-            double newAbsoluteY = (height / 2.0) - distanceFromCenterToTopBorderY + newY;
-
-            transform.X = newAbsoluteX;
-            transform.Y = newAbsoluteY;
+            transform.X = computeRelativeX(newXAbsolutePosition);
+            transform.Y = computeRelativeY(newYAbsolutePosition);
             UpdatePositionDisplay();
         }
 
@@ -466,16 +538,18 @@ namespace WandererPanoramasEditor
             {
                 using (FileStream stream = OpenFileStream(dialog.FileName))
                 {
-                    using(StreamReader reader = new StreamReader(stream)){
-                    try
+                    using (StreamReader reader = new StreamReader(stream))
                     {
-                        ImageMetadata loadedMetadata = JsonConvert.DeserializeObject<ImageMetadata>(reader.ReadToEnd());                    
-                        this.metadata = loadedMetadata;
-                        refreshPointsComboBox();
-                    }
-                    catch (Exception){
-                        MessageBox.Show("Format pliku nieznany.", "Błąd");
-                    }
+                        try
+                        {
+                            ImageMetadata loadedMetadata = JsonConvert.DeserializeObject<ImageMetadata>(reader.ReadToEnd());
+                            this.metadata = loadedMetadata;
+                            refreshPointsComboBox();
+                        }
+                        catch (Exception)
+                        {
+                            MessageBox.Show("Format pliku nieznany.", "Błąd");
+                        }
                     }
 
                 }
@@ -485,8 +559,16 @@ namespace WandererPanoramasEditor
 
         private void addPoint(object sender, RoutedEventArgs e)
         {
+            Cross.Visibility = Visibility.Hidden;
+            PointToTextLine.Visibility = Visibility.Visible;
+            DescriptionCanvas.Visibility = Visibility.Visible;
             AddEditPointToListWindow addPointWindow = new AddEditPointToListWindow(metadata, realX, realY, null, this);
             addPointWindow.ShowDialog();
+            refreshPointsComboBox();
+            resetSelectedPoint();
+            Cross.Visibility = Visibility.Visible;
+            PointToTextLine.Visibility = Visibility.Hidden;
+            DescriptionCanvas.Visibility = Visibility.Hidden;
         }
 
 
@@ -511,8 +593,16 @@ namespace WandererPanoramasEditor
             {
                 return;
             }
+            Cross.Visibility = Visibility.Hidden;
+            PointToTextLine.Visibility = Visibility.Visible;
+            DescriptionCanvas.Visibility = Visibility.Visible;
             AddEditPointToListWindow editPointWindow = new AddEditPointToListWindow(metadata, realX, realY, selectedPoint, this);
             editPointWindow.ShowDialog();
+            refreshPointsComboBox();
+            resetSelectedPoint();
+            Cross.Visibility = Visibility.Visible;
+            PointToTextLine.Visibility = Visibility.Hidden;
+            DescriptionCanvas.Visibility = Visibility.Hidden;
         }
 
         private void removePoint(object sender, RoutedEventArgs e)
@@ -548,9 +638,11 @@ namespace WandererPanoramasEditor
 
         private void GenerateJSONClick(object sender, RoutedEventArgs e)
         {
-            GenerateJSONWindow jsonWindow = new GenerateJSONWindow(metadata);
+            GenerateJSONWindow jsonWindow = new GenerateJSONWindow(metadata, imageFileName);
             jsonWindow.ShowDialog();
         }
+
+
 
     }
 }

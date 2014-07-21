@@ -41,6 +41,21 @@
                 </Image>
             </ScrollViewer>
 
+            <Line Name="PointToTextLine" Stroke="Black" StrokeThickness="2" X1="0" Y1="0" X2="100" Y2="100" Visibility="Hidden" />
+
+            <Canvas Margin="0,0" Name="DescriptionCanvas" Visibility="Hidden">
+                <StackPanel Name="DescriptionStackPanel">
+                    <TextBlock FontSize="18" FontWeight="Bold" Name="PrimaryDescriptionTextBlock" TextAlignment="Center"/>
+                    <TextBlock FontSize="13" Margin="0,1,0,0" Name="SecondaryDescriptionTextBlock" TextAlignment="Center"/>
+                    <StackPanel.RenderTransform>
+                        <RotateTransform/>
+                    </StackPanel.RenderTransform>
+                </StackPanel>
+                <Canvas.RenderTransform>
+                    <TranslateTransform/>
+               </Canvas.RenderTransform>
+            </Canvas>
+            
             <Canvas Height="40" Width="40" Name="Cross" MouseLeftButtonDown="CrossMouseLeftButtonDown" MouseLeftButtonUp="CrossMouseLeftButtonUp" MouseMove="CrossMouseMove" MouseLeave="CrossMouseLeave" Visibility="Hidden">
                 <Path Name="CrossColor" Stroke="Black" StrokeThickness="5">
                     <Path.Data>         
