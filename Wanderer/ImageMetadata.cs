@@ -18,6 +18,7 @@ namespace Wanderer
         public double CoverageInPercent { get; set; }
         public String PictureDescription { get; set; }
         public String PictureAdditionalDescription { get; set; }
+        public String PictureDescriptionToChange { get; set; }
         public int IdInDatabase { get; set; }
         public double Longitude { get; set; }
         public double Latitude { get; set; }

@@ -175,12 +175,38 @@ namespace Wanderer
 
         private void PlacesListBox_ImageTap(object sender, System.Windows.Input.GestureEventArgs e)
         {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            FrameworkElement element = (FrameworkElement)sender;
+            ImageMetadata image = (ImageMetadata)element.DataContext;
+            Uri uri = new Uri("/PanoramaView.xaml?photoID=" + image.IdInDatabase + "&hash=" + image.PictureSHA256 + "&useLocalDatabase=false", UriKind.Relative);
 
+            Debug.WriteLine("photo_id=" + image.IdInDatabase);
+            Debug.WriteLine("HASH: " + image.PictureSHA256);
+            //   NavigationService.Navigate(new Uri("/PanoramaView.xaml?photoID=" + places.ElementAt(PlacesListBox.SelectedIndex).IdInDatabase + "&hash="+places.ElementAt(PlacesListBox.SelectedIndex).PictureSHA256+"&useLocalDatabase=false", UriKind.Relative));
+            if (NavigationService == null)
+            {
+                Debug.WriteLine("Ni huja");
+            }
+            //MainPage.navigateToPage(uri);
+            PlacesListBox.SelectedIndex = -1;
+            mainPage.NavigationService.Navigate(uri);
         }
 
         private void PlacesListBox_TextTap(object sender, System.Windows.Input.GestureEventArgs e)
         {
-
+            Deployment.Current.Dispatcher.BeginInvoke(delegate
+            {
+                if (sender != null)
+                {
+                    FrameworkElement element = (FrameworkElement)sender;
+                    ImageMetadata image = (ImageMetadata)element.DataContext;
+                    image.PictureAdditionalDescription = "hejoo";
+                    PlacesListBox.ItemsSource = null;
+                    PlacesListBox.ItemsSource = places;
+                }
+                //Debug.WriteLine(image);
+            });
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
