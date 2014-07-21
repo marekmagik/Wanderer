@@ -20,16 +20,20 @@ namespace Wanderer
         private List<ImageMetadata> places;
         private List<ImageMetadata> notCachedPlaces;
         private List<ImageMetadata> points;
+        private List<ImageMetadata> allPlaces;
         //private Place actualPlace;
         //private DAO dao;
         private int actualIndex;
         private MainPage mainPage;
+        private int increaseAmount = 1;
+        private int actualNumberOfElementsInList = 1;
 
 
         public ListOfPlaces(MainPage mainPage)
         {
             InitializeComponent();
             places = new List<ImageMetadata>();
+            allPlaces = new List<ImageMetadata>();
             notCachedPlaces = new List<ImageMetadata>();
             DAO.GetDataFromServer(this, 20.5, 40.6, 100000000);
             this.DataContext = places;
@@ -63,9 +67,9 @@ namespace Wanderer
                     Debug.WriteLine("---JSON, req : " + json);
 
                     JSONParser parser = new JSONParser();
-                    places = parser.ParsePlacesJSON(json);
+                    allPlaces = parser.ParsePlacesJSON(json);
 
-                    if (places.Count > 0)
+                    if (allPlaces.Count > 0)
                     {
                         actualIndex = 0;
                         ProcessNextPlace();
@@ -83,9 +87,10 @@ namespace Wanderer
 
         private void ProcessNextPlace()
         {
-            if (actualIndex != places.Count)
+            if (actualIndex != actualNumberOfElementsInList)
             {
-                ImageMetadata place = places.ElementAt(actualIndex);
+                ImageMetadata place = allPlaces.ElementAt(actualIndex);
+                places.Add(place);
                 if (IsolatedStorageDAO.IsThumbnailCached(place.PictureSHA256))
                 {
                     LoadPhotoFromIsolatedStorage(place);
@@ -168,6 +173,24 @@ namespace Wanderer
             }
         }
 
+        private void PlacesListBox_ImageTap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+
+        }
+
+        private void PlacesListBox_TextTap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            if (actualNumberOfElementsInList != allPlaces.Count)
+            {
+                actualNumberOfElementsInList += increaseAmount;
+                ProcessNextPlace();
+            }
+        }
 
     }
 }
