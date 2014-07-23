@@ -18,7 +18,8 @@ namespace Wanderer
 
         private int fontSize = 20;
         private int maxWidth;
-        private int twoLinesWidth = 600;
+        private int twoLinesWidth = 750;
+        private int actualLine = 0;
 
         public List<ImageMetadata> ParsePlacesJSON(string json)
         {
@@ -158,6 +159,7 @@ namespace Wanderer
                 int fullDescriptionWidth = fullDescription.Length;
                 String shortDescription = "";
                 Boolean shouldEnd = false;
+                Boolean check = true;
                 int actualIndex = 0;
                 int actualWidth = 0;
 
@@ -168,10 +170,17 @@ namespace Wanderer
 
 
                     Char actualChar = fullDescription.ElementAt(actualIndex);
+                    int widthToEndOfNextWord = 0;
+                    if (!shouldEnd && fullDescription.ElementAt(actualIndex + 1).Equals(' '))
+                    {
+                        widthToEndOfNextWord = GetWidthToEndOfNextWord(fullDescription,actualIndex + 1);
+                    }
                     TextBlock block = new TextBlock();
                     block.Text = actualChar.ToString();
                     block.FontSize = fontSize;
                     int widthOfActualChar = (int)block.ActualWidth;
+
+                   
 
                     if (actualWidth + widthOfActualChar > maxWidth)
                     {
@@ -184,11 +193,62 @@ namespace Wanderer
                         actualWidth += widthOfActualChar;
                         shortDescription += actualChar;
                     }
+
+                    if (check && widthToEndOfNextWord!=0 && widthToEndOfNextWord + actualWidth > twoLinesWidth / 2)
+                    {
+                        check = false;
+                        actualWidth = twoLinesWidth / 2;
+                    }
                 }
 
                 metadata.PictureDescriptionToChange = fullDescription;
                 metadata.PictureAdditionalDescription = shortDescription;
             });
+        }
+
+        private int GetWidthToEndOfNextWord(String fullDescription, int index)
+        {
+            Boolean shouldEnd = false;
+            Boolean searchForEnd = false;
+            Boolean searchForBegining = true;
+            int actualWidth = 0;
+            int actualIndex = index;
+
+            while (!shouldEnd)
+            {
+
+                Char actualChar = ' ';
+                if (actualIndex == fullDescription.Length)
+                    shouldEnd = true;
+                else
+                {
+
+                    actualChar = fullDescription.ElementAt(actualIndex);
+                    if (!actualChar.Equals(' ') && searchForBegining)
+                    {
+                        searchForBegining = false;
+                        searchForEnd = true;
+                    }
+
+                    if (actualChar.Equals(' ') && searchForEnd)
+                    {
+                        shouldEnd = true;
+                    }
+
+                }
+
+                if (!shouldEnd)
+                {
+                    TextBlock block = new TextBlock();
+                    block.Text = actualChar.ToString();
+                    block.FontSize = fontSize;
+                    int widthOfActualChar = (int)block.ActualWidth;
+                    actualWidth += widthOfActualChar;
+                    actualIndex++;
+                }
+            }
+
+            return actualWidth;
         }
 
         private void SetMaxWidth()

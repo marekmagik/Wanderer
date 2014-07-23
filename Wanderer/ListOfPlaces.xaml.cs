@@ -26,7 +26,7 @@ namespace Wanderer
         private int actualIndex;
         private MainPage mainPage;
         private int increaseAmount = 1;
-        private int actualNumberOfElementsInList = 1;
+        private int actualNumberOfElementsInList = 5;
 
 
         public ListOfPlaces(MainPage mainPage)
@@ -216,6 +216,23 @@ namespace Wanderer
                 actualNumberOfElementsInList += increaseAmount;
                 ProcessNextPlace();
             }
+        }
+
+        private void PlacesListBox_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (allPlaces.Count > 0)
+            {
+                if (actualNumberOfElementsInList != allPlaces.Count)
+                {
+                    actualNumberOfElementsInList += increaseAmount;
+                    ProcessNextPlace();
+                }
+            }
+        }
+
+        private void PlacesListBox_ManipulationCompleted(object sender, System.Windows.Input.ManipulationCompletedEventArgs e)
+        {
+            Debug.WriteLine(" Handler ");
         }
 
     }
