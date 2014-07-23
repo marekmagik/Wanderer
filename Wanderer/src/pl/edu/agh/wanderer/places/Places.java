@@ -42,5 +42,17 @@ public class Places {
 		
 		return myString;
 	}
+	
+	@Path("/get/point/{id}")
+	@GET
+	@Produces(MediaType.TEXT_PLAIN)
+	public String getPoints(@PathParam("id") String id) throws Exception {
+
+		System.out.println(" sending description for "+id);
+		PostgresDB dao = new PostgresDB();
+		String myString = dao.getPointsAndUpdateSpecifiedJSONMetadata(Integer.parseInt(id));
+
+		return myString;
+	}
 
 }

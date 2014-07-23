@@ -54,9 +54,9 @@ public class PostgresDB extends DBConnection {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		for(JSONObject json : jsonObjects){
+		/*for(JSONObject json : jsonObjects){
 			getPointsAndUpdateSpecifiedJSONMetadata(json);
-		}
+		}*/
 		
 		return toJsonConverter.convertListOfJSONObjects(jsonObjects);
 
@@ -114,7 +114,7 @@ public class PostgresDB extends DBConnection {
 		Connection connection = getConnection();
 		String result = null;
 		System.out.println("got an query");
-		List<JSONObject> jsonObjects = null;
+		List<JSONObject> jsonObjects = new ArrayList<JSONObject>();
 		try {
 			PreparedStatement querry = connection
 					.prepareStatement("select metadata_id,longitude,latitude,\"primary_description\", \"secondary_description\", picture_hash , st_distance(metadata.geog,st_geogfromtext(?)) as distance from metadata where st_dwithin(metadata.geog,st_geogfromtext(?),?) order by 7;");
@@ -127,29 +127,30 @@ public class PostgresDB extends DBConnection {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		for(JSONObject json : jsonObjects){
+		/*for(JSONObject json : jsonObjects){
 			getPointsAndUpdateSpecifiedJSONMetadata(json);
-		}
+		}*/
 		
 		return toJsonConverter.convertListOfJSONObjects(jsonObjects);
 	}
 
-	public void getPointsAndUpdateSpecifiedJSONMetadata(JSONObject json) {
+	public String getPointsAndUpdateSpecifiedJSONMetadata(int metadata_id) {
 		Connection connection = getConnection();
-		
+		List<JSONObject> jsonObjects = new ArrayList<JSONObject>();
 		try {
 			ResultSet result = null;
 
-			int metadataID = json.getInt("metadata_id");
-			System.out.println("metadataID: " + metadataID);
+			int metadataID = metadata_id;
+			//int metadataID = json.getInt("metadata_id");
+			//System.out.println("metadataID: " + metadataID);
 
 			PreparedStatement querry = connection
-					.prepareStatement("select primary_description, secondary_description, category, x, y, alignment, line_length, angle from points where metadata_id = ? ;");
+					.prepareStatement("select primary_description, secondary_description, category, x, y, alignment, line_length, angle , color from points where metadata_id = ? ;");
 			querry.setInt(1, metadataID);
 			result = querry.executeQuery();
-			String pointsInJSONArray = toJsonConverter.toJSONArray(result).toString();
+			jsonObjects = toJsonConverter.toJSONObjectsList(result);
 			
-			json.put("points", pointsInJSONArray);
+			//json.put("points", pointsInJSONArray);
 			
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -160,6 +161,8 @@ public class PostgresDB extends DBConnection {
 				e.printStackTrace();
 			}
 		}
+		
+		return toJsonConverter.convertListOfJSONObjects(jsonObjects);
 	}
 
 }
