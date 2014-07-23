@@ -41,6 +41,11 @@ namespace Wanderer
             this.SecondaryDescription = secondaryDescription;
         }
 
+        public Point()
+        {
+
+        }
+
 
         public override string ToString()
         {

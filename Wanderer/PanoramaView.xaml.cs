@@ -68,6 +68,8 @@ namespace Wanderer
 
         public bool UseCompass { get; set; }
 
+        public bool isCached;
+
         public ImageSource ImageSource
         {
             get
@@ -300,7 +302,8 @@ namespace Wanderer
             //bool getFromLocalDatabase = Convert.ToBoolean(NavigationContext.QueryString["useLocalDatabase"]);
             string hash = NavigationContext.QueryString["hash"];
             photoID = Convert.ToInt32(NavigationContext.QueryString["photoID"]);
-            if (IsolatedStorageDAO.IsPhotoCached(hash))
+            isCached=IsolatedStorageDAO.IsPhotoCached(hash);
+            if (isCached)
             {
                 InitializePanoramaLocal("/photos/" + hash + ".jpg");
             }
@@ -362,7 +365,7 @@ namespace Wanderer
                 LoadingAnimation.Visibility = Visibility.Collapsed;
 
                 setPixelsPerDegree();
-                startCompass();
+                //startCompass();
 
                 Debug.WriteLine("Size: " + bitmapImage.PixelWidth + " x " + bitmapImage.PixelHeight);
             }
@@ -810,8 +813,32 @@ namespace Wanderer
             }
         }
 
+        public void PointsRequestCallback(IAsyncResult result)
+        {
+            HttpWebRequest request = result.AsyncState as HttpWebRequest;
+            if (request != null)
+            {
+
+                WebResponse response = request.EndGetResponse(result);
+                Stream stream = response.GetResponseStream();
+                StreamReader streamReader = new StreamReader(stream);
+                string json = streamReader.ReadToEnd();
+                JSONParser parser = new JSONParser();
+                List<Point> points = parser.ParsePointMetadataJSON(json);
+                metadata.Points = points;
+                generateUIElementsForPoints(metadata.Points);
+
+
+            }
+                    
+        }
+
         private void mock_generatePoints()
         {
+
+            DAO.GetPointsServer(this, photoID);
+
+            /*Debug.WriteLine("Colors"+Colors.White+  " "+Colors.Black+" "+Colors.Yellow );
 
             Point point1 = new Point(961.0, 420.0, null, "Zamek", "Baszta stracenców");
             point1.Alignment = 0;
@@ -833,10 +860,10 @@ namespace Wanderer
 
             metadata.Points.Add(point1);
             metadata.Points.Add(point2);
-            metadata.Points.Add(point3);
+            metadata.Points.Add(point3);*/
 
 
-            generateUIElementsForPoints(metadata.Points);
+            //generateUIElementsForPoints(metadata.Points);
 
         }
 
@@ -987,7 +1014,7 @@ namespace Wanderer
                         ReloadContent();
 
                         setPixelsPerDegree();
-                        startCompass();
+                        //startCompass();
                     }
                     catch (WebException)
                     {

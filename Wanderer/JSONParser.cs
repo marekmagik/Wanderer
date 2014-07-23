@@ -264,5 +264,58 @@ namespace Wanderer
             return Colors.Black;
         }
 
+
+        internal List<Point> ParsePointMetadataJSON(string json)
+        {
+            List<Point> points = new List<Point>();
+
+            JArray jsonArray = JArray.Parse(json);
+
+            foreach (JObject obj in jsonArray.Children<JObject>())
+            {
+                Point point = new Point();
+
+                foreach (JProperty property in obj.Properties())
+                {
+                    SetPointMetadata(property, point);
+                }
+
+                points.Add(point);
+            }
+
+            return points;
+        }
+
+        private void SetPointMetadata(JProperty pointProperty, Point point)
+        {
+            if (pointProperty.Name.Equals("primary_description"))
+                point.PrimaryDescription = pointProperty.Value.ToString();
+            else if (pointProperty.Name.Equals("secondary_description"))
+                point.SecondaryDescription = pointProperty.Value.ToString();
+            else if (pointProperty.Name.Equals("category"))
+                point.Category = new Category(pointProperty.Value.ToString());
+            else if (pointProperty.Name.Equals("x"))
+                point.X = Convert.ToDouble(pointProperty.Value.ToString());
+            else if (pointProperty.Name.Equals("y"))
+                point.Y = Convert.ToDouble(pointProperty.Value.ToString());
+            else if (pointProperty.Name.Equals("alignment"))
+                point.Alignment = Convert.ToByte(pointProperty.Value.ToString());
+            else if (pointProperty.Name.Equals("color"))
+                point.Color = GetColor(pointProperty.Value.ToString());
+            else if (pointProperty.Name.Equals("line_length"))
+                point.LineLength = Convert.ToDouble(pointProperty.Value.ToString());
+            else if (pointProperty.Name.Equals("angle"))
+                point.Angle = Convert.ToDouble(pointProperty.Value.ToString());
+        }
+
+        private Color GetColor(string p)
+        {
+            if (p.Equals("b"))
+                return Colors.Black;
+            else if (p.Equals("y"))
+                return Colors.Yellow;
+            else
+                return Colors.White;
+        }
     }
 }
