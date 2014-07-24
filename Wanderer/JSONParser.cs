@@ -160,6 +160,7 @@ namespace Wanderer
                 String shortDescription = "";
                 Boolean shouldEnd = false;
                 Boolean check = true;
+                Boolean ignoreWhiteSigns = false;
                 int actualIndex = 0;
                 int actualWidth = 0;
 
@@ -170,17 +171,27 @@ namespace Wanderer
 
 
                     Char actualChar = fullDescription.ElementAt(actualIndex);
+
+                    if (!actualChar.Equals(' ') && ignoreWhiteSigns)
+                        ignoreWhiteSigns = false;
+
                     int widthToEndOfNextWord = 0;
                     if (!shouldEnd && fullDescription.ElementAt(actualIndex + 1).Equals(' '))
                     {
                         widthToEndOfNextWord = GetWidthToEndOfNextWord(fullDescription,actualIndex + 1);
                     }
-                    TextBlock block = new TextBlock();
-                    block.Text = actualChar.ToString();
-                    block.FontSize = fontSize;
-                    int widthOfActualChar = (int)block.ActualWidth;
+                    int widthOfActualChar = 0;
+                    if (actualChar.Equals(' ') && ignoreWhiteSigns)
+                        widthOfActualChar = 0;
+                    else
+                    {
 
-                   
+                        TextBlock block = new TextBlock();
+                        block.Text = actualChar.ToString();
+                        block.FontSize = fontSize;
+                        widthOfActualChar = (int)block.ActualWidth;
+
+                    }
 
                     if (actualWidth + widthOfActualChar > maxWidth)
                     {
@@ -197,7 +208,8 @@ namespace Wanderer
                     if (check && widthToEndOfNextWord!=0 && widthToEndOfNextWord + actualWidth > twoLinesWidth / 2)
                     {
                         check = false;
-                        actualWidth = twoLinesWidth / 2;
+                        actualWidth = twoLinesWidth / 2 + 13;
+                        ignoreWhiteSigns = true;
                     }
                 }
 

@@ -14,7 +14,7 @@ namespace Wanderer
     public class DAO
     {
 
-        private const string address = "192.168.0.100";//192.168.1.100";//"192.168.1.100";//"10.20.116.217";// "10.20.120.151";//"10.22.115.27";.
+        private const string address = "192.168.0.104";//192.168.1.100";//"192.168.1.100";//"10.20.116.217";// "10.20.120.151";//"10.22.115.27";.
 
         public static void GetDataFromServer(ListOfPlaces callback, double lon, double lat, int distance)
         {
