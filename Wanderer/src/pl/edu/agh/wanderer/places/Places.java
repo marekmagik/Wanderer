@@ -50,7 +50,7 @@ public class Places {
 
 		System.out.println(" sending description for "+id);
 		PostgresDB dao = new PostgresDB();
-		String myString = dao.getPointsAndUpdateSpecifiedJSONMetadata(Integer.parseInt(id));
+		String myString = dao.getPointsForSpecifiedMetadata(Integer.parseInt(id));
 
 		return myString;
 	}

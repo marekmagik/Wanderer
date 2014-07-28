@@ -13,7 +13,7 @@ import pl.edu.agh.wanderer.util.JSONConverter;
 
 public class PostgresDB extends DBConnection {
 	private final JSONConverter toJsonConverter = new JSONConverter();
-	
+
 	public String getPlaceDesc(int placeId) {
 		PreparedStatement query;
 		Connection conn;
@@ -40,7 +40,7 @@ public class PostgresDB extends DBConnection {
 		PreparedStatement query;
 		Connection conn;
 		List<JSONObject> jsonObjects = new ArrayList<JSONObject>();
-		
+
 		try {
 			conn = getConnection();
 			query = conn
@@ -48,16 +48,16 @@ public class PostgresDB extends DBConnection {
 			query.setInt(1, placeId);
 			ResultSet rs = query.executeQuery();
 
-
 			jsonObjects = toJsonConverter.toJSONObjectsList(rs);
 			conn.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		/*for(JSONObject json : jsonObjects){
-			getPointsAndUpdateSpecifiedJSONMetadata(json);
-		}*/
-		
+		/*
+		 * for(JSONObject json : jsonObjects){
+		 * getPointsAndUpdateSpecifiedJSONMetadata(json); }
+		 */
+
 		return toJsonConverter.convertListOfJSONObjects(jsonObjects);
 
 	}
@@ -112,12 +112,13 @@ public class PostgresDB extends DBConnection {
 
 	public String getPointsWithinRange(String lon, String lat, String range) {
 		Connection connection = getConnection();
-		String result = null;
 		System.out.println("got an query");
 		List<JSONObject> jsonObjects = new ArrayList<JSONObject>();
 		try {
-			PreparedStatement querry = connection
-					.prepareStatement("select metadata_id,longitude,latitude,\"primary_description\", \"secondary_description\", picture_hash , st_distance(metadata.geog,st_geogfromtext(?)) as distance from metadata where st_dwithin(metadata.geog,st_geogfromtext(?),?) order by 7;");
+			PreparedStatement querry = connection			
+					.prepareStatement("select metadata.coverage, metadata.orientation, photos.width, photos.height, metadata.metadata_id, metadata.longitude, metadata.latitude, metadata.primary_description, metadata.secondary_description, metadata.picture_hash, st_distance(metadata.geog,st_geogfromtext(?)) as distance from photos inner join metadata on (photos.metadata_id = metadata.metadata_id) where (st_dwithin(metadata.geog,st_geogfromtext(?),?)) order by 7;" );
+
+			
 			querry.setString(1, "srid=4326;point(" + lon + " " + lat + ")");
 			querry.setString(2, "srid=4326;point(" + lon + " " + lat + ")");
 			querry.setInt(3, Integer.parseInt(range));
@@ -127,31 +128,31 @@ public class PostgresDB extends DBConnection {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		/*for(JSONObject json : jsonObjects){
+		for (JSONObject json : jsonObjects) {
 			getPointsAndUpdateSpecifiedJSONMetadata(json);
-		}*/
-		
+		}
+
 		return toJsonConverter.convertListOfJSONObjects(jsonObjects);
 	}
 
-	public String getPointsAndUpdateSpecifiedJSONMetadata(int metadata_id) {
+	public String getPointsForSpecifiedMetadata(int metadata_id) {
 		Connection connection = getConnection();
 		List<JSONObject> jsonObjects = new ArrayList<JSONObject>();
 		try {
 			ResultSet result = null;
 
 			int metadataID = metadata_id;
-			//int metadataID = json.getInt("metadata_id");
-			//System.out.println("metadataID: " + metadataID);
+			// int metadataID = json.getInt("metadata_id");
+			// System.out.println("metadataID: " + metadataID);
 
 			PreparedStatement querry = connection
 					.prepareStatement("select primary_description, secondary_description, category, x, y, alignment, line_length, angle , color from points where metadata_id = ? ;");
 			querry.setInt(1, metadataID);
 			result = querry.executeQuery();
 			jsonObjects = toJsonConverter.toJSONObjectsList(result);
-			
-			//json.put("points", pointsInJSONArray);
-			
+
+			// json.put("points", pointsInJSONArray);
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
@@ -161,8 +162,37 @@ public class PostgresDB extends DBConnection {
 				e.printStackTrace();
 			}
 		}
-		
+
 		return toJsonConverter.convertListOfJSONObjects(jsonObjects);
+	}
+
+	public void getPointsAndUpdateSpecifiedJSONMetadata(JSONObject json) {
+		Connection connection = getConnection();
+
+		try {
+			ResultSet result = null;
+
+			int metadataID = json.getInt("metadata_id");
+			System.out.println("metadataID: " + metadataID);
+
+			PreparedStatement querry = connection
+					.prepareStatement("select primary_description, secondary_description, category, x, y, alignment, line_length, angle from points where metadata_id = ? ;");
+			querry.setInt(1, metadataID);
+			result = querry.executeQuery();
+			String pointsInJSONArray = toJsonConverter.toJSONArray(result)
+					.toString();
+
+			json.put("points", pointsInJSONArray);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				connection.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 }
