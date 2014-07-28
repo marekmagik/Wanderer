@@ -44,15 +44,6 @@ namespace Wanderer
             List<ImageMetadata> places = new List<ImageMetadata>();
 
             JArray jsonArray = JArray.Parse(json);
-/*
-            //GetSeparatedMetadataInJSONFormatAndHashes(json);
-            foreach (KeyValuePair<string, string> kvp in GetSeparatedMetadataInJSONFormatAndHashes(json))
-            {
-                Debug.WriteLine("Key = {0}, Value = {1}", kvp.Key, kvp.Value);
-            }
-*/
-
-
 
             foreach (JObject obj in jsonArray.Children<JObject>())
             {
@@ -77,9 +68,7 @@ namespace Wanderer
 
         private void SetMetadata(JProperty property, ImageMetadata metadata)
         {
-            if (property.Name.Equals("metadata_id"))
-                metadata.IdInDatabase = Convert.ToInt32(property.Value.ToString());
-            else if (property.Name.Equals("longitude"))
+            if (property.Name.Equals("longitude"))
                 metadata.Longitude = Convert.ToDouble(property.Value.ToString());
             else if (property.Name.Equals("latitude"))
                 metadata.Latitude = Convert.ToDouble(property.Value.ToString());
@@ -105,8 +94,8 @@ namespace Wanderer
             {
                 double x = 0, y = 0, linelength = 0, angle = 0;
                 Category category = null;
-                String primaryDescription = null, secondaryDescription = null;
-                byte alignment = 0, color = 0;
+                String primaryDescription = null, secondaryDescription = null, color = null;
+                byte alignment = 0;
 
                 JArray jsonArray = JArray.Parse(JArray.Parse(property.Value.ToString()).ToString());
 
@@ -127,7 +116,7 @@ namespace Wanderer
                         else if (pointProperty.Name.Equals("alignment"))
                             alignment = Convert.ToByte(pointProperty.Value.ToString());
                         else if (pointProperty.Name.Equals("color"))
-                            color = Convert.ToByte(pointProperty.Value.ToString());
+                            color = pointProperty.Value.ToString();
                         else if (pointProperty.Name.Equals("line_length"))
                             linelength = Convert.ToDouble(pointProperty.Value.ToString());
                         else if (pointProperty.Name.Equals("angle"))
@@ -135,7 +124,7 @@ namespace Wanderer
                     }
                     Point point = new Point(x, y, category, primaryDescription, secondaryDescription);
                     point.Alignment = alignment;
-                    point.Color = convertbyteToColor(color);
+                    point.Color = getColor(color);
                     point.Angle = angle;
                     point.LineLength = linelength;
                     metadata.Points.Add(point);
@@ -264,60 +253,11 @@ namespace Wanderer
             maxWidth = twoLinesWidth - (int)text.ActualWidth;
         }
 
-        private Color convertbyteToColor(byte color)
+        private Color getColor(string color)
         {
-            return Colors.Black;
-        }
-
-
-        internal List<Point> ParsePointMetadataJSON(string json)
-        {
-            List<Point> points = new List<Point>();
-
-            JArray jsonArray = JArray.Parse(json);
-
-            foreach (JObject obj in jsonArray.Children<JObject>())
-            {
-                Point point = new Point();
-
-                foreach (JProperty property in obj.Properties())
-                {
-                    SetPointMetadata(property, point);
-                }
-
-                points.Add(point);
-            }
-
-            return points;
-        }
-
-        private void SetPointMetadata(JProperty pointProperty, Point point)
-        {
-            if (pointProperty.Name.Equals("primary_description"))
-                point.PrimaryDescription = pointProperty.Value.ToString();
-            else if (pointProperty.Name.Equals("secondary_description"))
-                point.SecondaryDescription = pointProperty.Value.ToString();
-            else if (pointProperty.Name.Equals("category"))
-                point.Category = new Category(pointProperty.Value.ToString());
-            else if (pointProperty.Name.Equals("x"))
-                point.X = Convert.ToDouble(pointProperty.Value.ToString());
-            else if (pointProperty.Name.Equals("y"))
-                point.Y = Convert.ToDouble(pointProperty.Value.ToString());
-            else if (pointProperty.Name.Equals("alignment"))
-                point.Alignment = Convert.ToByte(pointProperty.Value.ToString());
-            else if (pointProperty.Name.Equals("color"))
-                point.Color = GetColor(pointProperty.Value.ToString());
-            else if (pointProperty.Name.Equals("line_length"))
-                point.LineLength = Convert.ToDouble(pointProperty.Value.ToString());
-            else if (pointProperty.Name.Equals("angle"))
-                point.Angle = Convert.ToDouble(pointProperty.Value.ToString());
-        }
-
-        private Color GetColor(string p)
-        {
-            if (p.Equals("b"))
+            if (color.Equals("b"))
                 return Colors.Black;
-            else if (p.Equals("y"))
+            else if (color.Equals("y"))
                 return Colors.Yellow;
             else
                 return Colors.White;

@@ -77,13 +77,6 @@ namespace Wanderer
                     JSONParser parser = new JSONParser();
                     allPlaces = parser.ParsePlacesJSON(json);
 
-                    //allPlaces = parser.ParsePhotoMetadataJSON(json);
-/*
-                    foreach(string line in json){
-                    
-                    }
-*/
-
                     if (allPlaces.Count > 0)
                     {
                         actualIndex = 0;
@@ -102,7 +95,7 @@ namespace Wanderer
 
         private void ProcessNextPlace()
         {
-            if (actualIndex != actualNumberOfElementsInList)
+            if (actualIndex < actualNumberOfElementsInList)
             {
                 ImageMetadata place = allPlaces.ElementAt(actualIndex);
                 places.Add(place);
@@ -112,7 +105,7 @@ namespace Wanderer
                 }
                 else
                 {
-                    DAO.LoadImage(this, places.ElementAt(actualIndex).IdInDatabase);
+                    DAO.LoadImage(this, places.ElementAt(actualIndex).PictureSHA256);
                 }
             }
         }
@@ -172,9 +165,9 @@ namespace Wanderer
             GC.WaitForPendingFinalizers();
             FrameworkElement element = (FrameworkElement)sender;
             ImageMetadata image = (ImageMetadata)element.DataContext;
-            Uri uri = new Uri("/PanoramaView.xaml?photoID=" + image.IdInDatabase + "&hash=" + image.PictureSHA256 + "&useLocalDatabase=false", UriKind.Relative);
+            Uri uri = new Uri("/PanoramaView.xaml?&hash=" + image.PictureSHA256 + "&useLocalDatabase=false", UriKind.Relative);
 
-            Debug.WriteLine("photo_id=" + image.IdInDatabase);
+            //Debug.WriteLine("photo_id=" + image.IdInDatabase);
             Debug.WriteLine("HASH: " + image.PictureSHA256);
             //   NavigationService.Navigate(new Uri("/PanoramaView.xaml?photoID=" + places.ElementAt(PlacesListBox.SelectedIndex).IdInDatabase + "&hash="+places.ElementAt(PlacesListBox.SelectedIndex).PictureSHA256+"&useLocalDatabase=false", UriKind.Relative));
             if (NavigationService == null)

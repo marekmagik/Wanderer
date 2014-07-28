@@ -18,7 +18,6 @@ namespace Wanderer
         public String PictureDescription { get; set; }
         public String PictureAdditionalDescription { get; set; }
         public String PictureDescriptionToChange { get; set; }
-        public int IdInDatabase { get; set; }
         public double Longitude { get; set; }
         public double Latitude { get; set; }
         public double Version { get; set; }
@@ -40,67 +39,11 @@ namespace Wanderer
             Categories = new List<Category>();
         }
 
-        public bool addCategory(Category category)
-        {
-            if (Categories.Contains(category))
-            {
-                return false;
-            }
-            else
-            {
-                Categories.Add(category);
-                return true;
-            }
-        }
-
-        public bool addPoint(Point point)
-        {
-            bool canAddPoint = true;
-            foreach (Point p in Points)
-            {
-                if (Math.Abs(p.X - point.X) < 10 && Math.Abs(p.Y - point.Y) < 10)
-                {
-                    canAddPoint = false;
-                }
-            }
-            if (canAddPoint)
-            {
-                Points.Add(point);
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-
-        }
-
-        internal bool removeCategory(Category category)
-        {
-            bool canDelete = true;
-            foreach (Point p in Points)
-            {
-                if (p.Category.Equals(category))
-                {
-                    canDelete = false;
-                }
-            }
-            if (canDelete)
-            {
-                return Categories.Remove(category);
-            }
-            else
-            {
-                return false;
-            }
-        }
-
         public void ToggleDescriptions()
         {
             String temp = PictureAdditionalDescription;
             PictureAdditionalDescription = PictureDescriptionToChange;
             PictureDescriptionToChange = temp;
-
         }
     }
 }

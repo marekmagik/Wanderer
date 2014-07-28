@@ -31,18 +31,18 @@ namespace Wanderer
         }
 
 
-        public static void LoadImage(ListOfPlaces callback, int placeId)
+        public static void LoadImage(ListOfPlaces callback, string pictureSHA256)
         {
-            string uri = "http://" + address + ":7001/Wanderer/api/photos/get/thumbnail/" + placeId;
+            string uri = "http://" + address + ":7001/Wanderer/api/photos/get/thumbnail/" + pictureSHA256;
             HttpWebRequest request =
                 (HttpWebRequest)HttpWebRequest.Create(uri);
             request.BeginGetResponse(callback.ThumbRequestCallback, request);
         }
 
-        public static void GetPhotoById(PanoramaView callback, int id)
+        public static void GetPhotoByHash(PanoramaView callback, string pictureSHA256)
         {
 
-            string uri = "http://" + address + ":7001/Wanderer/api/photos/get/" +id;
+            string uri = "http://" + address + ":7001/Wanderer/api/photos/get/" +pictureSHA256;
 
             HttpWebRequest request =
                 (HttpWebRequest)HttpWebRequest.Create(uri);
@@ -51,6 +51,7 @@ namespace Wanderer
             
         }
 
+        /*
         public static void GetDataFromServer(PanoramaView callback, int placeId)
         {
 
@@ -62,5 +63,6 @@ namespace Wanderer
             request.BeginGetResponse(new AsyncCallback(callback.DescRequestCallback), request);
 
         }
+        */
     }
 }

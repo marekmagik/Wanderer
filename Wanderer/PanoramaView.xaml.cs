@@ -30,7 +30,6 @@ namespace Wanderer
 {
     public partial class PanoramaView : PhoneApplicationPage
     {
-        private readonly List<TextBlock> labels = new List<TextBlock>();
 
         private Compass compass;
         private DispatcherTimer timer;
@@ -61,76 +60,41 @@ namespace Wanderer
         private int screenHeight;
 
         private ImageMetadata metadata;
-        //  private DAO dao;
-        private int photoID;
-
-        private ImageSource imageSource;
 
         public bool UseCompass { get; set; }
-
-        public bool isCached;
-
-        public ImageSource ImageSource
-        {
-            get
-            {
-                return imageSource;
-            }
-            set
-            {
-                imageSource = value;
-            }
-        }
+        public ImageSource ImageSource { get; set; }
 
         public PanoramaView()
         {
             InitializeComponent();
         }
 
-        public void InitializePanoramaLocal(string path)
+        public void InitializePanorama(string hash)
         {
-            Debug.WriteLine("InitializePanoramaLocal");
-            Debug.WriteLine("memory1: " + GC.GetTotalMemory(true));
-
-            PanoramaImageLeft.DataContext = null;
-            PanoramaImageRight.DataContext = null;
-            imageSource = null;
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            Debug.WriteLine("memory2: " + GC.GetTotalMemory(true));
-
+            collectPreviousImage();
             MaxSizeReachedMessage.Visibility = Visibility.Collapsed;
             LoadingAnimation.Visibility = Visibility.Visible;
-
-            //LoadImage("/PołoninaWetlińska.jpg", 800, 480, true);
-            //LoadImage("/foto4.jpg", 800, 480, true, 80);
-            LoadImage(path, 800, 480, true, 70);
-
+            
+            if (IsolatedStorageDAO.IsPhotoCached(hash))
+            {
+                LoadImage("/photos/" + hash + ".jpg", 800, 480);
+            }
+            else
+            {
+                LoadImageFromServer(800, 480);
+            }
         }
 
-        public void InitializePanoramaRemote()
-        {
-            Debug.WriteLine("memory1: " + GC.GetTotalMemory(true));
+        private void collectPreviousImage() {
             PanoramaImageLeft.DataContext = null;
             PanoramaImageRight.DataContext = null;
-            imageSource = null;
+            ImageSource = null;
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
-            GC.WaitForPendingFinalizers();
-            Debug.WriteLine("memory2: " + GC.GetTotalMemory(true));
-            MaxSizeReachedMessage.Visibility = Visibility.Collapsed;
-            LoadingAnimation.Visibility = Visibility.Visible;
-
-            //LoadImage("/PołoninaWetlińska.jpg", 800, 480, true);
-            //LoadImage("/foto4.jpg", 800, 480, true, 80);
-            //LoadImage("/Panorama_z_Barańca_a2.jpg", 800, 480, true, 70);
-            //dao = new DAO();
-            LoadImageFromServer(800, 480, true, 100);
-            //LoadImage("/foto4.jpg");         
+            GC.WaitForPendingFinalizers();     
         }
+
 
         private void setPixelsPerDegree()
         {
@@ -159,7 +123,7 @@ namespace Wanderer
 
             PanoramaImageLeft.DataContext = null;
             PanoramaImageRight.DataContext = null;
-            imageSource = null;
+            ImageSource = null;
 
             LoadingAnimation.Visibility = Visibility.Visible;
             base.OnNavigatingFrom(e);
@@ -212,7 +176,7 @@ namespace Wanderer
                         PanoramaTransformRight.TranslateX = newShift + (width * currentScale);
 
                         updateImagesBounds();
-                        
+
                         convertedHeading = newConvertedHeading;
                     }
                 }
@@ -284,9 +248,8 @@ namespace Wanderer
             isCalibrationInProgress = false;
 
             compass = new Compass();
-            //compass.Start();
+
             compass.TimeBetweenUpdates = TimeSpan.FromMilliseconds(100);
-            //            Debug.WriteLine(compass.TimeBetweenUpdates.TotalMilliseconds + " ms");
             compass.CurrentValueChanged +=
                 new EventHandler<SensorReadingEventArgs<CompassReading>>(compassCurrentValueChanged);
             compass.Calibrate +=
@@ -298,71 +261,50 @@ namespace Wanderer
 
         protected override void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
         {
-
-            Debug.WriteLine("On navigated TO");
+            base.OnNavigatedTo(e);
 
             timer = new DispatcherTimer();
             timer.Interval = TimeSpan.FromMilliseconds(100);
             timer.Tick += new EventHandler(timerTick);
             UseCompass = false;
             timer.Start();
-            //compass.Start();
 
-
-            base.OnNavigatedTo(e);
-
-            //bool getFromLocalDatabase = Convert.ToBoolean(NavigationContext.QueryString["useLocalDatabase"]);
             string hash = NavigationContext.QueryString["hash"];
 
             JSONParser parser = new JSONParser();
             metadata = IsolatedStorageDAO.getCachedMetadata(hash);
 
-            photoID = Convert.ToInt32(NavigationContext.QueryString["photoID"]);
-            isCached=IsolatedStorageDAO.IsPhotoCached(hash);
-            if (isCached)
-            {
-                InitializePanoramaLocal("/photos/" + hash + ".jpg");
-            }
-            else
-            {
-                InitializePanoramaRemote();
-            }
+            InitializePanorama(hash);
         }
 
-        private void LoadImageFromServer(int screenResolutionWidth, int screenResolutionHeight, bool isImageFullyPanoramic, int panoramaPercentage)
+        private void LoadImageFromServer(int screenResolutionWidth, int screenResolutionHeight)
         {
             MaxSizeReachedMessage.Visibility = Visibility.Collapsed;
             screenWidth = screenResolutionWidth;
             screenHeight = screenResolutionHeight;
-            //DAO.GetPhotoDescById(this, photoID);
-            DAO.GetPhotoById(this, photoID);
+            DAO.GetPhotoByHash(this, metadata.PictureSHA256);
         }
 
-        private async void LoadImage(string filename, int screenResolutionWidth, int screenResolutionHeight, bool isImageFullyPanoramic, int panoramaPercentage)
+        private async void LoadImage(string filename, int screenResolutionWidth, int screenResolutionHeight)
         {
             MaxSizeReachedMessage.Visibility = Visibility.Collapsed;
             screenWidth = screenResolutionWidth;
             screenHeight = screenResolutionHeight;
 
-            //metadata = new ImageMetadata();
-            //metadata.Points = new List<Point>();
-            //mock_generatePoints();
-
-
+            try
+            {
+                SetImageResolution();
+            }
+            catch (PossibleMemoryAccessViolationException)
+            {
+                Debug.WriteLine("Żądanie zostało odrzucone ze względu na rozmiar panoramy.");
+                MaxSizeReachedMessage.Visibility = Visibility.Visible;
+                LoadingAnimation.Visibility = Visibility.Collapsed;
+                return;
+            }
+            
             using (var stream = await LoadImageAsync(filename))
             {
-                try
-                {
-                    SetImageResolution(filename, panoramaPercentage);
-                }
-                catch (PossibleMemoryAccessViolationException)
-                {
-                    Debug.WriteLine("Żądanie zostało odrzucone ze względu na rozmiar panoramy.");
-                    MaxSizeReachedMessage.Visibility = Visibility.Visible;
-                    LoadingAnimation.Visibility = Visibility.Collapsed;
-                    return;
-                }
-
                 WriteableBitmap bitmapImage = new WriteableBitmap(width, height);
 
                 bitmapImage.LoadJpeg(stream);
@@ -379,62 +321,38 @@ namespace Wanderer
                 PanoramaImageRight.Width = width * currentScale;
                 PanoramaImageRight.Height = height * currentScale;
 
-                LoadingAnimation.Visibility = Visibility.Collapsed;
-
                 setPixelsPerDegree();
 
                 generateUIElementsForPoints(metadata.Points);
 
-                //startCompass();
-
-                Debug.WriteLine("Size: " + bitmapImage.PixelWidth + " x " + bitmapImage.PixelHeight);
+                LoadingAnimation.Visibility = Visibility.Collapsed;
             }
 
         }
 
         /* Metoda obliczająca atrybuty width i height, jakie musi przyjąć kostruktor klasy WriteableBitmap.
          * Jest to konieczne, do ustawienia odpowiedniego dopełnienia (gdy panorama nie jest dookolna).
-         * Nie można tego zadania zrealizować za pomocą przepisania WritableBitmap do WritableBitmap, ponieważ 
-         * dwa obiekty tej klasy, nie mogą jednocześnie egzystować w pamięci (zajmują dużo miejsca -> możliwy OutOfMemoryException).
-         * 
+         *
          * @throws PossibleMemoryAccessViolationException - jeśli stworzenie zdjęcia w danym rozmiarze, może naruszyć pamięć.
          *          Wartość 34.500.000 została przetestowana i jest bezpieczna, każda powyżej jest ryzykowna i należy zakończyć operację.
          *
-         * NOTE: plik JPG musi zostać zdekodowany, wielkość nie jest w nim przechowywana excplicite.
+         * NOTE: wartości pobierane są z metadanych, wielkość nie jest przechowywana w pliku JPG excplicite.
          */
-        private void SetImageResolution(string filename, int panoramaPercentage)
+        private void SetImageResolution()
         {
-            using (IsolatedStorageFile isoStore = IsolatedStorageFile.GetUserStoreForApplication())
+            width = metadata.Width;
+            height = metadata.Height;
+
+            if (metadata.CoverageInPercent < 100)
             {
-                if (isoStore.FileExists(filename))
-                {
-                    using (var stream = isoStore.OpenFile(filename, System.IO.FileMode.Open, FileAccess.Read))
-                    {
-                        WriteableBitmap bitmapImage = PictureDecoder.DecodeJpeg(stream);
-
-                        width = bitmapImage.PixelWidth;
-                        height = bitmapImage.PixelHeight;
-
-                        if (panoramaPercentage < 100)
-                        {
-                            width += (width * (100 - panoramaPercentage) / panoramaPercentage);
-                        }
-
-                        /* Rzuć wyjątek, jeśli wyświetlenie zdjęcia może skutkować zamknięciem aplikacji. */
-                        if (width * height > 34500000)
-                        {
-                            throw new PossibleMemoryAccessViolationException();
-                        }
-
-                        /* Usuń z pamięci obiekt WriteableBitmap, aby móc utworzyć kolejny w metodzie wywołującej tą metodę. */
-                        bitmapImage = null;
-                        GC.Collect();
-                        GC.WaitForPendingFinalizers();
-                    }
-                }
+                width += (int)(width * (100 - metadata.CoverageInPercent) / metadata.CoverageInPercent);
             }
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
+
+            /* Rzuć wyjątek, jeśli wyświetlenie zdjęcia może skutkować zamknięciem aplikacji. */
+            if (width * height > 34500000)
+            {
+                throw new PossibleMemoryAccessViolationException();
+            }
         }
 
         private Task<Stream> LoadImageAsync(string filename)
@@ -701,7 +619,6 @@ namespace Wanderer
 
         private double computeRelativeX(double realX)
         {
-
             CompositeTransform translateTransform = PanoramaImageRight.RenderTransform as CompositeTransform;
             return translateTransform.TranslateX + realX * currentScale;
         }
@@ -715,13 +632,11 @@ namespace Wanderer
 
         private void updateDescriptionCanvasProperties(Point point)
         {
-            /* test */
             point.LeftPrimaryDescriptionTextBlock.FontSize = Configuration.PrimaryDescriptionFontSize;// *currentScale;
             point.LeftSecondaryDescriptionTextBlock.FontSize = Configuration.SecondaryDescriptionFontSize;// *currentScale;
             point.RightPrimaryDescriptionTextBlock.FontSize = Configuration.PrimaryDescriptionFontSize;// *currentScale;
             point.RightSecondaryDescriptionTextBlock.FontSize = Configuration.SecondaryDescriptionFontSize;// *currentScale;
 
-            /* test */
             point.RightPanoramaLine.X1 = computeRelativeX(point.X);
             point.RightPanoramaLine.X2 = point.RightPanoramaLine.X1;
 
@@ -781,60 +696,6 @@ namespace Wanderer
         }
 
         #region DAOCallbacksMethods
-
-        public void DescRequestCallback(IAsyncResult result)
-        {
-            HttpWebRequest request = result.AsyncState as HttpWebRequest;
-            if (request != null)
-            {
-                try
-                {
-                    WebResponse response = request.EndGetResponse(result);
-                    Stream stream = response.GetResponseStream();
-                    StreamReader streamReader = new StreamReader(stream);
-                    string json = streamReader.ReadToEnd();
-                    JSONParser parser = new JSONParser();
-                    //metadata = parser.ParsePhotoMetadataJSON(json);
-                   //metadata = parser.ParsePlacesJSON(json).ElementAt(0);
-
-
-                    width = metadata.Width;
-                    height = metadata.Height;
-
-                    if (metadata.CoverageInPercent < 100)
-                    {
-                        width += (int)(width * (100 - metadata.CoverageInPercent) / metadata.CoverageInPercent);
-                    }
-
-                    /* Rzuć wyjątek, jeśli wyświetlenie zdjęcia może skutkować zamknięciem aplikacji. */
-                    if (width * height > 34500000)
-                    {
-                        throw new PossibleMemoryAccessViolationException();
-                    }
-
-                    //mock_generatePoints();
-                    generateUIElementsForPoints(metadata.Points);
-
-                    Debug.WriteLine("getPhotoById");
-                    DAO.GetPhotoById(this, photoID);
-
-                }
-                catch (WebException)
-                {
-                    Deployment.Current.Dispatcher.BeginInvoke(delegate
-                    {
-                        LoadingAnimation.Visibility = Visibility.Collapsed;
-                        ConnectionErrorMessage.Visibility = Visibility.Visible;
-                    });
-                }
-                catch (PossibleMemoryAccessViolationException)
-                {
-                    LoadingAnimation.Visibility = Visibility.Collapsed;
-                    MaxSizeReachedMessage.Visibility = Visibility.Visible;
-                }
-            }
-        }
-
 
         private void generateUIElementsForPoints(List<Point> points)
         {
@@ -943,7 +804,8 @@ namespace Wanderer
 
                     index++;
                     Debug.WriteLine(index + " : " + points.Count);
-                    if (index == points.Count) {
+                    if (index == points.Count)
+                    {
                         startCompass();
                         updateImagesBounds();
                     }
@@ -961,36 +823,14 @@ namespace Wanderer
                 {
                     try
                     {
-                        
-                        width = metadata.Width;
-                        height = metadata.Height;
+                        SetImageResolution();
 
-                        if (metadata.CoverageInPercent < 100)
-                        {
-                            width += (int)(width * (100 - metadata.CoverageInPercent) / metadata.CoverageInPercent);
-                        }
-
-                    /* Rzuć wyjątek, jeśli wyświetlenie zdjęcia może skutkować zamknięciem aplikacji. */
-                    if (width * height > 34500000)
-                    {
-                        throw new PossibleMemoryAccessViolationException();
-                    }
-
-                    //mock_generatePoints();
-
-                    Debug.WriteLine("getPhotoById");
-                //    DAO.GetPhotoById(this, photoID);
-
-                
-
-
-
+                        setPixelsPerDegree();
 
                         WebResponse response = request.EndGetResponse(result);
                         Stream stream = response.GetResponseStream();
                         IsolatedStorageDAO.CachePhoto(stream, width, height, metadata);
                         WriteableBitmap bitmapImage = new WriteableBitmap(width, height);
-                        Debug.WriteLine(width + " x " + height);
                         bitmapImage.LoadJpeg(stream);
 
                         ImageSource = bitmapImage;
@@ -1005,18 +845,12 @@ namespace Wanderer
                         PanoramaImageRight.Width = width * currentScale;
                         PanoramaImageRight.Height = height * currentScale;
 
-                        LoadingAnimation.Visibility = Visibility.Collapsed;
-
                         Debug.WriteLine("Size: " + bitmapImage.PixelWidth + " x " + bitmapImage.PixelHeight);
                         ReloadContent();
 
-                        setPixelsPerDegree();
-                       // startCompass();
+                        generateUIElementsForPoints(metadata.Points);
 
-                         generateUIElementsForPoints(metadata.Points);
-
-                         //startCompass();
-
+                        LoadingAnimation.Visibility = Visibility.Collapsed;
                     }
                     catch (WebException)
                     {
@@ -1036,14 +870,14 @@ namespace Wanderer
         #endregion
 
 
-        public void ReloadContent()
+        private void ReloadContent()
         {
             Deployment.Current.Dispatcher.BeginInvoke(delegate
             {
                 PanoramaImageLeft.Source = null;
-                PanoramaImageLeft.Source = imageSource;
+                PanoramaImageLeft.Source = ImageSource;
                 PanoramaImageRight.Source = null;
-                PanoramaImageRight.Source = imageSource;
+                PanoramaImageRight.Source = ImageSource;
             });
         }
 

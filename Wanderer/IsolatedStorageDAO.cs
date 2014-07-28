@@ -163,7 +163,6 @@ namespace Wanderer
 
             Debug.WriteLine(" starting creating cache " + hash);
 
-
             using (IsolatedStorageFile storage = IsolatedStorageFile.GetUserStoreForApplication())
             {
                 IsolatedStorageFileStream fileStream = storage.CreateFile("/photos/" + hash + ".jpg");

@@ -8,27 +8,16 @@ namespace Wanderer
 {
     public class Category
     {
-        private String name;
-
-        public String Name
-        {
-            get
-            {
-                return name;
-            }
-            set {
-                name = value;
-            }
-        }
+        public String Name { get; set; }
 
         public Category(String name)
         {
-            this.name = name;
+            Name = name;
         }
 
         public override String ToString()
         {
-            return name;
+            return Name;
         }
 
         public override bool Equals(object obj)
@@ -39,7 +28,7 @@ namespace Wanderer
             }
             else
             {
-                if (((Category)obj).ToString().Trim().ToUpper().Equals(name.Trim().ToUpper()))
+                if (((Category)obj).ToString().Trim().ToUpper().Equals(Name.Trim().ToUpper()))
                 {
                     return true;
                 }
@@ -53,7 +42,7 @@ namespace Wanderer
         public override int GetHashCode()
         {
             int hash = 13;
-            hash = (hash * 7) + name.GetHashCode();
+            hash = (hash * 7) + Name.GetHashCode();
             return hash;
         }
 

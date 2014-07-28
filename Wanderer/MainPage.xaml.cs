@@ -15,8 +15,7 @@ namespace Wanderer
     public partial class MainPage : PhoneApplicationPage
     {
         //private static GPSTracker gpsTracker = new GPSTracker();
-        
-        // Constructor
+
         public MainPage()
         {
             InitializeComponent();
@@ -26,10 +25,8 @@ namespace Wanderer
 
             ListOfPlacesPanoraaItem.Content = (new ListOfPlaces(this));
             IsolatedStorageDAO.InitIsolatedStorageDAO();
-            // Sample code to localize the ApplicationBar
-            //BuildLocalizedApplicationBar();
         }
-        
+
 
         private void showPanoramaViewPage(Object sender, RoutedEventArgs e)
         {
@@ -38,7 +35,7 @@ namespace Wanderer
              */
             GC.Collect();
             GC.WaitForPendingFinalizers();
-            NavigationService.Navigate(new Uri("/PanoramaView.xaml?photoID=1&useLocalDatabase=true", UriKind.Relative));  
+            NavigationService.Navigate(new Uri("/PanoramaView.xaml?photoID=1&useLocalDatabase=true", UriKind.Relative));
         }
 
         private void showListOfPlaces(Object sender, RoutedEventArgs e)
@@ -51,15 +48,7 @@ namespace Wanderer
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
-            Debug.WriteLine("on navigated main");
-
-       //     Deployment.Current.Dispatcher.BeginInvoke(delegate
-       //     {
-                ((ListOfPlaces)ListOfPlacesPanoraaItem.Content).ReloadContent();
-             //   UpdateLayout();
-
-
-      //      });
+            ((ListOfPlaces)ListOfPlacesPanoraaItem.Content).ReloadContent();
             base.OnNavigatedTo(e);
         }
     }
