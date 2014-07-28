@@ -21,15 +21,43 @@ namespace Wanderer
         private int twoLinesWidth = 750;
         private int actualLine = 0;
 
+        public Dictionary<String, String> GetSeparatedMetadataInJSONFormatAndHashes(string json) {
+            Dictionary<String, String> placesInJSON = new Dictionary<String, String>();
+            JArray jsonArray = JArray.Parse(json);
+
+            foreach (JObject obj in jsonArray.Children<JObject>())
+            {
+                string hash = null;
+                foreach (JProperty property in obj.Properties())
+                {
+                    if (property.Name.Equals("picture_hash"))
+                        hash = property.Value.ToString();
+                }
+                placesInJSON.Add(obj.ToString(), hash);
+            }
+            return placesInJSON;
+        }
+
+
         public List<ImageMetadata> ParsePlacesJSON(string json)
         {
             List<ImageMetadata> places = new List<ImageMetadata>();
 
             JArray jsonArray = JArray.Parse(json);
+/*
+            //GetSeparatedMetadataInJSONFormatAndHashes(json);
+            foreach (KeyValuePair<string, string> kvp in GetSeparatedMetadataInJSONFormatAndHashes(json))
+            {
+                Debug.WriteLine("Key = {0}, Value = {1}", kvp.Key, kvp.Value);
+            }
+*/
+
+
 
             foreach (JObject obj in jsonArray.Children<JObject>())
             {
                 ImageMetadata place = new ImageMetadata();
+
 
                 foreach (JProperty property in obj.Properties())
                 {
@@ -42,41 +70,9 @@ namespace Wanderer
             return places;
         }
 
-        /*
-                private void SetProperty(JProperty property, Place place)
-                {
-                    if (property.Name.Equals("place_id"))
-                        place.PlaceId = Convert.ToInt32(property.Value.ToString());
-                    else if (property.Name.Equals("lon"))
-                        place.Lon = Convert.ToDouble(property.Value.ToString());
-                    else if (property.Name.Equals("lat"))
-                        place.Lat = Convert.ToDouble(property.Value.ToString());
-                    else if (property.Name.Equals("desc"))
-                        place.Desc = property.Value.ToString();
-                    else if (property.Name.Equals("distance"))
-                        place.Distance = Convert.ToDouble(property.Value.ToString());
-                    place.Distance /= 1000;
-                    place.Distance = Math.Round(place.Distance, 2);
-                }
-        */
         public ImageMetadata ParsePhotoMetadataJSON(string json)
         {
-            ImageMetadata metadata = new ImageMetadata();
-
-            Debug.WriteLine(json);
-
-            JArray jsonArray = JArray.Parse(json);
-
-            foreach (JObject obj in jsonArray.Children<JObject>())
-            {
-
-                foreach (JProperty property in obj.Properties())
-                {
-                    SetMetadata(property, metadata);
-                }
-            }
-
-            return metadata;
+            return ParsePlacesJSON(json).ElementAt(0);
         }
 
         private void SetMetadata(JProperty property, ImageMetadata metadata)
@@ -144,10 +140,7 @@ namespace Wanderer
                     point.LineLength = linelength;
                     metadata.Points.Add(point);
                 }
-
-
             }
-
         }
 
         private void ProcessSecondaryDescripion(ImageMetadata metadata, String fullDescription)

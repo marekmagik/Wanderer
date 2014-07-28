@@ -165,6 +165,7 @@
     </Content>
     <None Include="Resources\Compass_calibration8.png" />
     <Content Include="Images\CompassCalibration.png" />
+    <Content Include="Images\PanoramaCached.png" />
     <Content Include="Toolkit.Content\ApplicationBar.Add.png" />
     <Content Include="Toolkit.Content\ApplicationBar.Cancel.png" />
     <Content Include="Toolkit.Content\ApplicationBar.Check.png" />

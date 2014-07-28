@@ -90,11 +90,16 @@ namespace Wanderer
         public void InitializePanoramaLocal(string path)
         {
             Debug.WriteLine("InitializePanoramaLocal");
+            Debug.WriteLine("memory1: " + GC.GetTotalMemory(true));
+
             PanoramaImageLeft.DataContext = null;
             PanoramaImageRight.DataContext = null;
             imageSource = null;
             GC.Collect();
             GC.WaitForPendingFinalizers();
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            Debug.WriteLine("memory2: " + GC.GetTotalMemory(true));
 
             MaxSizeReachedMessage.Visibility = Visibility.Collapsed;
             LoadingAnimation.Visibility = Visibility.Visible;
@@ -107,12 +112,15 @@ namespace Wanderer
 
         public void InitializePanoramaRemote()
         {
+            Debug.WriteLine("memory1: " + GC.GetTotalMemory(true));
             PanoramaImageLeft.DataContext = null;
             PanoramaImageRight.DataContext = null;
             imageSource = null;
             GC.Collect();
             GC.WaitForPendingFinalizers();
-
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            Debug.WriteLine("memory2: " + GC.GetTotalMemory(true));
             MaxSizeReachedMessage.Visibility = Visibility.Collapsed;
             LoadingAnimation.Visibility = Visibility.Visible;
 
@@ -148,6 +156,11 @@ namespace Wanderer
                 LayoutRoot.Children.Remove(p.RightCanvas);
                 LayoutRoot.Children.Remove(p.RightPanoramaLine);
             }
+
+            PanoramaImageLeft.DataContext = null;
+            PanoramaImageRight.DataContext = null;
+            imageSource = null;
+
             LoadingAnimation.Visibility = Visibility.Visible;
             base.OnNavigatingFrom(e);
         }
@@ -271,7 +284,7 @@ namespace Wanderer
             isCalibrationInProgress = false;
 
             compass = new Compass();
-            compass.Start();
+            //compass.Start();
             compass.TimeBetweenUpdates = TimeSpan.FromMilliseconds(100);
             //            Debug.WriteLine(compass.TimeBetweenUpdates.TotalMilliseconds + " ms");
             compass.CurrentValueChanged +=
@@ -296,11 +309,14 @@ namespace Wanderer
             //compass.Start();
 
 
-
             base.OnNavigatedTo(e);
 
             //bool getFromLocalDatabase = Convert.ToBoolean(NavigationContext.QueryString["useLocalDatabase"]);
             string hash = NavigationContext.QueryString["hash"];
+
+            JSONParser parser = new JSONParser();
+            metadata = IsolatedStorageDAO.getCachedMetadata(hash);
+
             photoID = Convert.ToInt32(NavigationContext.QueryString["photoID"]);
             isCached=IsolatedStorageDAO.IsPhotoCached(hash);
             if (isCached)
@@ -318,7 +334,8 @@ namespace Wanderer
             MaxSizeReachedMessage.Visibility = Visibility.Collapsed;
             screenWidth = screenResolutionWidth;
             screenHeight = screenResolutionHeight;
-            DAO.GetPhotoDescById(this, photoID);
+            //DAO.GetPhotoDescById(this, photoID);
+            DAO.GetPhotoById(this, photoID);
         }
 
         private async void LoadImage(string filename, int screenResolutionWidth, int screenResolutionHeight, bool isImageFullyPanoramic, int panoramaPercentage)
@@ -327,9 +344,9 @@ namespace Wanderer
             screenWidth = screenResolutionWidth;
             screenHeight = screenResolutionHeight;
 
-            metadata = new ImageMetadata();
-            metadata.Points = new List<Point>();
-            mock_generatePoints();
+            //metadata = new ImageMetadata();
+            //metadata.Points = new List<Point>();
+            //mock_generatePoints();
 
 
             using (var stream = await LoadImageAsync(filename))
@@ -365,6 +382,9 @@ namespace Wanderer
                 LoadingAnimation.Visibility = Visibility.Collapsed;
 
                 setPixelsPerDegree();
+
+                generateUIElementsForPoints(metadata.Points);
+
                 //startCompass();
 
                 Debug.WriteLine("Size: " + bitmapImage.PixelWidth + " x " + bitmapImage.PixelHeight);
@@ -695,12 +715,11 @@ namespace Wanderer
 
         private void updateDescriptionCanvasProperties(Point point)
         {
-            //System.Threading.Thread.Sleep(1);
             /* test */
-            point.LeftPrimaryDescriptionTextBlock.FontSize = Configuration.PrimaryDescriptionFontSize * currentScale;
-            point.LeftSecondaryDescriptionTextBlock.FontSize = Configuration.SecondaryDescriptionFontSize * currentScale;
-            point.RightPrimaryDescriptionTextBlock.FontSize = Configuration.PrimaryDescriptionFontSize * currentScale;
-            point.RightSecondaryDescriptionTextBlock.FontSize = Configuration.SecondaryDescriptionFontSize * currentScale;
+            point.LeftPrimaryDescriptionTextBlock.FontSize = Configuration.PrimaryDescriptionFontSize;// *currentScale;
+            point.LeftSecondaryDescriptionTextBlock.FontSize = Configuration.SecondaryDescriptionFontSize;// *currentScale;
+            point.RightPrimaryDescriptionTextBlock.FontSize = Configuration.PrimaryDescriptionFontSize;// *currentScale;
+            point.RightSecondaryDescriptionTextBlock.FontSize = Configuration.SecondaryDescriptionFontSize;// *currentScale;
 
             /* test */
             point.RightPanoramaLine.X1 = computeRelativeX(point.X);
@@ -775,7 +794,9 @@ namespace Wanderer
                     StreamReader streamReader = new StreamReader(stream);
                     string json = streamReader.ReadToEnd();
                     JSONParser parser = new JSONParser();
-                    metadata = parser.ParsePhotoMetadataJSON(json);
+                    //metadata = parser.ParsePhotoMetadataJSON(json);
+                   //metadata = parser.ParsePlacesJSON(json).ElementAt(0);
+
 
                     width = metadata.Width;
                     height = metadata.Height;
@@ -791,7 +812,8 @@ namespace Wanderer
                         throw new PossibleMemoryAccessViolationException();
                     }
 
-                    mock_generatePoints();
+                    //mock_generatePoints();
+                    generateUIElementsForPoints(metadata.Points);
 
                     Debug.WriteLine("getPhotoById");
                     DAO.GetPhotoById(this, photoID);
@@ -813,63 +835,10 @@ namespace Wanderer
             }
         }
 
-        public void PointsRequestCallback(IAsyncResult result)
-        {
-            HttpWebRequest request = result.AsyncState as HttpWebRequest;
-            if (request != null)
-            {
-
-                WebResponse response = request.EndGetResponse(result);
-                Stream stream = response.GetResponseStream();
-                StreamReader streamReader = new StreamReader(stream);
-                string json = streamReader.ReadToEnd();
-                JSONParser parser = new JSONParser();
-                List<Point> points = parser.ParsePointMetadataJSON(json);
-                metadata.Points = points;
-                generateUIElementsForPoints(metadata.Points);
-
-
-            }
-                    
-        }
-
-        private void mock_generatePoints()
-        {
-
-            DAO.GetPointsServer(this, photoID);
-
-            /*Debug.WriteLine("Colors"+Colors.White+  " "+Colors.Black+" "+Colors.Yellow );
-
-            Point point1 = new Point(961.0, 420.0, null, "Zamek", "Baszta stracenców");
-            point1.Alignment = 0;
-            point1.LineLength = 122.0;
-            point1.Angle = -45.0;
-            point1.Color = Colors.Black;
-
-            Point point2 = new Point(1314.0, 622.0, null, "Nabrzeże portowe", "");
-            point2.Alignment = 1;
-            point2.LineLength = 339.2;
-            point2.Angle = 0;
-            point2.Color = Colors.Yellow;
-
-            Point point3 = new Point(1292.0, 430.7, null, "Zadar", "Wybrzeże zachodnie");
-            point3.Alignment = 2;
-            point3.LineLength = 59.3;
-            point3.Angle = 0;
-            point3.Color = Colors.White;
-
-            metadata.Points.Add(point1);
-            metadata.Points.Add(point2);
-            metadata.Points.Add(point3);*/
-
-
-            //generateUIElementsForPoints(metadata.Points);
-
-        }
-
 
         private void generateUIElementsForPoints(List<Point> points)
         {
+            int index = 0;
             foreach (Point point in points)
             {
                 Deployment.Current.Dispatcher.BeginInvoke(delegate
@@ -971,8 +940,14 @@ namespace Wanderer
                     LayoutRoot.Children.Add(point.RightCanvas);
                     LayoutRoot.Children.Add(point.LeftPanoramaLine);
                     LayoutRoot.Children.Add(point.RightPanoramaLine);
-                });
 
+                    index++;
+                    Debug.WriteLine(index + " : " + points.Count);
+                    if (index == points.Count) {
+                        startCompass();
+                        updateImagesBounds();
+                    }
+                });
             }
         }
 
@@ -986,12 +961,34 @@ namespace Wanderer
                 {
                     try
                     {
+                        
+                        width = metadata.Width;
+                        height = metadata.Height;
+
+                        if (metadata.CoverageInPercent < 100)
+                        {
+                            width += (int)(width * (100 - metadata.CoverageInPercent) / metadata.CoverageInPercent);
+                        }
+
+                    /* Rzuć wyjątek, jeśli wyświetlenie zdjęcia może skutkować zamknięciem aplikacji. */
+                    if (width * height > 34500000)
+                    {
+                        throw new PossibleMemoryAccessViolationException();
+                    }
+
+                    //mock_generatePoints();
+
+                    Debug.WriteLine("getPhotoById");
+                //    DAO.GetPhotoById(this, photoID);
+
+                
+
+
+
 
                         WebResponse response = request.EndGetResponse(result);
                         Stream stream = response.GetResponseStream();
-
-                        IsolatedStorageDAO.CachePhoto(stream, width, height);
-
+                        IsolatedStorageDAO.CachePhoto(stream, width, height, metadata);
                         WriteableBitmap bitmapImage = new WriteableBitmap(width, height);
                         Debug.WriteLine(width + " x " + height);
                         bitmapImage.LoadJpeg(stream);
@@ -1014,14 +1011,23 @@ namespace Wanderer
                         ReloadContent();
 
                         setPixelsPerDegree();
-                        //startCompass();
+                       // startCompass();
+
+                         generateUIElementsForPoints(metadata.Points);
+
+                         //startCompass();
+
                     }
                     catch (WebException)
                     {
                         LoadingAnimation.Visibility = Visibility.Collapsed;
                         ConnectionErrorMessage.Visibility = Visibility.Visible;
                     }
-
+                    catch (PossibleMemoryAccessViolationException)
+                    {
+                        LoadingAnimation.Visibility = Visibility.Collapsed;
+                        MaxSizeReachedMessage.Visibility = Visibility.Visible;
+                    }
                 });
 
             }

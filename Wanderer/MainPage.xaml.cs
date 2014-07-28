@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Windows;
@@ -48,5 +49,18 @@ namespace Wanderer
         }
 
 
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            Debug.WriteLine("on navigated main");
+
+       //     Deployment.Current.Dispatcher.BeginInvoke(delegate
+       //     {
+                ((ListOfPlaces)ListOfPlacesPanoraaItem.Content).ReloadContent();
+             //   UpdateLayout();
+
+
+      //      });
+            base.OnNavigatedTo(e);
+        }
     }
 }

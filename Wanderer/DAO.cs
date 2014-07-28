@@ -14,7 +14,7 @@ namespace Wanderer
     public class DAO
     {
 
-        private const string address = "192.168.0.104";//192.168.1.100";//"192.168.1.100";//"10.20.116.217";// "10.20.120.151";//"10.22.115.27";.
+        private const string address = "192.168.1.102";
 
         public static void GetDataFromServer(ListOfPlaces callback, double lon, double lat, int distance)
         {
@@ -51,19 +51,6 @@ namespace Wanderer
             
         }
 
-        public static void GetPhotoDescById(PanoramaView callback, int id)
-        {
-
-            Debug.WriteLine("getPhotoDesc  DAO");
-            string uri = "http://" + address + ":7001/Wanderer/api/photos/get/meta/" +id;
-
-            HttpWebRequest request =
-                (HttpWebRequest)HttpWebRequest.Create(uri);
-            request.Method = "GET";
-            request.BeginGetResponse(new AsyncCallback(callback.DescRequestCallback), request);
-
-        }
-
         public static void GetDataFromServer(PanoramaView callback, int placeId)
         {
 
@@ -75,18 +62,5 @@ namespace Wanderer
             request.BeginGetResponse(new AsyncCallback(callback.DescRequestCallback), request);
 
         }
-
-        public static void GetPointsServer(PanoramaView callback, int placeId)
-        {
-
-            string uri = "http://" + address + ":7001/Wanderer/api/places/get/point/" + placeId;
-
-            HttpWebRequest request =
-                (HttpWebRequest)HttpWebRequest.Create(uri);
-            request.Method = "GET";
-            request.BeginGetResponse(callback.PointsRequestCallback, request);
-
-        }
-
     }
 }

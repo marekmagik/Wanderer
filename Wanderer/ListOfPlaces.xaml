@@ -28,7 +28,7 @@
 
         <!--ContentPanel - place additional content here-->
         <Grid x:Name="ContentPanel" Grid.Row="1" Margin="12,0,12,0">
-            <ListBox ItemsSource="{Binding}" Height="600" Name="PlacesListBox" Width="440">
+            <ListBox ItemsSource="{Binding}" Height="600" Name="PlacesListBox" Width="440" ManipulationCompleted="PlacesListBox_ManipulationCompleted">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Background="DimGray" Margin="0,15,0,15"  Orientation="Vertical">
@@ -38,13 +38,16 @@
                             <StackPanel Orientation="Vertical" Tap="PlacesListBox_TextTap">
                                 <TextBlock Text="{Binding PictureDescription}" MaxWidth="380" TextWrapping="Wrap" FontSize="30" Margin="0,0,40,0"/>
                                 <TextBlock Text="{Binding PictureAdditionalDescription}" MaxWidth="380" TextWrapping="Wrap" FontSize="20" Margin="0,5,40,0"/>
-                                    <TextBlock HorizontalAlignment="Right" Text="W odległości: 100.00 km" FontSize="15" FontStyle="Italic" Margin="50,0,55,5"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Margin="5,0,0,0" Name="PanoramaCachedTick" Opacity="{Binding IsPanoramaCached}" Source="/Images/PanoramaCached.png"/>
+                                    <TextBlock Text="W odległości: 100.00 km" FontSize="15" FontStyle="Italic" Margin="150,0,0,5"/>
+                                </StackPanel>
                             </StackPanel>
                         </StackPanel>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
-            <Button Content="Pokaż więcej" VerticalAlignment="Bottom" Click="Button_Click"/>
+            <Button Content="Pokaż więcej" VerticalAlignment="Bottom" Click="Button_Click" />
         </Grid>
     </Grid>
 

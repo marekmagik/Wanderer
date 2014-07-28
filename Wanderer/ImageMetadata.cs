@@ -11,7 +11,6 @@ namespace Wanderer
 {
     public class ImageMetadata
     {
-
         public List<Point> Points { get; set; }
         public List<Category> Categories { get; set; }
         public double OrientationOfLeftBorder { get; set; }
@@ -27,7 +26,13 @@ namespace Wanderer
         public int Width { get; set; }
         public ImageSource Image { get; set; }
         public String PictureSHA256 { get; set; }
-
+        public bool IsPanoramaCached
+        {
+            get
+            {
+                return IsolatedStorageDAO.IsPhotoCached(PictureSHA256);
+            }
+        }
 
         public ImageMetadata()
         {

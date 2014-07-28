@@ -26,7 +26,7 @@ namespace Wanderer
         private int actualIndex;
         private MainPage mainPage;
         private int increaseAmount = 1;
-        private int actualNumberOfElementsInList = 5;
+        private int actualNumberOfElementsInList = 1;
 
 
         public ListOfPlaces(MainPage mainPage)
@@ -40,6 +40,13 @@ namespace Wanderer
             actualIndex = 0;
 
             this.mainPage = mainPage;
+        }
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+            Debug.WriteLine("on navigated list of places!");
+            PlacesListBox.UpdateLayout();
         }
 
 
@@ -66,8 +73,16 @@ namespace Wanderer
 
                     Debug.WriteLine("---JSON, req : " + json);
 
+                    IsolatedStorageDAO.CacheMetadata(json);
                     JSONParser parser = new JSONParser();
                     allPlaces = parser.ParsePlacesJSON(json);
+
+                    //allPlaces = parser.ParsePhotoMetadataJSON(json);
+/*
+                    foreach(string line in json){
+                    
+                    }
+*/
 
                     if (allPlaces.Count > 0)
                     {
@@ -99,7 +114,7 @@ namespace Wanderer
                 {
                     DAO.LoadImage(this, places.ElementAt(actualIndex).IdInDatabase);
                 }
-            }   
+            }
         }
 
         private void LoadPhotoFromIsolatedStorage(ImageMetadata place)
@@ -111,7 +126,7 @@ namespace Wanderer
                 place.Image = bitmapImage;
                 ReloadContent();
                 actualIndex++;
-                ProcessNextPlace();
+                //       ProcessNextPlace();
             });
         }
 
@@ -136,7 +151,7 @@ namespace Wanderer
                             place.Image = image;
 
                             ReloadContent();
-                            Debug.WriteLine("elemebts returned " + places.Count);
+                            Debug.WriteLine("elements returned " + places.Count);
                             actualIndex++;
                             ProcessNextPlace();
                         }
@@ -148,28 +163,6 @@ namespace Wanderer
 
                     });
 
-            }
-        }
-
-        void PlacesListBox_SelectionChanged(object sender, SelectionChangedEventArgs args)
-        {
-            if (PlacesListBox.SelectedIndex != -1)
-            {
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-                Uri uri = new Uri("/PanoramaView.xaml?photoID=" + places.ElementAt(PlacesListBox.SelectedIndex).IdInDatabase + "&hash=" + places.ElementAt(PlacesListBox.SelectedIndex).PictureSHA256 + "&useLocalDatabase=false", UriKind.Relative);
-
-                Debug.WriteLine("photo_id=" + places.ElementAt(PlacesListBox.SelectedIndex).IdInDatabase);
-                Debug.WriteLine("HASH: " + places.ElementAt(PlacesListBox.SelectedIndex).PictureSHA256);
-                //   NavigationService.Navigate(new Uri("/PanoramaView.xaml?photoID=" + places.ElementAt(PlacesListBox.SelectedIndex).IdInDatabase + "&hash="+places.ElementAt(PlacesListBox.SelectedIndex).PictureSHA256+"&useLocalDatabase=false", UriKind.Relative));
-                if (NavigationService == null)
-                {
-                    Debug.WriteLine("Ni huja");
-                }
-                //MainPage.navigateToPage(uri);
-                PlacesListBox.SelectedIndex = -1;
-                mainPage.NavigationService.Navigate(uri);
-                //  navigationService.Navigate(uri);
             }
         }
 
