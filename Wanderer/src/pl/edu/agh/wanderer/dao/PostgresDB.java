@@ -11,9 +11,20 @@ import org.codehaus.jettison.json.JSONObject;
 
 import pl.edu.agh.wanderer.util.JSONConverter;
 
+/**
+ * Klasa odpowiadajaca za wszystkie operacje zwiazane z baza danych
+ */
 public class PostgresDB extends DBConnection {
 	private final JSONConverter toJsonConverter = new JSONConverter();
 
+	/**
+	 * Metoda dokonujaca bezposredniego zapytania na bazie danych w celu
+	 * uzyskania opisu miejsca. Metoda w celach testowych.
+	 * 
+	 * @param placeId
+	 *            id miejsca, ktorego opis chcemy uzyskac
+	 * @return opis miejsca
+	 */
 	public String getPlaceDesc(int placeId) {
 		PreparedStatement query;
 		Connection conn;
@@ -21,8 +32,7 @@ public class PostgresDB extends DBConnection {
 
 		try {
 			conn = getConnection();
-			query = conn
-					.prepareStatement("select \"primary description\" from metadata where metadata_id=?");
+			query = conn.prepareStatement("select \"primary description\" from metadata where metadata_id=?");
 			query.setInt(1, placeId);
 			ResultSet resultSet = query.executeQuery();
 			while (resultSet.next()) {
@@ -36,6 +46,14 @@ public class PostgresDB extends DBConnection {
 		return result;
 	}
 
+	/**
+	 * Metoda wykonujaca bezposrednie zapytanie do bazy danych w celu uzyskania
+	 * metadanych dla danego miejsca
+	 * 
+	 * @param placeId
+	 *            id miejsca, ktorego metadane chcemy uzyskac
+	 * @return metadane danego miejsca w formacie JSON
+	 */
 	public String getPhotoMetadata(int placeId) {
 		PreparedStatement query;
 		Connection conn;
@@ -53,15 +71,19 @@ public class PostgresDB extends DBConnection {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		/*
-		 * for(JSONObject json : jsonObjects){
-		 * getPointsAndUpdateSpecifiedJSONMetadata(json); }
-		 */
 
 		return toJsonConverter.convertListOfJSONObjects(jsonObjects);
 
 	}
 
+	/**
+	 * Metoda wykonujaca zapytanie do bazy danych w celu pobrania zdjecia o
+	 * odpowiednim id
+	 * 
+	 * @param photoId
+	 *            id danego zdjecia
+	 * @return zdjecie jako tablica bajtow
+	 */
 	public byte[] getPhoto(int photoId) {
 		Connection connection = getConnection();
 		byte[] result = null;
@@ -86,6 +108,14 @@ public class PostgresDB extends DBConnection {
 		return result;
 	}
 
+	/**
+	 * Metoda wykonujaca zapytanie na bazie danych w celu uzyskania miniatruki
+	 * zjdecia o podanym id
+	 * 
+	 * @param photoId
+	 *            id zdjecia, ktorego miniatruke chcemy uzyskac
+	 * @return miniatruka jako tablica bajtow
+	 */
 	public byte[] getThumbnail(int photoId) {
 		Connection connection = getConnection();
 		byte[] result = null;
@@ -110,15 +140,26 @@ public class PostgresDB extends DBConnection {
 		return result;
 	}
 
+	/**
+	 * Metoda zwracajaca miejsca znajdujace sie w zadanym promieniu od podanego
+	 * punktu.
+	 * 
+	 * @param lon
+	 *            dlugosc geograficzna punktu
+	 * @param lat
+	 *            szerokosc geograficzna punktu
+	 * @param range
+	 *            promien w metrach
+	 * @return lista miejsc wraz z metadanymi w formacie JSON
+	 */
 	public String getPointsWithinRange(String lon, String lat, String range) {
 		Connection connection = getConnection();
 		System.out.println("got an query");
 		List<JSONObject> jsonObjects = new ArrayList<JSONObject>();
 		try {
-			PreparedStatement querry = connection			
-					.prepareStatement("select metadata.coverage, metadata.orientation, photos.width, photos.height, metadata.metadata_id, metadata.longitude, metadata.latitude, metadata.primary_description, metadata.secondary_description, metadata.picture_hash, st_distance(metadata.geog,st_geogfromtext(?)) as distance from photos inner join metadata on (photos.metadata_id = metadata.metadata_id) where (st_dwithin(metadata.geog,st_geogfromtext(?),?)) order by 7;" );
+			PreparedStatement querry = connection
+					.prepareStatement("select metadata.coverage, metadata.orientation, photos.width, photos.height, metadata.metadata_id, metadata.longitude, metadata.latitude, metadata.primary_description, metadata.secondary_description, metadata.picture_hash, st_distance(metadata.geog,st_geogfromtext(?)) as distance from photos inner join metadata on (photos.metadata_id = metadata.metadata_id) where (st_dwithin(metadata.geog,st_geogfromtext(?),?)) order by 7;");
 
-			
 			querry.setString(1, "srid=4326;point(" + lon + " " + lat + ")");
 			querry.setString(2, "srid=4326;point(" + lon + " " + lat + ")");
 			querry.setInt(3, Integer.parseInt(range));
@@ -135,37 +176,12 @@ public class PostgresDB extends DBConnection {
 		return toJsonConverter.convertListOfJSONObjects(jsonObjects);
 	}
 
-	public String getPointsForSpecifiedMetadata(int metadata_id) {
-		Connection connection = getConnection();
-		List<JSONObject> jsonObjects = new ArrayList<JSONObject>();
-		try {
-			ResultSet result = null;
-
-			int metadataID = metadata_id;
-			// int metadataID = json.getInt("metadata_id");
-			// System.out.println("metadataID: " + metadataID);
-
-			PreparedStatement querry = connection
-					.prepareStatement("select primary_description, secondary_description, category, x, y, alignment, line_length, angle , color from points where metadata_id = ? ;");
-			querry.setInt(1, metadataID);
-			result = querry.executeQuery();
-			jsonObjects = toJsonConverter.toJSONObjectsList(result);
-
-			// json.put("points", pointsInJSONArray);
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				connection.close();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-		}
-
-		return toJsonConverter.convertListOfJSONObjects(jsonObjects);
-	}
-
+	/**
+	 * Metoda pobierajaca punkty (opisujace zdjecie dla danego miejsca) i
+	 * aktualizujaca obiekt JSON z uzyciem uzyskanych danych.
+	 * 
+	 * @param json obiekt JSON, zawierajacy liste miejsc wraz z metadanymi
+	 */
 	public void getPointsAndUpdateSpecifiedJSONMetadata(JSONObject json) {
 		Connection connection = getConnection();
 
@@ -179,8 +195,7 @@ public class PostgresDB extends DBConnection {
 					.prepareStatement("select primary_description, secondary_description, category, x, y, alignment, line_length, angle from points where metadata_id = ? ;");
 			querry.setInt(1, metadataID);
 			result = querry.executeQuery();
-			String pointsInJSONArray = toJsonConverter.toJSONArray(result)
-					.toString();
+			String pointsInJSONArray = toJsonConverter.toJSONArray(result).toString();
 
 			json.put("points", pointsInJSONArray);
 

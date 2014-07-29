@@ -8,12 +8,7 @@ import java.util.List;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
 
-/**
- * This utility will convert a database data into JSON format. Note: this java
- * class requires the ESAPI 1.4.4 jar file ESAPI is used to encode data
- * 
- * @author 308tube
- */
+
 public class JSONConverter {
 
 	/**

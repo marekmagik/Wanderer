@@ -11,46 +11,57 @@ import pl.edu.agh.wanderer.dao.PostgresDB;
 @Path("/places")
 public class Places {
 
+	/**
+	 * Metoda zwracajace opis dla miejsca o danym id. Metoda do celow testowych.
+	 * 
+	 * @param placeId
+	 *            id miejsca, ktorego opis chcemy otrzymac
+	 * @return opis miejsca
+	 * @throws Exception
+	 *             w przypadku nieudanego odczytu z bazy danych
+	 */
 	@Path("/get/{id}")
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
-	public String getPlaceDesc(@PathParam("id") String id) throws Exception {
+	public String getPlaceDesc(@PathParam("id") String placeId) throws Exception {
 
-		System.out.println(" sending description for "+id);
+		System.out.println(" Sending description for place with id " + placeId);
 		PostgresDB dao = new PostgresDB();
-		String myString = dao.getPlaceDesc(Integer.parseInt(id));
+		String myString = dao.getPlaceDesc(Integer.parseInt(placeId));
 
 		return myString;
 	}
 
+	/**
+	 * Metoda zwracajaca punkty znajdujace sie w zadanym promieniu od podanego
+	 * punktu.
+	 * 
+	 * @param lon
+	 *            dlugosc geograficzna punktu
+	 * @param lat
+	 *            szerokosc geograficzna punktu
+	 * @param range
+	 *            promien w metrach
+	 * @return Liste miejsc w formacie JSON
+	 * @throws Exception
+	 *             w przypadku nieudanego odczytu z bazy danych
+	 */
 	@Path("/get/{lon}/{lat}/{range}")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public String getPointsInRange(@PathParam("lon") String lon,
-			@PathParam("lat") String lat, @PathParam("range") String range)
-			throws Exception {
-		System.out.println(" received message ");
-		System.out.println(lon+" "+lat+" "+range);
+	public String getPointsInRange(@PathParam("lon") String lon, @PathParam("lat") String lat,
+			@PathParam("range") String range) throws Exception {
+
+		System.out.println(" Received request for places ");
+		System.out.println(lon + " " + lat + " " + range);
+
 		PostgresDB dao = new PostgresDB();
 		String myString = dao.getPointsWithinRange(lon, lat, range);
-		
-		if(myString==null)
-			System.out.println("null ;/");
+
+		if (myString == null)
+			System.out.println(" Failed to get points from DB");
 		else
 			System.out.println(myString);
-			
-		
-		return myString;
-	}
-	
-	@Path("/get/point/{id}")
-	@GET
-	@Produces(MediaType.TEXT_PLAIN)
-	public String getPoints(@PathParam("id") String id) throws Exception {
-
-		System.out.println(" sending description for "+id);
-		PostgresDB dao = new PostgresDB();
-		String myString = dao.getPointsForSpecifiedMetadata(Integer.parseInt(id));
 
 		return myString;
 	}
