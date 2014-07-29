@@ -11,6 +11,14 @@ public class DBConnection {
 	private static DataSource postgresDB;
 	private static Context context;
 
+	/**
+	 * Metoda pobierajaca i zwracajca obiekt DataSource reprezentujacy bazê
+	 * danych
+	 * 
+	 * @return obiekt reprezentujacy baze danych
+	 * @throws Exception
+	 *             w przypadku niepowodzenia przy pobieraniu obiektu
+	 */
 	private static DataSource postgresConn() throws Exception {
 		if (postgresDB != null) {
 			return postgresDB;
@@ -30,6 +38,11 @@ public class DBConnection {
 
 	}
 
+	/**
+	 * Metoda zwracajaca polaczenie do bazy danych.
+	 * 
+	 * @return obiekt Connection reprezentujacy polaczenie z baza
+	 */
 	protected static Connection getConnection() {
 		Connection conn = null;
 		try {

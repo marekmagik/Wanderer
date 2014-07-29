@@ -8,43 +8,36 @@ import java.util.List;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
 
-
+/**
+ * Klasa odpowiadajaca za konwertowanie wyników zapytania do baza danych na dane
+ * w formacie JSON.
+ * 
+ */
 public class JSONConverter {
 
 	/**
-	 * This will convert database records into a JSON Array Simply pass in a
-	 * ResultSet from a database connection and it loop return a JSON array.
-	 * 
-	 * It important to check to make sure that all DataType that are being used
-	 * is properly encoding.
-	 * 
-	 * varchar is currently the only dataType that is being encode by ESAPI
+	 * Metoda konwertujaca wynik zapytania z bazy danych na dane w formacie JSON
+	 * (JSONArray).
 	 * 
 	 * @param rs
-	 *            - database ResultSet
-	 * @return - JSON array
+	 *            zbiór wynikowy zapytania
+	 * @return obiekt JSONArray reprezentujacy otrzymane dane
 	 * @throws Exception
+	 *             w przypadku niepowodzenia podczas konwertowania
 	 */
 	public JSONArray toJSONArray(ResultSet rs) throws Exception {
 
-		JSONArray json = new JSONArray(); // JSON array that will be returned
+		JSONArray json = new JSONArray();
 
 		try {
 
-			// we will need the column names, this will save the table meta-data
-			// like column nmae.
 			java.sql.ResultSetMetaData rsmd = rs.getMetaData();
 
-			// loop through the ResultSet
 			while (rs.next()) {
 
-				// figure out how many columns there are
 				int numColumns = rsmd.getColumnCount();
-				// each row in the ResultSet will be converted to a JSON Object
 				JSONObject obj = new JSONObject();
 
-				// loop through all the columns and place them into the JSON
-				// Object
 				for (int i = 1; i < numColumns + 1; i++) {
 
 					String column_name = rsmd.getColumnName(i);
@@ -93,36 +86,29 @@ public class JSONConverter {
 						/* Debug */System.out.println("ToJson: NUMERIC");
 					} else {
 						obj.put(column_name, rs.getObject(column_name));
-						/* Debug */System.out.println("ToJson: Object "
-								+ column_name);
+						/* Debug */System.out.println("ToJson: Object " + column_name);
 					}
-					/*
-					 * if (column_name.equals("metadata_id")) {
-					 * 
-					 * if (!rsContainsPoints) { PostgresDB dao = new
-					 * PostgresDB(); JSONArray pointsInJSONArray = toJSONArray(
-					 * dao.getPointsByPhotoID(rs .getInt(column_name)), true);
-					 * String pointsInString = pointsInJSONArray .toString();
-					 * obj.put("points", pointsInString); }
-					 * 
-					 * 
-					 * }
-					 */
-				}// end foreach
+				}
 
 				json.put(obj);
 
-			}// end while
+			}
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
-		return json; // return JSON array
+		return json;
 	}
 
-	public String convertListOfJSONObjects(
-			List<JSONObject> jsonObjects) {
+	/**
+	 * Metoda konwertujaca liste obiektow JSONObject do stringu w postaci JSON.
+	 * 
+	 * @param jsonObjects
+	 *            lista obiektów JSON
+	 * @return string w formacie JSON
+	 */
+	public String convertListOfJSONObjects(List<JSONObject> jsonObjects) {
 		JSONArray jsonArray = new JSONArray();
 		for (JSONObject json : jsonObjects) {
 			jsonArray.put(json);
@@ -130,6 +116,16 @@ public class JSONConverter {
 		return jsonArray.toString();
 	}
 
+	/**
+	 * Metoda konwertujaca zbiór wynikowy zapytania do bazy danych na dane w
+	 * formacie JSON (List<JSONObject>).
+	 * 
+	 * @param rs
+	 *            zbiór wynikowy zapytania do bazy
+	 * @return lista obiektów JSONObject reprezentujaca otrzymane dane
+	 * @throws Exception
+	 *             w przypadku niepowodzenia przy konwertowaniu.
+	 */
 	public List<JSONObject> toJSONObjectsList(ResultSet rs) throws Exception {
 
 		List<JSONObject> jsonObjects = new ArrayList<JSONObject>();

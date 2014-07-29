@@ -69,7 +69,7 @@ public class Photos {
 	 *            id otrzymanego zdjêcia - parametr zostanie wyrzucony
 	 * @param incomingData
 	 *            zdjecie w postaci tablicy bajtow
-	 * @return odpowiedni kod, 500 - sukces, 200 - porazka
+	 * @return odpowiedni kod, 200 - sukces, 500 - porazka
 	 * @throws Exception
 	 *             w przypadku niepowodzenia przy zapisie pliku
 	 */
@@ -84,7 +84,7 @@ public class Photos {
 		fos.write(incomingData);
 		fos.close();
 
-		return "500";
+		return "200";
 
 	}
 
