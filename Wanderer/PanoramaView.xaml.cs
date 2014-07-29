@@ -31,35 +31,34 @@ namespace Wanderer
     public partial class PanoramaView : PhoneApplicationPage
     {
 
-        private Compass compass;
-        private DispatcherTimer timer;
+        private Compass _compass;
+        private DispatcherTimer _timer;
 
-        private double trueHeading;
-        private double headingAccuracy;
-        private int convertedHeading;
+        private double _trueHeading;
+        private double _headingAccuracy;
+        private int _convertedHeading;
 
-        private bool isDataValid;
-        private bool isCalibrationInProgress;
+        private bool _isDataValid;
+        private bool _isCalibrationInProgress;
 
-        private readonly int HEADING_DIFF_TO_UPDATE_PANORAMA = 5;
-        private readonly int HEADING_DIFF_TO_UPDATE_PANORAMA_INCREASED = 30;
-        private int headingDiffToUpdate = 5;
+        private readonly int HaedingDiffToUpdatePanorama = 5;
+        private readonly int HaedingDiffToUpdatePanoramaIncreased = 30;
+        private int _headingDiffToUpdate = 5;
 
-        private double PIXELS_PER_DEGREE;
-        private double currentShift;
-        private double currentPageOrientationFactor;
+        private double _pixelsPerDegree;
+        private double _currentShift;
+        private double _currentPageOrientationFactor;
 
-        private double MIN_SCALE;
-        private readonly double MAX_SCALE = 1.0;
+        private double _minScale;
+        private readonly double MaxScale = 1.0;
+        private double _currentScale;
 
-        private double currentScale;
+        private int _height;
+        private int _width;
+        private int _screenWidth;
+        private int _screenHeight;
 
-        private int height;
-        private int width;
-        private int screenWidth;
-        private int screenHeight;
-
-        private ImageMetadata metadata;
+        private ImageMetadata _metadata;
 
         public bool UseCompass { get; set; }
         public ImageSource ImageSource { get; set; }
@@ -71,7 +70,7 @@ namespace Wanderer
 
         public void InitializePanorama(string hash)
         {
-            collectPreviousImage();
+            CollectPreviousImage();
             MaxSizeReachedMessage.Visibility = Visibility.Collapsed;
             LoadingAnimation.Visibility = Visibility.Visible;
             
@@ -85,7 +84,7 @@ namespace Wanderer
             }
         }
 
-        private void collectPreviousImage() {
+        private void CollectPreviousImage() {
             PanoramaImageLeft.DataContext = null;
             PanoramaImageRight.DataContext = null;
             ImageSource = null;
@@ -96,24 +95,23 @@ namespace Wanderer
         }
 
 
-        private void setPixelsPerDegree()
+        private void SetPixelsPerDegree()
         {
-            PIXELS_PER_DEGREE = ((width) / (360.0));
+            _pixelsPerDegree = ((_width) / (360.0));
         }
 
         protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)
         {
-            if (compass != null && compass.IsDataValid)
+            if (_compass != null && _compass.IsDataValid)
             {
-                compass.Stop();
-                timer.Stop();
+                _compass.Stop();
+                _timer.Stop();
 
                 Debug.WriteLine("---------------------Compass stopped.");
             }
-            /*
-             * Usuń naniesione punkty przy powrocie do poprzedniego widoku.
+            /* Usuń naniesione punkty przy powrocie do poprzedniego widoku.
              */
-            foreach (Point p in metadata.Points)
+            foreach (Point p in _metadata.Points)
             {
                 LayoutRoot.Children.Remove(p.LeftCanvas);
                 LayoutRoot.Children.Remove(p.LeftPanoramaLine);
@@ -130,42 +128,42 @@ namespace Wanderer
         }
 
 
-        private void compassCurrentValueChanged(object sender, SensorReadingEventArgs<CompassReading> e)
+        private void CompassCurrentValueChanged(object sender, SensorReadingEventArgs<CompassReading> e)
         {
-            isDataValid = compass.IsDataValid;
+            _isDataValid = _compass.IsDataValid;
 
-            trueHeading = e.SensorReading.TrueHeading;
+            _trueHeading = e.SensorReading.TrueHeading;
             //            trueHeading = e.SensorReading.MagneticHeading;
-            headingAccuracy = Math.Abs(e.SensorReading.HeadingAccuracy);
+            _headingAccuracy = Math.Abs(e.SensorReading.HeadingAccuracy);
 
         }
 
-        private void timerTick(object sender, EventArgs e)
+        private void TimerTick(object sender, EventArgs e)
         {
             if (UseCompass)
             {
-                if (!isCalibrationInProgress)
+                if (!_isCalibrationInProgress)
                 {
-                    int newConvertedHeading = Convert.ToInt32(trueHeading + 90.0);
+                    int newConvertedHeading = Convert.ToInt32(_trueHeading + 90.0);
 
                     if (newConvertedHeading >= 360)
                     {
                         newConvertedHeading -= 360;
                     }
-                    if (Math.Abs(convertedHeading - newConvertedHeading) > headingDiffToUpdate)
+                    if (Math.Abs(_convertedHeading - newConvertedHeading) > _headingDiffToUpdate)
                     {
-                        headingDiffToUpdate = HEADING_DIFF_TO_UPDATE_PANORAMA;
+                        _headingDiffToUpdate = HaedingDiffToUpdatePanorama;
 
-                        double newShift = ((-1.0) * newConvertedHeading * PIXELS_PER_DEGREE) * currentScale;
+                        double newShift = ((-1.0) * newConvertedHeading * _pixelsPerDegree) * _currentScale;
 
                         double constantShift;
-                        if (currentPageOrientationFactor == -1)
+                        if (_currentPageOrientationFactor == -1)
                         {
-                            constantShift = (metadata.OrientationOfLeftBorder * PIXELS_PER_DEGREE) * currentScale;
+                            constantShift = (_metadata.OrientationOfLeftBorder * _pixelsPerDegree) * _currentScale;
                         }
                         else
                         {
-                            constantShift = ((180.0 + metadata.OrientationOfLeftBorder) * PIXELS_PER_DEGREE) * currentScale;
+                            constantShift = ((180.0 + _metadata.OrientationOfLeftBorder) * _pixelsPerDegree) * _currentScale;
                         }
 
                         Debug.WriteLine(newConvertedHeading);
@@ -173,27 +171,27 @@ namespace Wanderer
                         newShift += constantShift;
 
                         PanoramaTransformLeft.TranslateX = newShift;
-                        PanoramaTransformRight.TranslateX = newShift + (width * currentScale);
+                        PanoramaTransformRight.TranslateX = newShift + (_width * _currentScale);
 
-                        updateImagesBounds();
+                        UpdateImagesBounds();
 
-                        convertedHeading = newConvertedHeading;
+                        _convertedHeading = newConvertedHeading;
                     }
                 }
                 else
                 {
-                    Debug.WriteLine("heading accuracy: " + headingAccuracy);
-                    if (headingAccuracy <= 10)
+                    Debug.WriteLine("heading accuracy: " + _headingAccuracy);
+                    if (_headingAccuracy <= 10)
                     {
                         Debug.WriteLine("dokładność osiągnięta");
                         calibrationTextBlock.Foreground = new SolidColorBrush(Colors.Green);
-                        calibrationTextBlock.Text = headingAccuracy.ToString("0.0");
+                        calibrationTextBlock.Text = _headingAccuracy.ToString("0.0");
                         FinishCalibrationButton.IsEnabled = true;
                     }
                     else
                     {
                         calibrationTextBlock.Foreground = new SolidColorBrush(Colors.Red);
-                        calibrationTextBlock.Text = headingAccuracy.ToString("0.0");
+                        calibrationTextBlock.Text = _headingAccuracy.ToString("0.0");
                     }
                 }
             }
@@ -209,18 +207,18 @@ namespace Wanderer
         {
             if (e.Orientation.Equals(PageOrientation.LandscapeLeft))
             {
-                currentPageOrientationFactor = -1.0;
+                _currentPageOrientationFactor = -1.0;
             }
             else
             {
-                currentPageOrientationFactor = 1.0;
+                _currentPageOrientationFactor = 1.0;
             }
             base.OnOrientationChanged(e);
         }
 
-        private void compass_Calibrate(object sender, CalibrationEventArgs e)
+        private void CompassCalibrate(object sender, CalibrationEventArgs e)
         {
-            isCalibrationInProgress = true;
+            _isCalibrationInProgress = true;
             Deployment.Current.Dispatcher.BeginInvoke(() =>
             {
                 CalibrationStackPanel.Visibility = Visibility.Visible;
@@ -228,32 +226,32 @@ namespace Wanderer
             });
         }
 
-        private double computeShift()
+        private double ComputeShift()
         {
             double shift;
             if (PanoramaTransformRight.TranslateX > 0)
             {
-                shift = ((PanoramaTransformRight.TranslateX / currentScale) - width);
+                shift = ((PanoramaTransformRight.TranslateX / _currentScale) - _width);
             }
             else
             {
-                shift = (PanoramaTransformRight.TranslateX / currentScale);
+                shift = (PanoramaTransformRight.TranslateX / _currentScale);
             }
             return shift;
         }
 
 
-        private void startCompass()
+        private void StartCompass()
         {
-            isCalibrationInProgress = false;
+            _isCalibrationInProgress = false;
 
-            compass = new Compass();
+            _compass = new Compass();
 
-            compass.TimeBetweenUpdates = TimeSpan.FromMilliseconds(100);
-            compass.CurrentValueChanged +=
-                new EventHandler<SensorReadingEventArgs<CompassReading>>(compassCurrentValueChanged);
-            compass.Calibrate +=
-                new EventHandler<CalibrationEventArgs>(compass_Calibrate);
+            _compass.TimeBetweenUpdates = TimeSpan.FromMilliseconds(100);
+            _compass.CurrentValueChanged +=
+                new EventHandler<SensorReadingEventArgs<CompassReading>>(CompassCurrentValueChanged);
+            _compass.Calibrate +=
+                new EventHandler<CalibrationEventArgs>(CompassCalibrate);
 
             useCompassCheckBox.IsChecked = true;
         }
@@ -263,16 +261,16 @@ namespace Wanderer
         {
             base.OnNavigatedTo(e);
 
-            timer = new DispatcherTimer();
-            timer.Interval = TimeSpan.FromMilliseconds(100);
-            timer.Tick += new EventHandler(timerTick);
+            _timer = new DispatcherTimer();
+            _timer.Interval = TimeSpan.FromMilliseconds(100);
+            _timer.Tick += new EventHandler(TimerTick);
             UseCompass = false;
-            timer.Start();
+            _timer.Start();
 
             string hash = NavigationContext.QueryString["hash"];
 
             JSONParser parser = new JSONParser();
-            metadata = IsolatedStorageDAO.getCachedMetadata(hash);
+            _metadata = IsolatedStorageDAO.getCachedMetadata(hash);
 
             InitializePanorama(hash);
         }
@@ -280,16 +278,16 @@ namespace Wanderer
         private void LoadImageFromServer(int screenResolutionWidth, int screenResolutionHeight)
         {
             MaxSizeReachedMessage.Visibility = Visibility.Collapsed;
-            screenWidth = screenResolutionWidth;
-            screenHeight = screenResolutionHeight;
-            DAO.GetPhotoByHash(this, metadata.PictureSHA256);
+            _screenWidth = screenResolutionWidth;
+            _screenHeight = screenResolutionHeight;
+            DAO.SendRequestForPanorama(this, _metadata.PictureSHA256);
         }
 
         private async void LoadImage(string filename, int screenResolutionWidth, int screenResolutionHeight)
         {
             MaxSizeReachedMessage.Visibility = Visibility.Collapsed;
-            screenWidth = screenResolutionWidth;
-            screenHeight = screenResolutionHeight;
+            _screenWidth = screenResolutionWidth;
+            _screenHeight = screenResolutionHeight;
 
             try
             {
@@ -305,7 +303,7 @@ namespace Wanderer
             
             using (var stream = await LoadImageAsync(filename))
             {
-                WriteableBitmap bitmapImage = new WriteableBitmap(width, height);
+                WriteableBitmap bitmapImage = new WriteableBitmap(_width, _height);
 
                 bitmapImage.LoadJpeg(stream);
 
@@ -313,17 +311,17 @@ namespace Wanderer
                 PanoramaImageLeft.DataContext = ImageSource;
                 PanoramaImageRight.DataContext = ImageSource;
 
-                MIN_SCALE = (double)screenHeight / (double)bitmapImage.PixelHeight;
-                currentScale = MIN_SCALE;
+                _minScale = (double)_screenHeight / (double)bitmapImage.PixelHeight;
+                _currentScale = _minScale;
 
-                PanoramaImageLeft.Width = width * currentScale;
-                PanoramaImageLeft.Height = height * currentScale;
-                PanoramaImageRight.Width = width * currentScale;
-                PanoramaImageRight.Height = height * currentScale;
+                PanoramaImageLeft.Width = _width * _currentScale;
+                PanoramaImageLeft.Height = _height * _currentScale;
+                PanoramaImageRight.Width = _width * _currentScale;
+                PanoramaImageRight.Height = _height * _currentScale;
 
-                setPixelsPerDegree();
+                SetPixelsPerDegree();
 
-                generateUIElementsForPoints(metadata.Points);
+                GenerateUIElementsForPoints(_metadata.Points);
 
                 LoadingAnimation.Visibility = Visibility.Collapsed;
             }
@@ -340,16 +338,16 @@ namespace Wanderer
          */
         private void SetImageResolution()
         {
-            width = metadata.Width;
-            height = metadata.Height;
+            _width = _metadata.Width;
+            _height = _metadata.Height;
 
-            if (metadata.CoverageInPercent < 100)
+            if (_metadata.CoverageInPercent < 100)
             {
-                width += (int)(width * (100 - metadata.CoverageInPercent) / metadata.CoverageInPercent);
+                _width += (int)(_width * (100 - _metadata.CoverageInPercent) / _metadata.CoverageInPercent);
             }
 
             /* Rzuć wyjątek, jeśli wyświetlenie zdjęcia może skutkować zamknięciem aplikacji. */
-            if (width * height > 34500000)
+            if (_width * _height > 34500000)
             {
                 throw new PossibleMemoryAccessViolationException();
             }
@@ -379,86 +377,85 @@ namespace Wanderer
 
 
 
-        private void manipulationDeltaHandler(object sender, ManipulationDeltaEventArgs e)
+        private void ManipulationDeltaHandler(object sender, ManipulationDeltaEventArgs e)
         {
-            headingDiffToUpdate = HEADING_DIFF_TO_UPDATE_PANORAMA_INCREASED;
+            _headingDiffToUpdate = HaedingDiffToUpdatePanoramaIncreased;
             if (e.DeltaManipulation.Scale.X > 0.0 && e.DeltaManipulation.Scale.Y > 0.0)
             {
 
                 CompositeTransform scaleTransformLeft = (CompositeTransform)PanoramaImageLeft.RenderTransform;
                 CompositeTransform scaleTransformRight = (CompositeTransform)PanoramaImageRight.RenderTransform;
 
-                double xScaleValue = currentScale * e.DeltaManipulation.Scale.X;
-                double yScaleValue = currentScale * e.DeltaManipulation.Scale.Y;
+                double xScaleValue = _currentScale * e.DeltaManipulation.Scale.X;
+                double yScaleValue = _currentScale * e.DeltaManipulation.Scale.Y;
                 double scaleValue = Math.Min(xScaleValue, yScaleValue);
 
                 /* Jeśli nie można zmienić skali zakończ funkcję. */
-                if ((currentScale == MIN_SCALE && scaleValue <= MIN_SCALE) || (currentScale == MAX_SCALE && scaleValue >= MAX_SCALE))
+                if ((_currentScale == _minScale && scaleValue <= _minScale) || (_currentScale == MaxScale && scaleValue >= MaxScale))
                 {
                     return;
                 }
 
-                if (scaleValue <= MIN_SCALE)
+                if (scaleValue <= _minScale)
                 {
-                    scaleValue = MIN_SCALE;
+                    scaleValue = _minScale;
                 }
-                else if (scaleValue >= MAX_SCALE)
+                else if (scaleValue >= MaxScale)
                 {
-                    scaleValue = MAX_SCALE;
+                    scaleValue = MaxScale;
                 }
 
-                scaleImages(scaleValue, 0.8);
-                updateImagesBounds();
+                ScaleImages(scaleValue, 0.8);
+                UpdateImagesBounds();
 
             }
             else
             {
                 Deployment.Current.Dispatcher.BeginInvoke(delegate
                     {
-                        if (e.DeltaManipulation.Translation.X < width)
+                        if (e.DeltaManipulation.Translation.X < _width)
                         {
-                            MoveHorizontial(e.DeltaManipulation.Translation.X * currentScale);
+                            MoveHorizontial(e.DeltaManipulation.Translation.X * _currentScale);
                         }
                         else
                         {
-                            MoveHorizontial(width * currentScale);
+                            MoveHorizontial(_width * _currentScale);
                         }
 
-                        MoveVertical(e.DeltaManipulation.Translation.Y * currentScale);
+                        MoveVertical(e.DeltaManipulation.Translation.Y * _currentScale);
                     });
             }
         }
 
-        private void scaleImages(double newScale, double translateFactor)
+        private void ScaleImages(double newScale, double translateFactor)
         {
             double positionHorizontalBefore = PanoramaTransformLeft.TranslateX;
             double positionVerticalBefore = PanoramaTransformLeft.TranslateY;
 
-            double positionHorizontalnPercentBefore = (positionHorizontalBefore / (width * currentScale));
-            double positionVerticalInPercentBefore = (positionVerticalBefore / (height * currentScale));
+            double positionHorizontalnPercentBefore = (positionHorizontalBefore / (_width * _currentScale));
+            double positionVerticalInPercentBefore = (positionVerticalBefore / (_height * _currentScale));
 
-            double positionHorizontalAfter = positionHorizontalnPercentBefore * width * newScale;
-            double positionVerticalAfter = positionVerticalInPercentBefore * height * newScale;
+            double positionHorizontalAfter = positionHorizontalnPercentBefore * _width * newScale;
+            double positionVerticalAfter = positionVerticalInPercentBefore * _height * newScale;
 
 
-            PanoramaImageLeft.Width = width * newScale;
-            PanoramaImageLeft.Height = height * newScale;
-            PanoramaImageRight.Width = width * newScale;
-            PanoramaImageRight.Height = height * newScale;
+            PanoramaImageLeft.Width = _width * newScale;
+            PanoramaImageLeft.Height = _height * newScale;
+            PanoramaImageRight.Width = _width * newScale;
+            PanoramaImageRight.Height = _height * newScale;
 
-            PanoramaTransformLeft.TranslateX = positionHorizontalAfter - (screenWidth * translateFactor * (newScale - currentScale));
-            PanoramaTransformLeft.TranslateY = positionVerticalAfter - (screenHeight * translateFactor * (newScale - currentScale));
+            PanoramaTransformLeft.TranslateX = positionHorizontalAfter - (_screenWidth * translateFactor * (newScale - _currentScale));
+            PanoramaTransformLeft.TranslateY = positionVerticalAfter - (_screenHeight * translateFactor * (newScale - _currentScale));
             PanoramaTransformRight.TranslateY = PanoramaTransformLeft.TranslateY;
 
-
             /* Utrzymaj prawe zdjęcie przyklejone do lewego. */
-            PanoramaTransformRight.TranslateX = PanoramaTransformLeft.TranslateX + (width * newScale);
+            PanoramaTransformRight.TranslateX = PanoramaTransformLeft.TranslateX + (_width * newScale);
 
-            currentScale = newScale;
+            _currentScale = newScale;
         }
 
 
-        private void manipulationCompletedHandler(object sender, ManipulationCompletedEventArgs e)
+        private void ManipulationCompletedHandler(object sender, ManipulationCompletedEventArgs e)
         {
             /* jeśli podczas oderwania palca od ekranu powinna być widoczna bezwładność obrazka */
             if (e.IsInertial)
@@ -475,7 +472,6 @@ namespace Wanderer
                 System.Threading.Thread startupThread =
                 new System.Threading.Thread(new System.Threading.ThreadStart(delegate { ComputeInertia(dx2, dy2); }));
                 startupThread.Start();
-
             }
         }
 
@@ -533,7 +529,7 @@ namespace Wanderer
         {
             PanoramaTransformLeft.TranslateY += dy2;
             PanoramaTransformRight.TranslateY += dy2;
-            updateImagesBounds();
+            UpdateImagesBounds();
         }
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.Synchronized)]
@@ -547,23 +543,23 @@ namespace Wanderer
              */
             if (PanoramaTransformLeft.TranslateX == PanoramaTransformRight.TranslateX)
             {
-                PanoramaTransformLeft.TranslateX -= (width * currentScale) - 1;
+                PanoramaTransformLeft.TranslateX -= (_width * _currentScale) - 1;
             }
 
             /* Warunek jest spełniony jeśli przesunięcie palcem było na tyle silne, że w czasie przesuwania zdjęć 
              * wystąpi conajmniej dwukrotnie konieczność przesunięcia obu do środka, aby uzyskać efekt nieskończonego przesuwania. 
              */
-            if (Math.Abs(dx2) > (width * currentScale))
+            if (Math.Abs(dx2) > (_width * _currentScale))
             {
                 if (dx2 > 0)
                 {
-                    distanceToCompleteSingleIntertiaStep = dx2 - (width * currentScale);
-                    dx2 = width * currentScale;
+                    distanceToCompleteSingleIntertiaStep = dx2 - (_width * _currentScale);
+                    dx2 = _width * _currentScale;
                 }
                 else
                 {
-                    distanceToCompleteSingleIntertiaStep = dx2 + (width * currentScale);
-                    dx2 = (-1.0) * width * currentScale;
+                    distanceToCompleteSingleIntertiaStep = dx2 + (_width * _currentScale);
+                    dx2 = (-1.0) * _width * _currentScale;
                 }
             }
 
@@ -571,12 +567,12 @@ namespace Wanderer
             PanoramaTransformLeft.TranslateX += dx2;
             PanoramaTransformRight.TranslateX += dx2;
 
-            updateImagesBounds();
+            UpdateImagesBounds();
 
             return distanceToCompleteSingleIntertiaStep;
         }
 
-        private void updateImagesBounds()
+        private void UpdateImagesBounds()
         {
             /* Warunki są spełnione jeśli odpowiednio: 
            *   - nastąpiło zbyt duże przesunięcie w lewo,
@@ -585,65 +581,65 @@ namespace Wanderer
            */
             if (PanoramaTransformLeft.TranslateX >= 0)
             {
-                PanoramaTransformLeft.TranslateX -= width * currentScale;
-                PanoramaTransformRight.TranslateX -= width * currentScale;
+                PanoramaTransformLeft.TranslateX -= _width * _currentScale;
+                PanoramaTransformRight.TranslateX -= _width * _currentScale;
             }
-            if ((PanoramaTransformRight.TranslateX + (width * currentScale)) < screenWidth)
+            if ((PanoramaTransformRight.TranslateX + (_width * _currentScale)) < _screenWidth)
             {
-                PanoramaTransformLeft.TranslateX += width * currentScale;
-                PanoramaTransformRight.TranslateX += width * currentScale;
+                PanoramaTransformLeft.TranslateX += _width * _currentScale;
+                PanoramaTransformRight.TranslateX += _width * _currentScale;
             }
             if (PanoramaTransformLeft.TranslateY >= 0)
             {
                 PanoramaTransformLeft.TranslateY = 0;
                 PanoramaTransformRight.TranslateY = 0;
             }
-            if (PanoramaTransformLeft.TranslateY < (((-1.0) * height * currentScale) + screenHeight))
+            if (PanoramaTransformLeft.TranslateY < (((-1.0) * _height * _currentScale) + _screenHeight))
             {
-                PanoramaTransformLeft.TranslateY = (-1.0) * height * currentScale + screenHeight;
-                PanoramaTransformRight.TranslateY = (-1.0) * height * currentScale + screenHeight;
+                PanoramaTransformLeft.TranslateY = (-1.0) * _height * _currentScale + _screenHeight;
+                PanoramaTransformRight.TranslateY = (-1.0) * _height * _currentScale + _screenHeight;
             }
 
-            currentShift = computeShift();
+            _currentShift = ComputeShift();
             /*
              * Zaktualizuj współrzędne opisów i linii na zdjęciu.
              */
-            foreach (Point point in metadata.Points)
+            foreach (Point point in _metadata.Points)
             {
-                updateDescriptionCanvasProperties(point);
+                UpdateDescriptionCanvasProperties(point);
             }
 
         }
 
 
 
-        private double computeRelativeX(double realX)
+        private double ComputeRelativeX(double realX)
         {
             CompositeTransform translateTransform = PanoramaImageRight.RenderTransform as CompositeTransform;
-            return translateTransform.TranslateX + realX * currentScale;
+            return translateTransform.TranslateX + realX * _currentScale;
         }
 
-        private double computeRelativeY(double realY)
+        private double ComputeRelativeY(double realY)
         {
             CompositeTransform translateTransform = PanoramaImageRight.RenderTransform as CompositeTransform;
-            return translateTransform.TranslateY + realY * currentScale;
+            return translateTransform.TranslateY + realY * _currentScale;
         }
 
 
-        private void updateDescriptionCanvasProperties(Point point)
+        private void UpdateDescriptionCanvasProperties(Point point)
         {
             point.LeftPrimaryDescriptionTextBlock.FontSize = Configuration.PrimaryDescriptionFontSize;// *currentScale;
             point.LeftSecondaryDescriptionTextBlock.FontSize = Configuration.SecondaryDescriptionFontSize;// *currentScale;
             point.RightPrimaryDescriptionTextBlock.FontSize = Configuration.PrimaryDescriptionFontSize;// *currentScale;
             point.RightSecondaryDescriptionTextBlock.FontSize = Configuration.SecondaryDescriptionFontSize;// *currentScale;
 
-            point.RightPanoramaLine.X1 = computeRelativeX(point.X);
+            point.RightPanoramaLine.X1 = ComputeRelativeX(point.X);
             point.RightPanoramaLine.X2 = point.RightPanoramaLine.X1;
 
-            point.RightPanoramaLine.Y1 = computeRelativeY(point.Y);
-            point.RightPanoramaLine.Y2 = point.RightPanoramaLine.Y1 - currentScale * point.LineLength;
+            point.RightPanoramaLine.Y1 = ComputeRelativeY(point.Y);
+            point.RightPanoramaLine.Y2 = point.RightPanoramaLine.Y1 - _currentScale * point.LineLength;
 
-            point.LeftPanoramaLine.X1 = point.RightPanoramaLine.X1 - width * currentScale;
+            point.LeftPanoramaLine.X1 = point.RightPanoramaLine.X1 - _width * _currentScale;
             point.LeftPanoramaLine.X2 = point.LeftPanoramaLine.X1;
             point.LeftPanoramaLine.Y1 = point.RightPanoramaLine.Y1;
             point.LeftPanoramaLine.Y2 = point.RightPanoramaLine.Y2;
@@ -672,32 +668,32 @@ namespace Wanderer
             RightCanvasTranslateTransform.X = translateX;
             RightCanvasTranslateTransform.Y = translateY;
 
-            LeftCanvasTranslateTransform.X = translateX - (width * currentScale);
+            LeftCanvasTranslateTransform.X = translateX - (_width * _currentScale);
             LeftCanvasTranslateTransform.Y = translateY;
         }
 
 
-        private void doubleTapHandler(object sender, System.Windows.Input.GestureEventArgs e)
+        private void DoubleTapHandler(object sender, System.Windows.Input.GestureEventArgs e)
         {
-            if (currentScale == MAX_SCALE)
+            if (_currentScale == MaxScale)
             {
-                scaleImages(MIN_SCALE, 0.8);
-                PanoramaTransformLeft.TranslateX -= (screenWidth * 0.15);
-                PanoramaTransformRight.TranslateX = PanoramaTransformLeft.TranslateX + (width * MIN_SCALE);
+                ScaleImages(_minScale, 0.8);
+                PanoramaTransformLeft.TranslateX -= (_screenWidth * 0.15);
+                PanoramaTransformRight.TranslateX = PanoramaTransformLeft.TranslateX + (_width * _minScale);
             }
             else
             {
-                double scale = currentScale;
-                scaleImages(MAX_SCALE, 0.8);
-                PanoramaTransformLeft.TranslateX -= (screenWidth * 0.3) * ((MAX_SCALE - scale));
-                PanoramaTransformRight.TranslateX = PanoramaTransformLeft.TranslateX + (width * MAX_SCALE);
+                double scale = _currentScale;
+                ScaleImages(MaxScale, 0.8);
+                PanoramaTransformLeft.TranslateX -= (_screenWidth * 0.3) * ((MaxScale - scale));
+                PanoramaTransformRight.TranslateX = PanoramaTransformLeft.TranslateX + (_width * MaxScale);
             }
-            updateImagesBounds();
+            UpdateImagesBounds();
         }
 
         #region DAOCallbacksMethods
 
-        private void generateUIElementsForPoints(List<Point> points)
+        private void GenerateUIElementsForPoints(List<Point> points)
         {
             int index = 0;
             foreach (Point point in points)
@@ -806,8 +802,8 @@ namespace Wanderer
                     Debug.WriteLine(index + " : " + points.Count);
                     if (index == points.Count)
                     {
-                        startCompass();
-                        updateImagesBounds();
+                        StartCompass();
+                        UpdateImagesBounds();
                     }
                 });
             }
@@ -824,31 +820,30 @@ namespace Wanderer
                     try
                     {
                         SetImageResolution();
-
-                        setPixelsPerDegree();
+                        SetPixelsPerDegree();
 
                         WebResponse response = request.EndGetResponse(result);
                         Stream stream = response.GetResponseStream();
-                        IsolatedStorageDAO.CachePhoto(stream, width, height, metadata);
-                        WriteableBitmap bitmapImage = new WriteableBitmap(width, height);
+                        IsolatedStorageDAO.CachePhoto(stream, _width, _height, _metadata);
+                        WriteableBitmap bitmapImage = new WriteableBitmap(_width, _height);
                         bitmapImage.LoadJpeg(stream);
 
                         ImageSource = bitmapImage;
                         PanoramaImageLeft.DataContext = ImageSource;
                         PanoramaImageRight.DataContext = ImageSource;
 
-                        MIN_SCALE = (double)screenHeight / (double)bitmapImage.PixelHeight;
-                        currentScale = MIN_SCALE;
+                        _minScale = (double)_screenHeight / (double)bitmapImage.PixelHeight;
+                        _currentScale = _minScale;
 
-                        PanoramaImageLeft.Width = width * currentScale;
-                        PanoramaImageLeft.Height = height * currentScale;
-                        PanoramaImageRight.Width = width * currentScale;
-                        PanoramaImageRight.Height = height * currentScale;
+                        PanoramaImageLeft.Width = _width * _currentScale;
+                        PanoramaImageLeft.Height = _height * _currentScale;
+                        PanoramaImageRight.Width = _width * _currentScale;
+                        PanoramaImageRight.Height = _height * _currentScale;
 
                         Debug.WriteLine("Size: " + bitmapImage.PixelWidth + " x " + bitmapImage.PixelHeight);
                         ReloadContent();
 
-                        generateUIElementsForPoints(metadata.Points);
+                        GenerateUIElementsForPoints(_metadata.Points);
 
                         LoadingAnimation.Visibility = Visibility.Collapsed;
                     }
@@ -882,7 +877,6 @@ namespace Wanderer
         }
 
 
-
         #region CompassMethods
 
 
@@ -891,7 +885,7 @@ namespace Wanderer
          */
         protected override void OnBackKeyPress(CancelEventArgs e)
         {
-            if (!isCalibrationInProgress)
+            if (!_isCalibrationInProgress)
             {
                 base.OnBackKeyPress(e);
             }
@@ -906,7 +900,7 @@ namespace Wanderer
         private void useCompassCheckBoxChecked(object sender, RoutedEventArgs e)
         {
             UseCompass = true;
-            compass.Start();
+            _compass.Start();
         }
 
         /* Metoda deaktywująca kompas (odznaczono checkbox w menu kontekstowym).
@@ -914,7 +908,7 @@ namespace Wanderer
         private void useCompassCheckBoxUnchecked(object sender, RoutedEventArgs e)
         {
             UseCompass = false;
-            compass.Stop();
+            _compass.Stop();
         }
 
         /* Metoda zamykająca okno kalibracji kompasu. 
@@ -923,7 +917,7 @@ namespace Wanderer
         private void FinishCalibrationButtonClick(object sender, RoutedEventArgs e)
         {
             CalibrationStackPanel.Visibility = Visibility.Collapsed;
-            isCalibrationInProgress = false;
+            _isCalibrationInProgress = false;
         }
 
 

@@ -8,7 +8,7 @@ namespace Wanderer
 {
     public class Category
     {
-        public String Name { get; set; }
+        public String Name { get; private set; }
 
         public Category(String name)
         {

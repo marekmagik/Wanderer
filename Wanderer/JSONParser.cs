@@ -16,10 +16,9 @@ namespace Wanderer
     class JSONParser
     {
 
-        private int fontSize = 20;
-        private int maxWidth;
-        private int twoLinesWidth = 750;
-        private int actualLine = 0;
+        private int _fontSize = 20;
+        private int _maxWidth;
+        private int _twoLinesWidth = 750;
 
         public Dictionary<String, String> GetSeparatedMetadataInJSONFormatAndHashes(string json) {
             Dictionary<String, String> placesInJSON = new Dictionary<String, String>();
@@ -33,7 +32,7 @@ namespace Wanderer
                     if (property.Name.Equals("picture_hash"))
                         hash = property.Value.ToString();
                 }
-                placesInJSON.Add(obj.ToString(), hash);
+                placesInJSON.Add(hash, obj.ToString());
             }
             return placesInJSON;
         }
@@ -48,7 +47,6 @@ namespace Wanderer
             foreach (JObject obj in jsonArray.Children<JObject>())
             {
                 ImageMetadata place = new ImageMetadata();
-
 
                 foreach (JProperty property in obj.Properties())
                 {
@@ -136,7 +134,6 @@ namespace Wanderer
         {
             Deployment.Current.Dispatcher.BeginInvoke(delegate
             {
-
                 SetMaxWidth();
                 int fullDescriptionWidth = fullDescription.Length;
                 String shortDescription = "";
@@ -150,7 +147,6 @@ namespace Wanderer
                 {
                     if (actualIndex == fullDescriptionWidth - 1)
                         shouldEnd = true;
-
 
                     Char actualChar = fullDescription.ElementAt(actualIndex);
 
@@ -167,15 +163,14 @@ namespace Wanderer
                         widthOfActualChar = 0;
                     else
                     {
-
                         TextBlock block = new TextBlock();
                         block.Text = actualChar.ToString();
-                        block.FontSize = fontSize;
+                        block.FontSize = _fontSize;
                         widthOfActualChar = (int)block.ActualWidth;
 
                     }
 
-                    if (actualWidth + widthOfActualChar > maxWidth)
+                    if (actualWidth + widthOfActualChar > _maxWidth)
                     {
                         shouldEnd = true;
                         shortDescription += "...";
@@ -187,10 +182,10 @@ namespace Wanderer
                         shortDescription += actualChar;
                     }
 
-                    if (check && widthToEndOfNextWord!=0 && widthToEndOfNextWord + actualWidth > twoLinesWidth / 2)
+                    if (check && widthToEndOfNextWord!=0 && widthToEndOfNextWord + actualWidth > _twoLinesWidth / 2)
                     {
                         check = false;
-                        actualWidth = twoLinesWidth / 2 + 13;
+                        actualWidth = _twoLinesWidth / 2 + 13;
                         ignoreWhiteSigns = true;
                     }
                 }
@@ -210,13 +205,11 @@ namespace Wanderer
 
             while (!shouldEnd)
             {
-
                 Char actualChar = ' ';
                 if (actualIndex == fullDescription.Length)
                     shouldEnd = true;
                 else
                 {
-
                     actualChar = fullDescription.ElementAt(actualIndex);
                     if (!actualChar.Equals(' ') && searchForBegining)
                     {
@@ -228,14 +221,13 @@ namespace Wanderer
                     {
                         shouldEnd = true;
                     }
-
                 }
 
                 if (!shouldEnd)
                 {
                     TextBlock block = new TextBlock();
                     block.Text = actualChar.ToString();
-                    block.FontSize = fontSize;
+                    block.FontSize = _fontSize;
                     int widthOfActualChar = (int)block.ActualWidth;
                     actualWidth += widthOfActualChar;
                     actualIndex++;
@@ -249,8 +241,8 @@ namespace Wanderer
         {
             TextBlock text = new TextBlock();
             text.Text = "...";
-            text.FontSize = fontSize;
-            maxWidth = twoLinesWidth - (int)text.ActualWidth;
+            text.FontSize = _fontSize;
+            _maxWidth = _twoLinesWidth - (int)text.ActualWidth;
         }
 
         private Color getColor(string color)

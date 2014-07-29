@@ -7,9 +7,11 @@ using System.Device.Location;
 
 namespace Wanderer
 {
-    public class Configuration
+    public static class Configuration
     {
         public static int PrimaryDescriptionFontSize { get; set; }
         public static int SecondaryDescriptionFontSize { get; set; }
+        public static string ServerAddress { get; set; }
+
     }
 }

@@ -29,12 +29,9 @@
             	        <Run Text="Wanderer"/>
             	        <LineBreak/>
                     </TextBlock>
-                    <Button Content="Konfiguracja" Click="showPanoramaViewPage" IsEnabled="False" />
-                    <Button Content="Pokaz liste" Click="showListOfPlaces" IsEnabled="False"/>
-
+                    
                 </StackPanel>
 
-                <!--ContentPanel - place additional content here-->
                 <Grid x:Name="ContentPanel" Grid.Row="1" Margin="12,0,12,0">
 
                 </Grid>

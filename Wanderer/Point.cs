@@ -41,11 +41,6 @@ namespace Wanderer
             this.SecondaryDescription = secondaryDescription;
         }
 
-        public Point()
-        {
-
-        }
-
 
         public override string ToString()
         {
@@ -66,6 +61,16 @@ namespace Wanderer
                 }
             }
             return false;
+        }
+
+        public override int GetHashCode()
+        {
+            int hash = 13;
+            hash = (hash * 7) + Convert.ToInt32(X);
+            hash = (hash * 7) + Convert.ToInt32(Y);
+            hash = (hash * 7) + PrimaryDescription.GetHashCode();
+            hash = (hash * 7) + SecondaryDescription.GetHashCode();
+            return hash;
         }
 
     }

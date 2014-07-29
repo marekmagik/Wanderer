@@ -41,7 +41,7 @@ namespace Wanderer
 
         public void ToggleDescriptions()
         {
-            String temp = PictureAdditionalDescription;
+            string temp = PictureAdditionalDescription;
             PictureAdditionalDescription = PictureDescriptionToChange;
             PictureDescriptionToChange = temp;
         }

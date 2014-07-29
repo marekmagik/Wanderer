@@ -6,7 +6,5 @@ using System.Threading.Tasks;
 
 namespace Wanderer
 {
-    class PossibleMemoryAccessViolationException : Exception
-    {
-    }
+    class PossibleMemoryAccessViolationException : Exception { }
 }

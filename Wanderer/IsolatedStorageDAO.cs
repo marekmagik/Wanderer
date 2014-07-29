@@ -16,16 +16,16 @@ namespace Wanderer
     static class IsolatedStorageDAO
     {
 
-        private const string filename = "places_data.wdf";
-        private static List<string> cachedPhotos;
-        private static List<string> cachedThumbnails;
+        private const string Filename = "places_data.wdf";
+        private static List<String> _cachedPhotos;
+        private static List<String> _cachedThumbnails;
 
         public static void InitIsolatedStorageDAO()
         {
-            if (cachedPhotos == null)
-                cachedPhotos = new List<string>();
-            if (cachedThumbnails == null)
-                cachedThumbnails = new List<string>();
+            if (_cachedPhotos == null)
+                _cachedPhotos = new List<string>();
+            if (_cachedThumbnails == null)
+                _cachedThumbnails = new List<string>();
 
             LoadPlacesData();
             LoadNewFiles();
@@ -49,13 +49,13 @@ namespace Wanderer
 
             using (IsolatedStorageFile storage = IsolatedStorageFile.GetUserStoreForApplication())
             {
-                foreach (KeyValuePair<string, string> metadataAndHash in parser.GetSeparatedMetadataInJSONFormatAndHashes(json))
+                foreach (KeyValuePair<String, String> metadataAndHash in parser.GetSeparatedMetadataInJSONFormatAndHashes(json))
                 {
-                    if (!storage.FileExists("/metadata/" + metadataAndHash.Value + ".meta"))
+                    if (!storage.FileExists("/metadata/" + metadataAndHash.Key + ".meta"))
                     {
-                        using (StreamWriter writer = new StreamWriter(storage.CreateFile("/metadata/" + metadataAndHash.Value + ".meta")))
+                        using (StreamWriter writer = new StreamWriter(storage.CreateFile("/metadata/" + metadataAndHash.Key + ".meta")))
                         {
-                            writer.Write("[" + metadataAndHash.Key + "]");
+                            writer.Write("[" + metadataAndHash.Value + "]");
                         }
                     }
                     else
@@ -80,19 +80,18 @@ namespace Wanderer
                 if (!storage.DirectoryExists("metadata"))
                     storage.CreateDirectory("metadata");
 
-                if (storage.FileExists(filename))
+                if (storage.FileExists(Filename))
                 {
                     // tutaj zaladowanie places oraz cachedFiles z pliku
                     // czyli informacji o cahcowanych mmiejscach oraz o plikach ktore sa chachowane
                     // takze dodawanie do dictonary
+                    // ^ DEPRECATED
                 }
                 else
                 {
-                    storage.CreateFile(filename);
+                    storage.CreateFile(Filename);
                 }
-
             }
-
         }
 
         public static void LoadNewFiles()
@@ -102,16 +101,16 @@ namespace Wanderer
                 string[] photos = storage.GetFileNames("/photos/*");
                 foreach (string photo in photos)
                 {
-                    if (!cachedPhotos.Contains(photo))
-                        cachedPhotos.Add(photo.Remove(64, 4));
+                    if (!_cachedPhotos.Contains(photo))
+                        _cachedPhotos.Add(photo.Remove(64, 4));
                 }
 
                 string[] thumbnails = storage.GetFileNames("/thumbnails/*");
                 foreach (string thumbnail in thumbnails)
                 {
                     Debug.WriteLine("WCZYTUJE MINIATURE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" + thumbnail);
-                    if (!cachedThumbnails.Contains(thumbnail))
-                        cachedThumbnails.Add(thumbnail.Remove(64, 4));
+                    if (!_cachedThumbnails.Contains(thumbnail))
+                        _cachedThumbnails.Add(thumbnail.Remove(64, 4));
                 }
 
             }
@@ -134,13 +133,13 @@ namespace Wanderer
 
         public static bool IsPhotoCached(string hash)
         {
-            foreach (string photo in cachedPhotos)
+            foreach (string photo in _cachedPhotos)
             {
                 Debug.WriteLine(photo);
             }
             Debug.WriteLine(" arg " + hash);
 
-            if (cachedPhotos.Contains(hash))
+            if (_cachedPhotos.Contains(hash))
                 return true;
             else
                 return false;
@@ -148,7 +147,7 @@ namespace Wanderer
 
         public static bool IsThumbnailCached(string hash)
         {
-            if (cachedThumbnails.Contains(hash))
+            if (_cachedThumbnails.Contains(hash))
                 return true;
             else
                 return false;
@@ -174,8 +173,8 @@ namespace Wanderer
                 image.Position = 0;
             }
 
-            cachedPhotos.Add(hash);
-            Debug.WriteLine(" size of list " + cachedPhotos.Count);
+            _cachedPhotos.Add(hash);
+            Debug.WriteLine(" size of list " + _cachedPhotos.Count);
         }
 
         public static void CacheThumbnail(Stream image, int width, int height, string hash)
@@ -192,7 +191,7 @@ namespace Wanderer
             }
 
             Debug.WriteLine(" thumbnail cached ");
-            cachedThumbnails.Add(hash);
+            _cachedThumbnails.Add(hash);
         }
 
         public static WriteableBitmap loadThumbnail(string hash)
@@ -213,19 +212,6 @@ namespace Wanderer
                 IsolatedStorageFileStream fileStream = storage.OpenFile("photos\\" + hash + ".jpg", System.IO.FileMode.Open, FileAccess.Read);
                 return fileStream;
             }
-        }
-
-        public static List<ImageMetadata> getCachedPlaces(List<ImageMetadata> places)
-        {
-            List<ImageMetadata> cachedPlaces = new List<ImageMetadata>();
-
-            foreach (ImageMetadata place in places)
-            {
-                if (cachedThumbnails.Contains(place.PictureSHA256))
-                    cachedPlaces.Add(place);
-            }
-
-            return cachedPlaces;
         }
 
     }

@@ -22,7 +22,7 @@
     <Grid x:Name="LayoutRoot" Background="Green" Width="Auto">
         
         <Canvas Background="Black">
-            <Image Name="PanoramaImageLeft" Source="{Binding}" HorizontalAlignment="Left" Hold="PanoramaHold" Visibility="Visible" ManipulationDelta="manipulationDeltaHandler" ManipulationCompleted="manipulationCompletedHandler" DoubleTap="doubleTapHandler">
+            <Image Name="PanoramaImageLeft" Source="{Binding}" HorizontalAlignment="Left" Hold="PanoramaHold" Visibility="Visible" ManipulationDelta="ManipulationDeltaHandler" ManipulationCompleted="ManipulationCompletedHandler" DoubleTap="DoubleTapHandler">
                 <Image.RenderTransform>
                     <CompositeTransform x:Name="PanoramaTransformLeft"></CompositeTransform>
                 </Image.RenderTransform>
@@ -41,7 +41,7 @@
 
 
         <Canvas Name="PanoramaRightCanvas">
-            <Image Name="PanoramaImageRight" Source="{Binding}"  HorizontalAlignment="Right" Hold="PanoramaHold" Visibility="Visible" ManipulationDelta="manipulationDeltaHandler" ManipulationCompleted="manipulationCompletedHandler" DoubleTap="doubleTapHandler">
+            <Image Name="PanoramaImageRight" Source="{Binding}"  HorizontalAlignment="Right" Hold="PanoramaHold" Visibility="Visible" ManipulationDelta="ManipulationDeltaHandler" ManipulationCompleted="ManipulationCompletedHandler" DoubleTap="DoubleTapHandler">
                 <Image.RenderTransform>
                     <CompositeTransform x:Name="PanoramaTransformRight"></CompositeTransform>
                 </Image.RenderTransform>

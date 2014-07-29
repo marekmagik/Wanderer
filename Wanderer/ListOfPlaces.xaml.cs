@@ -16,47 +16,36 @@ namespace Wanderer
 {
     public partial class ListOfPlaces : PhoneApplicationPage
     {
-        //private List<Place> places;
-        private List<ImageMetadata> places;
-        private List<ImageMetadata> notCachedPlaces;
-        private List<ImageMetadata> points;
-        private List<ImageMetadata> allPlaces;
-        //private Place actualPlace;
-        //private DAO dao;
-        private int actualIndex;
-        private MainPage mainPage;
-        private int increaseAmount = 1;
-        private int actualNumberOfElementsInList = 1;
+        private List<ImageMetadata> _places;
+        private List<ImageMetadata> _notCachedPlaces;
+        private List<ImageMetadata> _points;
+        private List<ImageMetadata> _allPlaces;
+        private int _actualIndex;
+        private MainPage _mainPage;
+        private int _increaseAmount = 1;
+        private int _actualNumberOfElementsInList = 1;
 
 
         public ListOfPlaces(MainPage mainPage)
         {
             InitializeComponent();
-            places = new List<ImageMetadata>();
-            allPlaces = new List<ImageMetadata>();
-            notCachedPlaces = new List<ImageMetadata>();
-            DAO.GetDataFromServer(this, 20.5, 40.6, 100000000);
-            this.DataContext = places;
-            actualIndex = 0;
+            _places = new List<ImageMetadata>();
+            _allPlaces = new List<ImageMetadata>();
+            _notCachedPlaces = new List<ImageMetadata>();
+            DAO.SendRequestForMetadataOfPlacesWithinRange(this, 20.5, 40.6, 100000000);
+            this.DataContext = _places;
+            _actualIndex = 0;
 
-            this.mainPage = mainPage;
+            this._mainPage = mainPage;
         }
-
-        protected override void OnNavigatedTo(NavigationEventArgs e)
-        {
-            base.OnNavigatedTo(e);
-            Debug.WriteLine("on navigated list of places!");
-            PlacesListBox.UpdateLayout();
-        }
-
 
         public void ReloadContent()
         {
             Deployment.Current.Dispatcher.BeginInvoke(delegate
-                    {
-                        PlacesListBox.ItemsSource = null;
-                        PlacesListBox.ItemsSource = places;
-                    });
+                {
+                    PlacesListBox.ItemsSource = null;
+                    PlacesListBox.ItemsSource = _places;
+                });
         }
 
         public void RequestCallback(IAsyncResult result)
@@ -75,11 +64,11 @@ namespace Wanderer
 
                     IsolatedStorageDAO.CacheMetadata(json);
                     JSONParser parser = new JSONParser();
-                    allPlaces = parser.ParsePlacesJSON(json);
+                    _allPlaces = parser.ParsePlacesJSON(json);
 
-                    if (allPlaces.Count > 0)
+                    if (_allPlaces.Count > 0)
                     {
-                        actualIndex = 0;
+                        _actualIndex = 0;
                         ProcessNextPlace();
                     }
 
@@ -95,17 +84,17 @@ namespace Wanderer
 
         private void ProcessNextPlace()
         {
-            if (actualIndex < actualNumberOfElementsInList)
+            if (_actualIndex < _actualNumberOfElementsInList)
             {
-                ImageMetadata place = allPlaces.ElementAt(actualIndex);
-                places.Add(place);
+                ImageMetadata place = _allPlaces.ElementAt(_actualIndex);
+                _places.Add(place);
                 if (IsolatedStorageDAO.IsThumbnailCached(place.PictureSHA256))
                 {
                     LoadPhotoFromIsolatedStorage(place);
                 }
                 else
                 {
-                    DAO.LoadImage(this, places.ElementAt(actualIndex).PictureSHA256);
+                    DAO.SendRequestForThumbnail(this, _places.ElementAt(_actualIndex).PictureSHA256);
                 }
             }
         }
@@ -118,8 +107,7 @@ namespace Wanderer
                 WriteableBitmap bitmapImage = IsolatedStorageDAO.loadThumbnail(place.PictureSHA256);
                 place.Image = bitmapImage;
                 ReloadContent();
-                actualIndex++;
-                //       ProcessNextPlace();
+                _actualIndex++;
             });
         }
 
@@ -135,17 +123,17 @@ namespace Wanderer
                             WebResponse response = request.EndGetResponse(result);
                             Stream stream = response.GetResponseStream();
 
-                            ImageMetadata place = places.ElementAt(actualIndex);
+                            ImageMetadata place = _places.ElementAt(_actualIndex);
                             IsolatedStorageDAO.CacheThumbnail(stream, place.Width, place.Height, place.PictureSHA256);
 
                             BitmapImage image = new BitmapImage();
                             image.SetSource(stream);
-                            Debug.WriteLine(actualIndex);
+                            Debug.WriteLine(_actualIndex);
                             place.Image = image;
 
                             ReloadContent();
-                            Debug.WriteLine("elements returned " + places.Count);
-                            actualIndex++;
+                            Debug.WriteLine("elements returned " + _places.Count);
+                            _actualIndex++;
                             ProcessNextPlace();
                         }
                         catch (WebException)
@@ -153,70 +141,60 @@ namespace Wanderer
                             Debug.WriteLine("wyjatek wewnatrz UI!");
                             return;
                         }
-
-                    });
-
+                });
             }
         }
 
-        private void PlacesListBox_ImageTap(object sender, System.Windows.Input.GestureEventArgs e)
+        private void PlacesListBoxImageTap(object sender, System.Windows.Input.GestureEventArgs e)
         {
             GC.Collect();
             GC.WaitForPendingFinalizers();
             FrameworkElement element = (FrameworkElement)sender;
             ImageMetadata image = (ImageMetadata)element.DataContext;
-            Uri uri = new Uri("/PanoramaView.xaml?&hash=" + image.PictureSHA256 + "&useLocalDatabase=false", UriKind.Relative);
+            Uri uri = new Uri("/PanoramaView.xaml?&hash=" + image.PictureSHA256, UriKind.Relative);
 
-            //Debug.WriteLine("photo_id=" + image.IdInDatabase);
             Debug.WriteLine("HASH: " + image.PictureSHA256);
-            //   NavigationService.Navigate(new Uri("/PanoramaView.xaml?photoID=" + places.ElementAt(PlacesListBox.SelectedIndex).IdInDatabase + "&hash="+places.ElementAt(PlacesListBox.SelectedIndex).PictureSHA256+"&useLocalDatabase=false", UriKind.Relative));
-            if (NavigationService == null)
-            {
-                Debug.WriteLine("Ni huja");
-            }
-            //MainPage.navigateToPage(uri);
             PlacesListBox.SelectedIndex = -1;
-            mainPage.NavigationService.Navigate(uri);
+            _mainPage.NavigationService.Navigate(uri);
         }
 
-        private void PlacesListBox_TextTap(object sender, System.Windows.Input.GestureEventArgs e)
+        private void PlacesListBoxTextTap(object sender, System.Windows.Input.GestureEventArgs e)
         {
             Deployment.Current.Dispatcher.BeginInvoke(delegate
             {
                 if (sender != null)
                 {
                     FrameworkElement element = (FrameworkElement)sender;
-                    ImageMetadata image = (ImageMetadata)element.DataContext;
-                    image.ToggleDescriptions();
+                    ImageMetadata metadata = (ImageMetadata)element.DataContext;
+                    metadata.ToggleDescriptions();
                     PlacesListBox.ItemsSource = null;
-                    PlacesListBox.ItemsSource = places;
+                    PlacesListBox.ItemsSource = _places;
                 }
-                //Debug.WriteLine(image);
             });
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
+        private void ButtonClick(object sender, RoutedEventArgs e)
         {
-            if (actualNumberOfElementsInList != allPlaces.Count)
+            if (_actualNumberOfElementsInList != _allPlaces.Count)
             {
-                actualNumberOfElementsInList += increaseAmount;
+                _actualNumberOfElementsInList += _increaseAmount;
                 ProcessNextPlace();
             }
         }
 
-        private void PlacesListBox_Loaded(object sender, RoutedEventArgs e)
+        private void PlacesListBoxLoaded(object sender, RoutedEventArgs e)
         {
-            if (allPlaces.Count > 0)
+            if (_allPlaces.Count > 0)
             {
-                if (actualNumberOfElementsInList != allPlaces.Count)
+                if (_actualNumberOfElementsInList != _allPlaces.Count)
                 {
-                    actualNumberOfElementsInList += increaseAmount;
+                    _actualNumberOfElementsInList += _increaseAmount;
                     ProcessNextPlace();
                 }
             }
         }
 
-        private void PlacesListBox_ManipulationCompleted(object sender, System.Windows.Input.ManipulationCompletedEventArgs e)
+        private void PlacesListBoxManipulationCompleted(object sender, System.Windows.Input.ManipulationCompletedEventArgs e)
         {
             Debug.WriteLine(" Handler ");
         }
