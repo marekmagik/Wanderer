@@ -21,14 +21,14 @@ namespace WandererPanoramasEditor
 
     public partial class GenerateJSONWindow : Window
     {
-        private readonly ImageMetadata metadata;
-        private readonly string imageFileName;
+        private readonly ImageMetadata _metadata;
+        private readonly string _imageFileName;
 
         public GenerateJSONWindow(ImageMetadata metadata, string imageFileName)
         {
             InitializeComponent();
-            this.metadata = metadata;
-            this.imageFileName = imageFileName;
+            this._metadata = metadata;
+            this._imageFileName = imageFileName;
             ImageDescriptionTextBox.Text = metadata.PictureDescription;
             ImageAdditionalDescriptionTextBox.Text = metadata.PictureAdditionalDescription;
             ImageOrientationTextBox.Text = Convert.ToString(metadata.OrientationOfLeftBorder);
@@ -48,24 +48,24 @@ namespace WandererPanoramasEditor
                 double longitude = Convert.ToDouble(LongitudeTextBox.Text);
                 double latitude = Convert.ToDouble(LatitudeTextBox.Text);
 
-                metadata.PictureDescription = description;
-                metadata.PictureAdditionalDescription = additionalDescription;
-                metadata.OrientationOfLeftBorder = orientation;
-                metadata.CoverageInPercent = coverage;
-                metadata.Longitude = longitude;
-                metadata.Latitude = latitude;
-                metadata.Version += 0.001;
-                using (FileStream stream = File.Open(imageFileName, System.IO.FileMode.Open, FileAccess.Read))
+                _metadata.PictureDescription = description;
+                _metadata.PictureAdditionalDescription = additionalDescription;
+                _metadata.OrientationOfLeftBorder = orientation;
+                _metadata.CoverageInPercent = coverage;
+                _metadata.Longitude = longitude;
+                _metadata.Latitude = latitude;
+                _metadata.Version += 0.001;
+                using (FileStream stream = File.Open(_imageFileName, System.IO.FileMode.Open, FileAccess.Read))
                 {
                     SHA256Managed sha256 = new SHA256Managed();
                     string hex = BitConverter.ToString(sha256.ComputeHash(stream));
                     Debug.WriteLine(hex);
                     hex = hex.Replace("-", "");
                     hex = hex.ToLower();
-                    metadata.PictureSHA256 = hex;
+                    _metadata.PictureSHA256 = hex;
                 }
 
-                string result = JsonConvert.SerializeObject(metadata);
+                string result = JsonConvert.SerializeObject(_metadata);
 
                 Microsoft.Win32.SaveFileDialog dialog = new Microsoft.Win32.SaveFileDialog();
                 dialog.Filter = "Metadane programu Wanderer|*.wan";

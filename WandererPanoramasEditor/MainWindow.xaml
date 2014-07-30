@@ -1,7 +1,7 @@
 ﻿<Window x:Class="WandererPanoramasEditor.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Panoramas Editor" Height="450" Width="1055" SizeChanged="Window_SizeChanged">
+        Title="Panoramas Editor" Height="450" Width="1055" SizeChanged="WindowSizeChanged">
     <Grid Background="Beige">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
@@ -17,15 +17,15 @@
                 <Menu DockPanel.Dock="Top" Background="Black" Foreground="White">
                     <MenuItem Background="Black" Header="Plik">
                         <MenuItem Foreground="Black" Header="Wczytaj zdjęcie..." Name="LoadFileMenuItem" Click="loadPanoramaFile" />
-                        <MenuItem Foreground="Black" Header="Wczytaj metadane..." IsEnabled="False" Name="MetaDataMenuItem" Click="loadMetadataFile" />
+                        <MenuItem Foreground="Black" Header="Wczytaj metadane..." IsEnabled="False" Name="MetaDataMenuItem" Click="LoadMetadataFile" />
                         <MenuItem Foreground="Black" Header="Zakończ" Name="CloseAppMenuItem" Click="closeApplication" />
                     </MenuItem>
                     <MenuItem Background="Black" Header="Kursor">
                         <MenuItem Foreground="Black" Header="Kolor" Name="ColorMenuItem" >
-                            <MenuItem Foreground="Black" Header="Czarny" IsCheckable="True" IsChecked="True" Name="blackColorMenuItem" Click="blackColorMenuItemClick" />
-                            <MenuItem Foreground="Black" Header="Czerwony" IsCheckable="True" IsChecked="False" Name="redColorMenuItem" Click="redColorMenuItemClick"/>
-                            <MenuItem Foreground="Black" Header="Żółty" IsCheckable="True" IsChecked="False" Name="yellowColorMenuItem" Click="yellowColorMenuItemClick"/>
-                            <MenuItem Foreground="Black" Header="Zielony" IsCheckable="True" IsChecked="False" Name="greenColorMenuItem" Click="greenColorMenuItemClick"/>
+                            <MenuItem Foreground="Black" Header="Czarny" IsCheckable="True" IsChecked="True" Name="blackColorMenuItem" Click="BlackColorMenuItemClick" />
+                            <MenuItem Foreground="Black" Header="Czerwony" IsCheckable="True" IsChecked="False" Name="redColorMenuItem" Click="RedColorMenuItemClick"/>
+                            <MenuItem Foreground="Black" Header="Żółty" IsCheckable="True" IsChecked="False" Name="yellowColorMenuItem" Click="YellowColorMenuItemClick"/>
+                            <MenuItem Foreground="Black" Header="Zielony" IsCheckable="True" IsChecked="False" Name="greenColorMenuItem" Click="GreenColorMenuItemClick"/>
 
                         </MenuItem>
                     </MenuItem>
@@ -95,24 +95,24 @@
                 </DockPanel>
                 <DockPanel Grid.Column="1">
                     <TextBlock Margin="2" DockPanel.Dock="Top">Pozycja kursora:</TextBlock>
-                    <TextBox Name="xCursorPosition" Margin="3" Width="35" KeyDown="moveCursorToSpecifiedPosition"></TextBox>
+                    <TextBox Name="xCursorPosition" Margin="3" Width="35" KeyDown="MoveCursorToSpecifiedPosition"></TextBox>
                     <TextBlock Margin="3">x</TextBlock>
-                    <TextBox Name="yCursorPosition" Margin="3" Width="35" KeyDown="moveCursorToSpecifiedPosition"></TextBox>
+                    <TextBox Name="yCursorPosition" Margin="3" Width="35" KeyDown="MoveCursorToSpecifiedPosition"></TextBox>
                 </DockPanel>
                 <DockPanel Grid.Column="2">
-                    <Button Click="addPoint" Height="20" IsEnabled="False" Name="AddPointButton"  Width="90">Dodaj punkt</Button>
+                    <Button Click="AddPoint" Height="20" IsEnabled="False" Name="AddPointButton"  Width="90">Dodaj punkt</Button>
                 </DockPanel>
                 <DockPanel Grid.Column="3">
                     <ComboBox Height="20" Name="PointsComboBox" DropDownClosed="PointsComboBoxDropDownClosed" Width="150"></ComboBox>
                 </DockPanel>
                 <DockPanel Grid.Column="4">
-                    <Button Click="editPoint" Height="20" IsEnabled="False" Name="EditPointButton" Width="90">Edytuj punkt</Button>
+                    <Button Click="EditPoint" Height="20" IsEnabled="False" Name="EditPointButton" Width="90">Edytuj punkt</Button>
                 </DockPanel>
                 <DockPanel Grid.Column="5">
-                    <Button Click="removePoint" Height="20" IsEnabled="False" Name="RemovePointButton" Width="90">Usuń punkt</Button>
+                    <Button Click="RemovePoint" Height="20" IsEnabled="False" Name="RemovePointButton" Width="90">Usuń punkt</Button>
                 </DockPanel>
                 <DockPanel Grid.Column="6">
-                    <Button Click="manageCategories" Height="20" HorizontalAlignment="Right" IsEnabled="False" Margin="0,0,10,0" Name="ManageCategoriesButton" Width="130">Zarządzaj kategoriami</Button>
+                    <Button Click="ManageCategories" Height="20" HorizontalAlignment="Right" IsEnabled="False" Margin="0,0,10,0" Name="ManageCategoriesButton" Width="130">Zarządzaj kategoriami</Button>
                 </DockPanel>
                 <DockPanel Grid.Column="7">
                     <Button Click="GenerateJSONClick" Height="20" HorizontalAlignment="Right" IsEnabled="False" Margin="0,0,10,0" Name="GenerateJSONButton" Width="130">Generuj plik!</Button>
