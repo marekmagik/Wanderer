@@ -33,7 +33,7 @@ public class Photos {
 		System.out.println(" Sending photo with id: " + photoId);
 
 		PostgresDB dao = new PostgresDB();
-		byte[] result = dao.getPhoto(Integer.parseInt(photoId));
+		byte[] result = dao.getPhoto(photoId);
 		return Response.ok(result).build();
 
 	}
@@ -55,7 +55,7 @@ public class Photos {
 		System.out.println("Sending thumbnail of photo with id  " + photoId);
 
 		PostgresDB dao = new PostgresDB();
-		byte[] result = dao.getThumbnail(Integer.parseInt(photoId));
+		byte[] result = dao.getThumbnail(photoId);
 		System.out.println(" Number of bytes: " + result.length);
 		return Response.ok(result).build();
 

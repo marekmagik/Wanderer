@@ -84,13 +84,13 @@ public class PostgresDB extends DBConnection {
 	 *            id danego zdjecia
 	 * @return zdjecie jako tablica bajtow
 	 */
-	public byte[] getPhoto(int photoId) {
+	public byte[] getPhoto(String photoId) {
 		Connection connection = getConnection();
 		byte[] result = null;
 		try {
 			PreparedStatement ps = connection
-					.prepareStatement("SELECT photos.photo FROM photos inner join metadata on metadata.metadata_id=photos.metadata_id where metadata.metadata_id=?");
-			ps.setInt(1, photoId);
+					.prepareStatement("SELECT photos.photo FROM photos inner join metadata on metadata.metadata_id=photos.metadata_id where metadata.picture_hash=?");
+			ps.setString(1, photoId);
 			ResultSet rs = ps.executeQuery();
 			if (rs != null) {
 				while (rs.next()) {
@@ -116,13 +116,13 @@ public class PostgresDB extends DBConnection {
 	 *            id zdjecia, ktorego miniatruke chcemy uzyskac
 	 * @return miniatruka jako tablica bajtow
 	 */
-	public byte[] getThumbnail(int photoId) {
+	public byte[] getThumbnail(String photoId) {
 		Connection connection = getConnection();
 		byte[] result = null;
 		try {
 			PreparedStatement ps = connection
-					.prepareStatement("SELECT photos.thumbnail FROM photos inner join metadata on metadata.metadata_id=photos.metadata_id where metadata.metadata_id=?");
-			ps.setInt(1, photoId);
+					.prepareStatement("SELECT photos.thumbnail FROM photos inner join metadata on metadata.metadata_id=photos.metadata_id where metadata.picture_hash=?");
+			ps.setString(1, photoId);
 			ResultSet rs = ps.executeQuery();
 			if (rs != null) {
 				while (rs.next()) {
