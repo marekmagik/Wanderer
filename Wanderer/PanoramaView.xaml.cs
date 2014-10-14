@@ -63,6 +63,9 @@ namespace Wanderer
         public bool UseCompass { get; set; }
         public ImageSource ImageSource { get; set; }
 
+        private List<Category> _activeCategories = new List<Category>();
+        private List<Point> _activePoints = new List<Point>();
+
         public PanoramaView()
         {
             InitializeComponent();
@@ -111,7 +114,7 @@ namespace Wanderer
             }
             /* Usuń naniesione punkty przy powrocie do poprzedniego widoku.
              */
-            foreach (Point p in _metadata.Points)
+            foreach (Point p in _activePoints)
             {
                 LayoutRoot.Children.Remove(p.LeftCanvas);
                 LayoutRoot.Children.Remove(p.LeftPanoramaLine);
@@ -271,8 +274,43 @@ namespace Wanderer
 
             JSONParser parser = new JSONParser();
             _metadata = IsolatedStorageDAO.getCachedMetadata(hash);
+            InitializeCategoriesList(_metadata);
 
             InitializePanorama(hash);
+        }
+
+        private void InitializeCategoriesList(ImageMetadata _metadata)
+        {
+            Dispatcher.BeginInvoke(delegate
+            {
+                foreach (Point point in _metadata.Points)
+                {
+                    if (point.Category!=null && !_activeCategories.Contains(point.Category))
+                        _activeCategories.Add(point.Category);
+                }
+
+                if (_activePoints != null)
+                {
+                    foreach (Point point in _metadata.Points)
+                    {
+                        if (_activeCategories.Contains(point.Category))
+                            _activePoints.Add(point);
+                    }
+                }
+                //CategoriesListBox.ItemsSource = _activeCategories;
+            });
+        }
+
+
+        private void AddCategory(Category category)
+        {
+            if (!_activeCategories.Contains(category))
+                _activeCategories.Add(category);
+        }
+
+        private void RemoveCategory(Category category)
+        {
+            _activeCategories.Remove(category);
         }
 
         private void LoadImageFromServer(int screenResolutionWidth, int screenResolutionHeight)
@@ -321,7 +359,7 @@ namespace Wanderer
 
                 SetPixelsPerDegree();
 
-                GenerateUIElementsForPoints(_metadata.Points);
+                GenerateUIElementsForPoints(_activePoints);
 
                 LoadingAnimation.Visibility = Visibility.Collapsed;
             }
@@ -604,7 +642,7 @@ namespace Wanderer
             /*
              * Zaktualizuj współrzędne opisów i linii na zdjęciu.
              */
-            foreach (Point point in _metadata.Points)
+            foreach (Point point in _activePoints)
             {
                 UpdateDescriptionCanvasProperties(point);
             }
@@ -843,7 +881,7 @@ namespace Wanderer
                         Debug.WriteLine("Size: " + bitmapImage.PixelWidth + " x " + bitmapImage.PixelHeight);
                         ReloadContent();
 
-                        GenerateUIElementsForPoints(_metadata.Points);
+                        GenerateUIElementsForPoints(_activePoints);
 
                         LoadingAnimation.Visibility = Visibility.Collapsed;
                     }
