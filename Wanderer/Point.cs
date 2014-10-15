@@ -73,5 +73,18 @@ namespace Wanderer
             return hash;
         }
 
+        public void setPointVisibility(System.Windows.Visibility visibility)
+        {
+            if (LeftPanoramaLine != null)
+            {
+                LeftPanoramaLine.Visibility = visibility;
+                RightPanoramaLine.Visibility = visibility;
+                LeftPrimaryDescriptionTextBlock.Visibility = visibility;
+                RightPrimaryDescriptionTextBlock.Visibility = visibility;
+                LeftSecondaryDescriptionTextBlock.Visibility = visibility;
+                RightSecondaryDescriptionTextBlock.Visibility = visibility;
+            }
+        }
+
     }
 }
