@@ -63,7 +63,7 @@ namespace Wanderer
         public bool UseCompass { get; set; }
         public ImageSource ImageSource { get; set; }
 
-        private List<Category> _activeCategories = new List<Category>();
+        private List<Category> _categories = new List<Category>();
         private List<Point> _activePoints = new List<Point>();
 
         public PanoramaView()
@@ -281,36 +281,44 @@ namespace Wanderer
 
         private void InitializeCategoriesList(ImageMetadata _metadata)
         {
-            Dispatcher.BeginInvoke(delegate
+            Deployment.Current.Dispatcher.BeginInvoke(delegate
             {
                 foreach (Point point in _metadata.Points)
                 {
-                    if (point.Category!=null && !_activeCategories.Contains(point.Category))
-                        _activeCategories.Add(point.Category);
+                    if (point.Category != null && !_categories.Contains(point.Category))
+                    {
+                        Category category = point.Category;
+                        category.IsActive = true;
+                        _categories.Add(category);
+                    }
                 }
 
                 if (_activePoints != null)
                 {
                     foreach (Point point in _metadata.Points)
                     {
-                        if (_activeCategories.Contains(point.Category))
+                        if (_categories.Contains(point.Category))
                             _activePoints.Add(point);
                     }
                 }
-                //CategoriesListBox.ItemsSource = _activeCategories;
+                this.DataContext = _categories;
+                CategoriesListBox.ItemsSource = null;
+                CategoriesListBox.Items.Clear();
+                CategoriesListBox.ItemsSource = _categories;
+                
             });
         }
 
 
         private void AddCategory(Category category)
         {
-            if (!_activeCategories.Contains(category))
-                _activeCategories.Add(category);
+            if (!_categories.Contains(category))
+                _categories.Add(category);
         }
 
         private void RemoveCategory(Category category)
         {
-            _activeCategories.Remove(category);
+            _categories.Remove(category);
         }
 
         private void LoadImageFromServer(int screenResolutionWidth, int screenResolutionHeight)
@@ -840,7 +848,7 @@ namespace Wanderer
                     Debug.WriteLine(index + " : " + points.Count);
                     if (index == points.Count)
                     {
-                        StartCompass();
+                        //StartCompass();
                         UpdateImagesBounds();
                     }
                 });
@@ -979,6 +987,15 @@ namespace Wanderer
             ContextMenu.Visibility = Visibility.Collapsed;
         }
 
+        private void CategoryChecked(object sender, RoutedEventArgs e)
+        {
+            
+        }
+
+        private void CategoryUnchecked(object sender, RoutedEventArgs e)
+        {
+
+        }
 
         #endregion
 
