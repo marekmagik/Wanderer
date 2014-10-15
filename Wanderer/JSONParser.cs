@@ -18,7 +18,7 @@ namespace Wanderer
 
         private const int FontSize = 20;
         private int _maxWidth;
-        private const int OneLineWidth = 375;
+        private const int OneLineWidth = 380;
         private const String WordTextBlock = "word";
         private const String WhitesignsTextBlock = "whitesigns";
 
