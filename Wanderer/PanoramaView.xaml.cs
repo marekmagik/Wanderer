@@ -292,21 +292,33 @@ namespace Wanderer
                         _categories.Add(category);
                     }
                 }
-
-                if (_activePoints != null)
-                {
-                    foreach (Point point in _metadata.Points)
-                    {
-                        if (_categories.Contains(point.Category))
-                            _activePoints.Add(point);
-                    }
-                }
+                _activePoints = _metadata.Points;
+                SetActivePoints();
                 this.DataContext = _categories;
                 CategoriesListBox.ItemsSource = null;
                 CategoriesListBox.Items.Clear();
                 CategoriesListBox.ItemsSource = _categories;
                 
             });
+        }
+
+        private void SetActivePoints()
+        {
+            if (_activePoints != null)
+            {
+                //_activePoints.Clear();
+                foreach (Point point in _metadata.Points)
+                {
+                    int index = _categories.IndexOf(point.Category);
+                    if (index >= 0 && _categories.ElementAt(index).IsActive)
+                    {
+                        point.setPointVisibility(Visibility.Visible);
+                        //_activePoints.Add(point);
+                    }
+                    else
+                        point.setPointVisibility(Visibility.Collapsed);
+                }
+            }
         }
 
 
@@ -977,7 +989,7 @@ namespace Wanderer
         private void PanoramaHold(object sender, System.Windows.Input.GestureEventArgs e)
         {
             ContextMenu.Visibility = Visibility.Visible;
-            useCompassCheckBox.Focus();
+            //useCompassCheckBox.Focus();
         }
 
         /* Metoda zamyka menu kontekstowe.
@@ -989,12 +1001,22 @@ namespace Wanderer
 
         private void CategoryChecked(object sender, RoutedEventArgs e)
         {
-            
+            FrameworkElement element = (FrameworkElement)sender;
+            Category category = (Category)element.DataContext;
+            int index=_categories.IndexOf(category);
+            if (index >= 0)
+                _categories.ElementAt(index).IsActive = true;
+            SetActivePoints();
         }
 
         private void CategoryUnchecked(object sender, RoutedEventArgs e)
         {
-
+            FrameworkElement element = (FrameworkElement)sender;
+            Category category = (Category)element.DataContext;
+            int index = _categories.IndexOf(category);
+            if (index >= 0)
+                _categories.ElementAt(index).IsActive = false;
+            SetActivePoints();
         }
 
         #endregion
