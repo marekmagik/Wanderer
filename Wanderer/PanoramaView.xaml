@@ -84,19 +84,27 @@
         </StackPanel>
 
         
-        <Border Background="Black" CornerRadius="40" Height="200" LostFocus="ContextMenuLostFocus" Name="ContextMenu" Opacity="0.6" Visibility="Collapsed" Width="400">
-            <StackPanel>
-                <ListBox ItemsSource="{Binding}" Name="CategoriesListBox">
-                    <DataTemplate>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{Binding Category.Name}"/>
-                            <!--"<CheckBox Click="ChangeActiveCategories"/>-->
-                        </StackPanel>
-                    </DataTemplate>
+        <Border Background="Black" CornerRadius="40" Height="400" LostFocus="ContextMenuLostFocus" Name="ContextMenu" Opacity="0.6" Visibility="Collapsed" Width="700">
+            <Grid>
+            <StackPanel HorizontalAlignment="Left">
+                    <TextBlock FontSize="30" HorizontalAlignment="Center" Margin="0,10">Kategorie</TextBlock>
+                    <ListBox ItemsSource="{Binding}" Name="CategoriesListBox">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                        <CheckBox Name="CategoryCheckbox" Background="Teal" Checked="CategoryChecked" Unchecked="CategoryUnchecked" IsChecked="{Binding IsActive, Mode=TwoWay}" Width="350">
+                                            <TextBlock FontSize="30" HorizontalAlignment="Center" Text="{Binding Name}"/>
+                                        </CheckBox>
+                                    </StackPanel>
+                            </DataTemplate>
+                      </ListBox.ItemTemplate>
                 </ListBox>
-                <TextBlock FontSize="30" HorizontalAlignment="Center" Margin="0,10">Opcje</TextBlock>
-                <CheckBox Background="Teal" Checked="useCompassCheckBoxChecked"  IsChecked="{Binding Path=UseCompass, Mode=TwoWay}" Name="useCompassCheckBox" Unchecked="useCompassCheckBoxUnchecked" Width="400">Użyj kompasu</CheckBox>
             </StackPanel>
+            <StackPanel HorizontalAlignment="Right">
+                <TextBlock FontSize="30" HorizontalAlignment="Center" Margin="0,10">Opcje</TextBlock>
+                <CheckBox Background="Teal" Checked="useCompassCheckBoxChecked"  IsChecked="{Binding Path=UseCompass, Mode=TwoWay}" Name="useCompassCheckBox" Unchecked="useCompassCheckBoxUnchecked" Width="350">Użyj kompasu</CheckBox>
+            </StackPanel>
+            </Grid>
         </Border>
 
     </Grid>
