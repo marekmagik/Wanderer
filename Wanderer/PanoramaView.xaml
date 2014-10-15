@@ -92,7 +92,7 @@
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
-                                        <CheckBox Name="CategoryCheckbox" Background="Teal" Checked="CategoryChecked" Unchecked="CategoryUnchecked" IsChecked="{Binding IsActive, Mode=TwoWay}" Width="350">
+                                        <CheckBox  Name="CategoryCheckbox" Background="Teal" Checked="CategoryChecked" Unchecked="CategoryUnchecked" IsChecked="{Binding IsActive, Mode=TwoWay}" Width="350">
                                             <TextBlock FontSize="30" HorizontalAlignment="Center" Text="{Binding Name}"/>
                                         </CheckBox>
                                     </StackPanel>
