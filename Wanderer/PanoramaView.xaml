@@ -48,6 +48,8 @@
             </Image>
         </Canvas>
 
+        <Grid Name="GridLayoutPoints"/>
+        
 <!--
         <Canvas Margin="0,0" Name="DescriptionCanvas" Visibility="Collapsed">
             <StackPanel Name="DescriptionStackPanel">
@@ -83,9 +85,9 @@
             <Button IsEnabled="False" Name="FinishCalibrationButton" Margin="0,20" Content="Zakończ" Click="FinishCalibrationButtonClick" Width="450"/>
         </StackPanel>
 
-        <Grid Name="GridLayoutPoints"/>
-        
-        <Border Background="Black" CornerRadius="40" Height="400" LostFocus="ContextMenuLostFocus" Name="ContextMenu" Opacity="0.6" Visibility="Collapsed" Width="700">
+
+
+        <Border Background="Black" CornerRadius="40" Height="400" Hold="HideContextMenu"  Name="ContextMenu" Opacity="0.6" Visibility="Collapsed" Width="700">
             <Grid>
             <StackPanel HorizontalAlignment="Left">
                     <TextBlock FontSize="30" HorizontalAlignment="Center" Margin="0,10">Kategorie</TextBlock>
@@ -105,6 +107,7 @@
                 <TextBlock FontSize="30" HorizontalAlignment="Center" Margin="0,10">Opcje</TextBlock>
                 <CheckBox Background="Teal" Checked="useCompassCheckBoxChecked"  IsChecked="{Binding Path=UseCompass, Mode=TwoWay}" Name="useCompassCheckBox" Unchecked="useCompassCheckBoxUnchecked" Width="350">Użyj kompasu</CheckBox>
             </StackPanel>
+                <Button VerticalAlignment="Bottom" Content="Ukryj" Width="130" Click="HideContextMenu" HorizontalAlignment="Right" Margin="0,10"/>
             </Grid>
         </Border>
 

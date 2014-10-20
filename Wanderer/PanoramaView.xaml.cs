@@ -380,7 +380,7 @@ namespace Wanderer
                 SetPixelsPerDegree();
 
                 GenerateUIElementsForPoints(_activePoints);
-
+                UpdateTextBlockPosition();
                 LoadingAnimation.Visibility = Visibility.Collapsed;
             }
 
@@ -902,7 +902,7 @@ namespace Wanderer
                         ReloadContent();
 
                         GenerateUIElementsForPoints(_activePoints);
-
+                        UpdateTextBlockPosition();
                         LoadingAnimation.Visibility = Visibility.Collapsed;
                     }
                     catch (WebException)
@@ -994,7 +994,7 @@ namespace Wanderer
 
         /* Metoda zamyka menu kontekstowe.
          */
-        private void ContextMenuLostFocus(object sender, RoutedEventArgs e)
+        private void HideContextMenu(object sender, RoutedEventArgs e)
         {
             ContextMenu.Visibility = Visibility.Collapsed;
         }
@@ -1006,11 +1006,20 @@ namespace Wanderer
             int index=_categories.IndexOf(category);
             if (index >= 0)
                 _categories.ElementAt(index).IsActive = true;
-            foreach (Point point in _activePoints)
-            {
-                UpdateDescriptionCanvasProperties(point);
-            }
             SetActivePoints();
+            UpdateTextBlockPosition();
+
+        }
+
+        private void UpdateTextBlockPosition(){
+            Deployment.Current.Dispatcher.BeginInvoke(delegate
+            {
+                foreach (Point point in _metadata.Points)
+                {
+                    UpdateDescriptionCanvasProperties(point);
+                }
+            });
+            
         }
 
         private void CategoryUnchecked(object sender, RoutedEventArgs e)
