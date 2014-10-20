@@ -116,10 +116,10 @@ namespace Wanderer
              */
             foreach (Point p in _activePoints)
             {
-                LayoutRoot.Children.Remove(p.LeftCanvas);
-                LayoutRoot.Children.Remove(p.LeftPanoramaLine);
-                LayoutRoot.Children.Remove(p.RightCanvas);
-                LayoutRoot.Children.Remove(p.RightPanoramaLine);
+                GridLayoutPoints.Children.Remove(p.LeftCanvas);
+                GridLayoutPoints.Children.Remove(p.LeftPanoramaLine);
+                GridLayoutPoints.Children.Remove(p.RightCanvas);
+                GridLayoutPoints.Children.Remove(p.RightPanoramaLine);
             }
 
             PanoramaImageLeft.DataContext = null;
@@ -851,10 +851,10 @@ namespace Wanderer
                     /*
                      * Umieść przygotowane elementy na ekranie.
                      */
-                    LayoutRoot.Children.Add(point.LeftCanvas);
-                    LayoutRoot.Children.Add(point.RightCanvas);
-                    LayoutRoot.Children.Add(point.LeftPanoramaLine);
-                    LayoutRoot.Children.Add(point.RightPanoramaLine);
+                    GridLayoutPoints.Children.Add(point.LeftCanvas);
+                    GridLayoutPoints.Children.Add(point.RightCanvas);
+                    GridLayoutPoints.Children.Add(point.LeftPanoramaLine);
+                    GridLayoutPoints.Children.Add(point.RightPanoramaLine);
 
                     index++;
                     Debug.WriteLine(index + " : " + points.Count);
@@ -1006,6 +1006,10 @@ namespace Wanderer
             int index=_categories.IndexOf(category);
             if (index >= 0)
                 _categories.ElementAt(index).IsActive = true;
+            foreach (Point point in _activePoints)
+            {
+                UpdateDescriptionCanvasProperties(point);
+            }
             SetActivePoints();
         }
 

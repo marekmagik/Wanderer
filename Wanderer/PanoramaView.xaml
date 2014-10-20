@@ -83,6 +83,7 @@
             <Button IsEnabled="False" Name="FinishCalibrationButton" Margin="0,20" Content="Zakończ" Click="FinishCalibrationButtonClick" Width="450"/>
         </StackPanel>
 
+        <Grid Name="GridLayoutPoints"/>
         
         <Border Background="Black" CornerRadius="40" Height="400" LostFocus="ContextMenuLostFocus" Name="ContextMenu" Opacity="0.6" Visibility="Collapsed" Width="700">
             <Grid>
