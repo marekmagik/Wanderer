@@ -192,7 +192,7 @@ public class PostgresDB extends DBConnection {
 			System.out.println("metadataID: " + metadataID);
 
 			PreparedStatement querry = connection
-					.prepareStatement("select primary_description, secondary_description, category, x, y, alignment, line_length, angle from points where metadata_id = ? ;");
+					.prepareStatement("select primary_description, secondary_description, category, x, y, alignment, line_length, angle, color from points where metadata_id = ? ;");
 			querry.setInt(1, metadataID);
 			result = querry.executeQuery();
 			String pointsInJSONArray = toJsonConverter.toJSONArray(result).toString();
