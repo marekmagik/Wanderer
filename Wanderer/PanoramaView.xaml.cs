@@ -23,6 +23,7 @@ using Microsoft.Devices.Sensors;
 using Microsoft.Xna.Framework;
 using System.Windows.Threading;
 using System.Windows.Shapes;
+using System.Threading;
 
 
 
@@ -30,6 +31,10 @@ namespace Wanderer
 {
     public partial class PanoramaView : PhoneApplicationPage
     {
+
+        private TimerCallback _normalPriorityTaskCallback;
+        private DispatcherTimer _descRotationTaskTimer;
+        private Timer _normalPriorityTaskTimer;
 
         private Compass _compass;
         private DispatcherTimer _timer;
@@ -52,6 +57,7 @@ namespace Wanderer
         private double _minScale;
         private readonly double MaxScale = 1.0;
         private double _currentScale;
+        private readonly double HidingDescriptionsMaxScale = 0.9;
 
         private int _height;
         private int _width;
@@ -60,6 +66,8 @@ namespace Wanderer
 
         private ImageMetadata _metadata;
 
+
+        private Boolean isUIThreadReady;
         public bool UseCompass { get; set; }
         public ImageSource ImageSource { get; set; }
 
@@ -73,7 +81,7 @@ namespace Wanderer
             CollectPreviousImage();
             MaxSizeReachedMessage.Visibility = Visibility.Collapsed;
             LoadingAnimation.Visibility = Visibility.Visible;
-            
+
             if (IsolatedStorageDAO.IsPhotoCached(hash))
             {
                 LoadImage("/photos/" + hash + ".jpg", 800, 480);
@@ -84,14 +92,15 @@ namespace Wanderer
             }
         }
 
-        private void CollectPreviousImage() {
+        private void CollectPreviousImage()
+        {
             PanoramaImageLeft.DataContext = null;
             PanoramaImageRight.DataContext = null;
             ImageSource = null;
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
-            GC.WaitForPendingFinalizers();     
+            GC.WaitForPendingFinalizers();
         }
 
 
@@ -300,7 +309,7 @@ namespace Wanderer
                 LoadingAnimation.Visibility = Visibility.Collapsed;
                 return;
             }
-            
+
             using (var stream = await LoadImageAsync(filename))
             {
                 WriteableBitmap bitmapImage = new WriteableBitmap(_width, _height);
@@ -322,11 +331,23 @@ namespace Wanderer
                 SetPixelsPerDegree();
 
                 GenerateUIElementsForPoints(_metadata.Points);
-
-                LoadingAnimation.Visibility = Visibility.Collapsed;
             }
 
         }
+
+        private void descRotationTaskTimerTick(object sender, EventArgs e)
+        {
+            (sender as DispatcherTimer).Stop();
+            SetPointsDesctiptionsRotation(_metadata.Points);
+
+            MoveHorizontial(_width * _currentScale);
+            ScaleImages(MaxScale, 0);
+            UpdateImagesBounds();
+
+            isUIThreadReady = true;
+        }
+
+
 
         /* Metoda obliczająca atrybuty width i height, jakie musi przyjąć kostruktor klasy WriteableBitmap.
          * Jest to konieczne, do ustawienia odpowiedniego dopełnienia (gdy panorama nie jest dookolna).
@@ -647,20 +668,58 @@ namespace Wanderer
             double translateX = 0;
             double translateY = 0;
 
+            double descriptionWidth = point.RightStackPanel.ActualWidth;
+            double descriptionHeight = point.RightStackPanel.ActualHeight;
+
+            double descriptionAlignmentWidth = 0;
+
             if (point.Alignment == 0)
             {
                 translateX = point.RightPanoramaLine.X2;
                 translateY = point.RightPanoramaLine.Y2 - (point.RightStackPanel.ActualHeight + 5);
+
+                point.LeftBall.Margin = new Thickness(-10.0, point.RightStackPanel.ActualHeight / 2.0, 0.0, 0.0);
+                point.RightBall.Margin = new Thickness(-10.0, point.RightStackPanel.ActualHeight / 2.0, 0.0, 0.0);
             }
             else if (point.Alignment == 1)
             {
                 translateX = point.RightPanoramaLine.X2 - (point.RightStackPanel.ActualWidth / 2.0);
-                translateY = point.RightPanoramaLine.Y2 - (point.RightStackPanel.ActualHeight + 5);
+                translateY = point.RightPanoramaLine.Y2 - (point.RightStackPanel.ActualHeight + 10);
+
+                translateX -= descriptionHeight * 0.5 * Math.Sin((-1.0) * point.Angle * (Math.PI / 180));
+
+                //  translateX += ( descriptionHeight *  Math.Sin((-1.0) * point.Angle * (Math.PI / 180)));
+                //  translateY += descriptionWidth * 0.5 * Math.Sin((-1.0) * point.Angle * (Math.PI / 180)); 
+                descriptionAlignmentWidth = (point.RightStackPanel.ActualWidth / 2.0);
+
+                point.LeftBall.Margin = new Thickness(point.RightStackPanel.ActualWidth / 2.0 - 10.0, point.RightStackPanel.ActualHeight / 2.0, 0.0, 0.0);
+                point.RightBall.Margin = new Thickness(point.RightStackPanel.ActualWidth / 2.0 - 10.0 + descriptionHeight * 0.5 * Math.Sin((-1.0) * point.Angle * (Math.PI / 180)), point.RightStackPanel.ActualHeight / 2.0, 0.0, 0.0);
             }
             else if (point.Alignment == 2)
             {
                 translateX = point.RightPanoramaLine.X2 - (point.RightStackPanel.ActualWidth);
                 translateY = point.RightPanoramaLine.Y2 - (point.RightStackPanel.ActualHeight + 5);
+
+                descriptionAlignmentWidth = (point.RightStackPanel.ActualWidth);
+
+                point.LeftBall.Margin = new Thickness(point.RightStackPanel.ActualWidth - 10.0, point.RightStackPanel.ActualHeight / 2.0, 0.0, 0.0);
+                point.RightBall.Margin = new Thickness(point.RightStackPanel.ActualWidth - 10.0, point.RightStackPanel.ActualHeight / 2.0, 0.0, 0.0);
+
+            }
+
+            if (point.MinimumScaleDescriptionVisibility < 1.0 && _currentScale < HidingDescriptionsMaxScale && _currentScale < point.MinimumScaleDescriptionVisibility)
+            {
+                point.LeftBall.Visibility = Visibility.Visible;
+                point.RightBall.Visibility = Visibility.Visible;
+                point.LeftStackPanel.Visibility = Visibility.Collapsed;
+                point.RightStackPanel.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                point.LeftBall.Visibility = Visibility.Collapsed;
+                point.RightBall.Visibility = Visibility.Collapsed;
+                point.LeftStackPanel.Visibility = Visibility.Visible;
+                point.RightStackPanel.Visibility = Visibility.Visible;
             }
 
             TranslateTransform LeftCanvasTranslateTransform = point.LeftCanvas.RenderTransform as TranslateTransform;
@@ -670,6 +729,85 @@ namespace Wanderer
 
             LeftCanvasTranslateTransform.X = translateX - (_width * _currentScale);
             LeftCanvasTranslateTransform.Y = translateY;
+
+
+            double heightOffset = descriptionWidth * Math.Sin((-1.0) * point.Angle * (Math.PI / 180));
+
+            if (point.Alignment == 0)
+            {
+                translateY += 5.0;
+
+                point.BottomLine.X1 = translateX;// ComputeRelativeX(point.X) /*- translateX */- descriptionAlignmentWidth;
+
+                point.TopLine.X1 = point.BottomLine.X1;
+
+                point.BottomLine.X2 = point.BottomLine.X1 + descriptionWidth * Math.Cos((-1.0) * point.Angle * (Math.PI / 180));
+                point.TopLine.X2 = point.BottomLine.X2;
+
+                point.BottomLine.Y1 = translateY + descriptionHeight;// ComputeRelativeY(point.Y) - translateY - point.LineLength * _currentScale;
+                point.BottomLine.Y2 = point.BottomLine.Y1 - heightOffset;
+
+                point.TopLine.Y1 = point.BottomLine.Y1 - descriptionHeight;
+                point.TopLine.Y2 = point.TopLine.Y1 - heightOffset;
+
+            }
+            else if (point.Alignment == 1)
+            {
+                translateY += 5.0 + descriptionWidth * 0.5 * Math.Sin((-1.0) * point.Angle * (Math.PI / 180));
+                translateX += descriptionHeight * Math.Sin((-1.0) * point.Angle * (Math.PI / 180));
+
+                point.BottomLine.X1 = translateX;// -descriptionAlignmentWidth * Math.Cos((-1.0) * point.Angle * (Math.PI / 180));// (point.X) - translateX - descriptionAlignmentWidth * Math.Cos((-1.0) * point.Angle * (Math.PI / 180));
+
+                point.TopLine.X1 = point.BottomLine.X1;
+
+                point.BottomLine.X2 = point.BottomLine.X1 + descriptionWidth * Math.Cos((-1.0) * point.Angle * (Math.PI / 180));
+                point.TopLine.X2 = point.BottomLine.X2;
+
+                point.BottomLine.Y1 = translateY + descriptionHeight;// ComputeRelativeY(point.Y) - translateY - point.LineLength * _currentScale;
+                point.BottomLine.Y2 = point.BottomLine.Y1 - heightOffset;
+
+                point.TopLine.Y1 = point.BottomLine.Y1 - descriptionHeight;
+                point.TopLine.Y2 = point.TopLine.Y1 - heightOffset;
+
+            }
+            else
+            {
+                translateY += 5.0;
+                translateX += descriptionHeight * Math.Cos((-1.0) * point.Angle * (Math.PI / 180));
+
+                point.BottomLine.X1 = translateX;// +descriptionHeight * Math.Sin(point.Angle * (Math.PI / 180)); ;// +descriptionAlignmentWidth;
+
+                // (point.X) - translateX - descriptionWidth * Math.Cos((-1.0) * point.Angle * (Math.PI / 180)); ;// +descriptionAlignmentWidth;
+
+                point.TopLine.X1 = point.BottomLine.X1;
+
+                point.BottomLine.X2 = point.BottomLine.X1 + descriptionWidth * Math.Cos((-1.0) * point.Angle * (Math.PI / 180));
+                point.TopLine.X2 = point.BottomLine.X2;
+
+                point.BottomLine.Y2 = translateY + descriptionHeight; // ComputeRelativeY(point.Y) - translateY - point.LineLength * _currentScale;
+                point.BottomLine.Y1 = point.BottomLine.Y2 + heightOffset;
+
+                point.TopLine.Y2 = point.BottomLine.Y2 - descriptionHeight;
+                point.TopLine.Y1 = point.TopLine.Y2 + heightOffset;
+            }
+
+
+
+            point.TopLine.X1 += point.Angle / 90.0 * descriptionHeight / 2.0;
+            point.TopLine.X2 += point.Angle / 90.0 * descriptionHeight / 2.0;
+
+            point.BottomLine.X1 -= point.Angle / 90.0 * descriptionHeight / 2.0;
+            point.BottomLine.X2 -= point.Angle / 90.0 * descriptionHeight / 2.0;
+
+            point.BottomLine.StrokeThickness = 3;
+            point.BottomLine.Stroke = new SolidColorBrush(Colors.Red);
+            point.TopLine.StrokeThickness = point.BottomLine.StrokeThickness;
+            point.TopLine.Stroke = new SolidColorBrush(Colors.Green);
+
+
+            if (point.PrimaryDescription.Equals("Grand Mont Ruan"))
+                Debug.WriteLine("[ " + point.PrimaryDescription + " ]:  X = " + (translateX - (_width * _currentScale)));
+
         }
 
 
@@ -708,15 +846,17 @@ namespace Wanderer
                     point.LeftCanvas = new Canvas();
                     point.RightCanvas = new Canvas();
 
+                    /* Tworzenie odcinków będących górną i dolną granicą opisu punktu.
+                     * Odcinki te posłużą do detekcji kolizji opisów.
+                     */
+                    point.TopLine = new Line();
+                    point.BottomLine = new Line();
 
                     point.LeftStackPanel = new StackPanel();
                     point.RightStackPanel = new StackPanel();
 
                     point.LeftStackPanel.RenderTransform = new RotateTransform();
                     point.RightStackPanel.RenderTransform = new RotateTransform();
-
-
-
 
                     TextBlock PrimaryDescriptionTextBlockLeft = new TextBlock() { FontSize = Configuration.PrimaryDescriptionFontSize, FontWeight = FontWeights.Bold, TextAlignment = TextAlignment.Center };
                     TextBlock SecondaryDescriptionTextBlockLeft = new TextBlock() { FontSize = Configuration.SecondaryDescriptionFontSize, Margin = new Thickness(0, 0, 0, 0), TextAlignment = TextAlignment.Center };
@@ -735,32 +875,19 @@ namespace Wanderer
                     point.LeftCanvas.RenderTransform = new TranslateTransform();
                     point.RightCanvas.RenderTransform = new TranslateTransform();
 
-
                     /*
-                     * Tworzenie odpowiedniej rotacji i zastosowywanie jej do obu komponentów StackPanel.
+                     * Generowanie punktu pojawiającego się zamiast podpisu w momencie kolizji.
                      */
-                    double rotationCenterX = 0;
-                    double rotationCenterY = point.RightPrimaryDescriptionTextBlock.ActualHeight;
-                    if (point.Alignment == 0)
-                    {
-                        rotationCenterX = 0;
-                        point.Angle = (-1.0) * Math.Abs(point.Angle);
-                    }
-                    if (point.Alignment == 1)
-                    {
-                        rotationCenterX = 0.5 * point.RightStackPanel.ActualWidth;
-                        point.Angle = (-1.0) * Math.Abs(point.Angle);
-                    }
-                    if (point.Alignment == 2)
-                    {
-                        rotationCenterX = point.RightStackPanel.ActualWidth;
-                    }
-                    RotateTransform rotateTransform = point.RightStackPanel.RenderTransform as RotateTransform;
-                    rotateTransform.CenterX = rotationCenterX;
-                    rotateTransform.CenterY = rotationCenterY;
-                    rotateTransform.Angle = point.Angle;
-                    point.LeftStackPanel.RenderTransform = rotateTransform;
-                    point.RightStackPanel.RenderTransform = rotateTransform;
+                    Ellipse leftBall = new Ellipse();
+                    Ellipse rightBall = new Ellipse();
+                    leftBall.Width = 20;
+                    leftBall.Height = leftBall.Width;
+                    rightBall.Width = leftBall.Width;
+                    rightBall.Height = leftBall.Width;
+                    leftBall.Fill = new SolidColorBrush(Colors.Red);
+                    rightBall.Fill = new SolidColorBrush(Colors.Red);
+                    point.LeftBall = leftBall;
+                    point.RightBall = rightBall;
 
                     /*
                      * Ustawienie tekstu podpisów.
@@ -790,6 +917,9 @@ namespace Wanderer
                     point.LeftCanvas.Children.Add(point.LeftStackPanel);
                     point.RightCanvas.Children.Add(point.RightStackPanel);
 
+                    point.LeftCanvas.Children.Add(point.LeftBall);
+                    point.RightCanvas.Children.Add(point.RightBall);
+
                     /*
                      * Umieść przygotowane elementy na ekranie.
                      */
@@ -797,18 +927,128 @@ namespace Wanderer
                     LayoutRoot.Children.Add(point.RightCanvas);
                     LayoutRoot.Children.Add(point.LeftPanoramaLine);
                     LayoutRoot.Children.Add(point.RightPanoramaLine);
+                    LayoutRoot.Children.Add(point.TopLine);
+                    LayoutRoot.Children.Add(point.BottomLine);
 
                     index++;
                     Debug.WriteLine(index + " : " + points.Count);
                     if (index == points.Count)
                     {
-                        StartCompass();
-                        UpdateImagesBounds();
+                        isUIThreadReady = false;
+
+                        _descRotationTaskTimer = new DispatcherTimer();
+                        _descRotationTaskTimer.Interval = TimeSpan.FromMilliseconds(0);
+                        _descRotationTaskTimer.Tick += new EventHandler(descRotationTaskTimerTick);
+                        _descRotationTaskTimer.Start();
+
+                        /* Reszta ładowania należy wykonać w wątku nie będącym wątkiem Dispatchera UI.
+                         */
+                        _normalPriorityTaskCallback = new TimerCallback(this.descCollisionsAlgorithm);
+                        _normalPriorityTaskTimer = new Timer(_normalPriorityTaskCallback);
+                        _normalPriorityTaskTimer.Change(0, Timeout.Infinite);
                     }
                 });
             }
         }
 
+        public void descCollisionsAlgorithm(Object state)
+        {
+            Timer t = (Timer)state;
+            t.Dispose();
+
+            while (!isUIThreadReady)
+            {
+                System.Threading.Thread.Sleep(1);
+            }
+
+            double scale = 0;
+            Line PanoramaTopLine = null;
+            Line PanoramaBottomLine = null;
+
+            isUIThreadReady = false;
+            Deployment.Current.Dispatcher.BeginInvoke(delegate
+            {
+                PanoramaTopLine = new Line();
+                PanoramaTopLine.X1 = 0.0;
+                PanoramaTopLine.Y1 = 0.0;
+                PanoramaTopLine.Y2 = 0.0;
+                PanoramaBottomLine = new Line();
+                PanoramaBottomLine.X1 = 0.0;
+                isUIThreadReady = true;
+            });
+
+            while (!isUIThreadReady)
+            {
+                System.Threading.Thread.Sleep(1);
+            }
+
+            for (scale = 1.00; scale > _minScale; scale = scale - 0.01)
+            {
+                isUIThreadReady = false;
+
+                Deployment.Current.Dispatcher.BeginInvoke(delegate
+                {
+                    ScaleImages(scale, 0);
+                    UpdateImagesBounds();
+                    isUIThreadReady = true;
+                });
+
+                while (!isUIThreadReady)
+                {
+                    System.Threading.Thread.Sleep(1);
+                }
+
+                Deployment.Current.Dispatcher.BeginInvoke(delegate
+                {
+                    for (int i = 0; i < _metadata.Points.Count; i++)
+                    {
+                        Point firstPoint = _metadata.Points.ElementAt(i);
+ 
+                        PanoramaTopLine.X2 = _width * scale;
+                        PanoramaBottomLine.Y1 = _height * scale;
+                        PanoramaBottomLine.X2 = _width * scale;
+                        PanoramaBottomLine.Y2 = _height * scale;
+
+                        if (firstPoint.MinimumScaleDescriptionVisibility == 1.0)
+                        {
+                            if (LineSegmentIntersection.LineSegmentIntersection.doQuadrilateralsIntersect(firstPoint.TopLine, firstPoint.BottomLine, PanoramaTopLine, PanoramaBottomLine))
+                            {
+                                firstPoint.MinimumScaleDescriptionVisibility = scale;
+                            }
+                            else
+                            {
+                                if (i < _metadata.Points.Count - 1)
+                                {
+                                    for (int j = i + 1; j < _metadata.Points.Count; j++)
+                                    {
+                                        Point secondPoint = _metadata.Points.ElementAt(j);
+                                        if(LineSegmentIntersection.LineSegmentIntersection.doQuadrilateralsIntersect(firstPoint.TopLine, firstPoint.BottomLine, secondPoint.TopLine, secondPoint.BottomLine)){
+                                            firstPoint.MinimumScaleDescriptionVisibility = scale;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    isUIThreadReady = true;
+                });
+                while (!isUIThreadReady)
+                {
+                    System.Threading.Thread.Sleep(1);
+                }
+            }
+            Deployment.Current.Dispatcher.BeginInvoke(delegate
+               {
+
+                   foreach(Point p in _metadata.Points){
+                       p.TopLine.Visibility = Visibility.Collapsed;
+                       p.BottomLine.Visibility = Visibility.Collapsed;
+                   }
+                   StartCompass();
+
+                   LoadingAnimation.Visibility = Visibility.Collapsed;
+               });
+        }
 
         public void ImageRequestCallback(IAsyncResult result)
         {
@@ -844,8 +1084,6 @@ namespace Wanderer
                         ReloadContent();
 
                         GenerateUIElementsForPoints(_metadata.Points);
-
-                        LoadingAnimation.Visibility = Visibility.Collapsed;
                     }
                     catch (WebException)
                     {
@@ -858,7 +1096,38 @@ namespace Wanderer
                         MaxSizeReachedMessage.Visibility = Visibility.Visible;
                     }
                 });
+            }
+        }
 
+        private void SetPointsDesctiptionsRotation(List<Point> list)
+        {
+            /*
+             * Tworzenie odpowiedniej rotacji i zastosowywanie jej do obu komponentów StackPanel.
+             */
+            foreach (Point point in list)
+            {
+                double rotationCenterX = 0;
+                double rotationCenterY = point.RightPrimaryDescriptionTextBlock.ActualHeight;
+                if (point.Alignment == 0)
+                {
+                    rotationCenterX = 0;
+                    point.Angle = (-1.0) * Math.Abs(point.Angle);
+                }
+                if (point.Alignment == 1)
+                {
+                    rotationCenterX = 0.5 * point.RightStackPanel.ActualWidth;
+                    point.Angle = (-1.0) * Math.Abs(point.Angle);
+                }
+                if (point.Alignment == 2)
+                {
+                    rotationCenterX = point.RightStackPanel.ActualWidth;
+                }
+                RotateTransform rotateTransform = point.RightStackPanel.RenderTransform as RotateTransform;
+                rotateTransform.CenterX = rotationCenterX;
+                rotateTransform.CenterY = rotationCenterY;
+                rotateTransform.Angle = point.Angle;
+                point.LeftStackPanel.RenderTransform = rotateTransform;
+                point.RightStackPanel.RenderTransform = rotateTransform;
             }
         }
 

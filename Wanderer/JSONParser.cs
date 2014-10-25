@@ -247,7 +247,7 @@ namespace Wanderer
 
         private Color getColor(string color)
         {
-            if (color.Equals("b"))
+            if (color == null || color.Equals("b"))
                 return Colors.Black;
             else if (color.Equals("y"))
                 return Colors.Yellow;

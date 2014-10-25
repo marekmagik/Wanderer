@@ -99,6 +99,7 @@
     <Compile Include="ImageMetadata.cs" />
     <Compile Include="IsolatedStorageDAO.cs" />
     <Compile Include="JSONParser.cs" />
+    <Compile Include="LineSegmentIntersection.cs" />
     <Compile Include="ListOfPlaces.xaml.cs">
       <DependentUpon>ListOfPlaces.xaml</DependentUpon>
     </Compile>

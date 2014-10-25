@@ -33,7 +33,6 @@
                 Wystąpił błąd podczas wczytywania obrazka. 
                 Rozmiar zdjęcia przekracza dopuszczalny zakres.
         </TextBlock>
-        <ProgressBar Foreground="White" Name="LoadingAnimation" IsIndeterminate="True" Width="400" Height="50" />
 
         <TextBlock Name="ConnectionErrorMessage" FontSize="24" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Center" Height="200" Width="460" Visibility="Collapsed">
                 Wystąpił błąd podczas pobierania obrazka z serwera.
@@ -48,7 +47,12 @@
             </Image>
         </Canvas>
 
-<!--
+        <Grid Background="Black" Name="LoadingAnimation" Visibility="Visible">
+            <ProgressBar Foreground="White" HorizontalAlignment="Center" IsIndeterminate="True" Width="400" Height="50" />
+        </Grid>
+
+
+        <!--
         <Canvas Margin="0,0" Name="DescriptionCanvas" Visibility="Collapsed">
             <StackPanel Name="DescriptionStackPanel">
                 <TextBlock FontSize="18" FontWeight="Bold" Name="PrimaryDescriptionTextBlock" TextAlignment="Center"/>

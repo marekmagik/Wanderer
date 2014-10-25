@@ -15,7 +15,7 @@ namespace Wanderer
         /// <summary>
         /// Przestarzałe - do zastąpienia przez Configuration.ServerAddress w późniejszej wersji.
         /// </summary>
-        private const string Address = "192.168.1.102";
+        private const string Address = "192.168.1.103";// "10.20.107.210";
 
         public static void SendRequestForMetadataOfPlacesWithinRange(ListOfPlaces callback, double lon, double lat, int distance)
         {

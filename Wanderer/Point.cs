@@ -30,7 +30,12 @@ namespace Wanderer
         public TextBlock RightPrimaryDescriptionTextBlock { get; set; }
         public TextBlock LeftSecondaryDescriptionTextBlock { get; set; }
         public TextBlock RightSecondaryDescriptionTextBlock { get; set; }
-
+        public double MinimumScaleDescriptionVisibility { get; set; }
+        public Ellipse LeftBall { get; set; }
+        public Ellipse RightBall { get; set; }
+        //TODO: delete following
+        public Line BottomLine { get; set; }
+        public Line TopLine { get; set; }
 
         public Point(double x, double y, Category category, String primaryDescription, String secondaryDescription)
         {
@@ -39,6 +44,8 @@ namespace Wanderer
             this.Category = category;
             this.PrimaryDescription = primaryDescription;
             this.SecondaryDescription = secondaryDescription;
+
+            MinimumScaleDescriptionVisibility = 1.0;
         }
 
 
