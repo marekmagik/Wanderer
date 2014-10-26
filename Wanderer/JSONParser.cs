@@ -16,11 +16,14 @@ namespace Wanderer
     class JSONParser
     {
 
-        private int _fontSize = 20;
+        private const int FontSize = 20;
         private int _maxWidth;
-        private int _twoLinesWidth = 750;
+        private const int OneLineWidth = 380;
+        private const String WordTextBlock = "word";
+        private const String WhitesignsTextBlock = "whitesigns";
 
-        public Dictionary<String, String> GetSeparatedMetadataInJSONFormatAndHashes(string json) {
+        public Dictionary<String, String> GetSeparatedMetadataInJSONFormatAndHashes(string json)
+        {
             Dictionary<String, String> placesInJSON = new Dictionary<String, String>();
             JArray jsonArray = JArray.Parse(json);
 
@@ -135,114 +138,92 @@ namespace Wanderer
             Deployment.Current.Dispatcher.BeginInvoke(delegate
             {
                 SetMaxWidth();
-                int fullDescriptionWidth = fullDescription.Length;
-                String shortDescription = "";
-                Boolean shouldEnd = false;
-                Boolean check = true;
-                Boolean ignoreWhiteSigns = false;
-                int actualIndex = 0;
+                List<TextBlock> textBlocks = SplitDescriptionIntoBlocks(fullDescription, fullDescription.ElementAt(0));
+
                 int actualWidth = 0;
+                String shortDescription = "";
+                Boolean secondLineConstructed = false;
+                Boolean firstLineConstructed = false;
 
-                while (!shouldEnd)
+                foreach (TextBlock textBlock in textBlocks)
                 {
-                    if (actualIndex == fullDescriptionWidth - 1)
-                        shouldEnd = true;
-
-                    Char actualChar = fullDescription.ElementAt(actualIndex);
-
-                    if (!actualChar.Equals(' ') && ignoreWhiteSigns)
-                        ignoreWhiteSigns = false;
-
-                    int widthToEndOfNextWord = 0;
-                    if (!shouldEnd && fullDescription.ElementAt(actualIndex + 1).Equals(' '))
+                    actualWidth+= (int)textBlock.ActualWidth;
+                    if (!firstLineConstructed && actualWidth  >= OneLineWidth)
                     {
-                        widthToEndOfNextWord = GetWidthToEndOfNextWord(fullDescription,actualIndex + 1);
-                    }
-                    int widthOfActualChar = 0;
-                    if (actualChar.Equals(' ') && ignoreWhiteSigns)
-                        widthOfActualChar = 0;
-                    else
-                    {
-                        TextBlock block = new TextBlock();
-                        block.Text = actualChar.ToString();
-                        block.FontSize = _fontSize;
-                        widthOfActualChar = (int)block.ActualWidth;
-
+                        if (textBlock.Name.Equals(WordTextBlock))
+                            actualWidth = OneLineWidth + (int)textBlock.ActualWidth;
+                        else if (textBlock.Name.Equals(WhitesignsTextBlock))
+                            actualWidth = OneLineWidth;
+                        firstLineConstructed = true;
                     }
 
-                    if (actualWidth + widthOfActualChar > _maxWidth)
+                    if (!secondLineConstructed)
                     {
-                        shouldEnd = true;
-                        shortDescription += "...";
-                    }
-                    else
-                    {
-                        actualIndex++;
-                        actualWidth += widthOfActualChar;
-                        shortDescription += actualChar;
-                    }
-
-                    if (check && widthToEndOfNextWord!=0 && widthToEndOfNextWord + actualWidth > _twoLinesWidth / 2)
-                    {
-                        check = false;
-                        actualWidth = _twoLinesWidth / 2 + 13;
-                        ignoreWhiteSigns = true;
+                        if (actualWidth >= _maxWidth)
+                        {
+                            secondLineConstructed = true;
+                            shortDescription += " ...";
+                        }
+                        else
+                            shortDescription += textBlock.Text;
                     }
                 }
 
-                metadata.PictureDescriptionToChange = fullDescription;
                 metadata.PictureAdditionalDescription = shortDescription;
+                metadata.PictureDescriptionToChange = fullDescription;
             });
         }
 
-        private int GetWidthToEndOfNextWord(String fullDescription, int index)
+        private List<TextBlock> SplitDescriptionIntoBlocks(String fullDescription, Char firstSign)
         {
-            Boolean shouldEnd = false;
-            Boolean searchForEnd = false;
-            Boolean searchForBegining = true;
-            int actualWidth = 0;
-            int actualIndex = index;
+            Boolean isWordTextBlock;
+            if(firstSign.Equals(' '))
+                isWordTextBlock=false;
+            else
+                isWordTextBlock=true;
 
-            while (!shouldEnd)
+            String textForActualBlock = "";
+            List<TextBlock> textBlocks = new List<TextBlock>();
+
+
+            for (int i = 0; i < fullDescription.Length; i++)
             {
-                Char actualChar = ' ';
-                if (actualIndex == fullDescription.Length)
-                    shouldEnd = true;
-                else
-                {
-                    actualChar = fullDescription.ElementAt(actualIndex);
-                    if (!actualChar.Equals(' ') && searchForBegining)
-                    {
-                        searchForBegining = false;
-                        searchForEnd = true;
-                    }
-
-                    if (actualChar.Equals(' ') && searchForEnd)
-                    {
-                        shouldEnd = true;
-                    }
-                }
-
-                if (!shouldEnd)
-                {
-                    TextBlock block = new TextBlock();
-                    block.Text = actualChar.ToString();
-                    block.FontSize = _fontSize;
-                    int widthOfActualChar = (int)block.ActualWidth;
-                    actualWidth += widthOfActualChar;
-                    actualIndex++;
+                textForActualBlock += fullDescription.ElementAt(i);
+                if(i==fullDescription.Length-1 ||  CheckIfEndOfTextBlock(isWordTextBlock,fullDescription.ElementAt(i+1))){
+                    TextBlock textBlock = new TextBlock();
+                    textBlock.Text = textForActualBlock;
+                    textBlock.FontSize = FontSize;
+                    textBlock.Name = GetTypeOfTextBlock(isWordTextBlock);
+                    textBlocks.Add(textBlock);
+                    textForActualBlock = "";
+                    isWordTextBlock = !isWordTextBlock;
                 }
             }
 
-            return actualWidth;
+            return textBlocks;
+        }
+
+        private string GetTypeOfTextBlock(bool isWordTextBlock)
+        {
+            if (isWordTextBlock)
+                return WordTextBlock;
+            else
+                return WhitesignsTextBlock;
+        }
+
+        private bool CheckIfEndOfTextBlock(bool isWordTextBlock, char sign)
+        {
+            if (isWordTextBlock && sign.Equals(' '))
+                return true;
+            else if (!isWordTextBlock && !sign.Equals(' '))
+                return true;
+            else
+                return false;
         }
 
         private void SetMaxWidth()
         {
-            TextBlock text = new TextBlock();
-            text.Text = "...";
-            text.FontSize = _fontSize;
-            _maxWidth = _twoLinesWidth - (int)text.ActualWidth;
+            _maxWidth = OneLineWidth * 2 - GetTextWidth(" ...");
         }
 
         private Color getColor(string color)
@@ -253,6 +234,16 @@ namespace Wanderer
                 return Colors.Yellow;
             else
                 return Colors.White;
+        }
+
+        private int GetTextWidth(String text)
+        {
+            int width = 0;
+            TextBlock textBlock = new TextBlock();
+            textBlock.Text = text;
+            textBlock.FontSize = FontSize;
+            width = (int)textBlock.ActualWidth;
+            return width;
         }
     }
 }

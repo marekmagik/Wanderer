@@ -55,9 +55,9 @@ namespace Wanderer
         private double _currentPageOrientationFactor;
 
         private double _minScale;
-        private readonly double MaxScale = 1.0;
         private double _currentScale;
-        private readonly double HidingDescriptionsMaxScale = 0.9;
+        public static readonly double MaxScale = 1.0;
+        public static readonly double HidingDescriptionsMaxScale = 0.9;
 
         private int _height;
         private int _width;
@@ -66,10 +66,14 @@ namespace Wanderer
 
         private ImageMetadata _metadata;
 
-
+        private int contextMenuInitialized;
+        private Boolean isCollisionAlgorithmFinished = false;
         private Boolean isUIThreadReady;
         public bool UseCompass { get; set; }
         public ImageSource ImageSource { get; set; }
+
+        private List<Category> _categories = new List<Category>();
+        //private List<Point> _activePoints = new List<Point>();
 
         public PanoramaView()
         {
@@ -120,12 +124,13 @@ namespace Wanderer
             }
             /* Usuń naniesione punkty przy powrocie do poprzedniego widoku.
              */
+            //foreach (Point p in _activePoints)
             foreach (Point p in _metadata.Points)
             {
-                LayoutRoot.Children.Remove(p.LeftCanvas);
-                LayoutRoot.Children.Remove(p.LeftPanoramaLine);
-                LayoutRoot.Children.Remove(p.RightCanvas);
-                LayoutRoot.Children.Remove(p.RightPanoramaLine);
+                GridLayoutPoints.Children.Remove(p.LeftCanvas);
+                GridLayoutPoints.Children.Remove(p.LeftPanoramaLine);
+                GridLayoutPoints.Children.Remove(p.RightCanvas);
+                GridLayoutPoints.Children.Remove(p.RightPanoramaLine);
             }
 
             PanoramaImageLeft.DataContext = null;
@@ -280,8 +285,72 @@ namespace Wanderer
 
             JSONParser parser = new JSONParser();
             _metadata = IsolatedStorageDAO.getCachedMetadata(hash);
+            InitializeCategoriesList(_metadata);
 
             InitializePanorama(hash);
+        }
+
+        private void InitializeCategoriesList(ImageMetadata _metadata)
+        {
+            Deployment.Current.Dispatcher.BeginInvoke(delegate
+            {
+                foreach (Point point in _metadata.Points)
+                {
+                    if (point.Category != null && !_categories.Contains(point.Category))
+                    {
+                        Category category = point.Category;
+                        category.IsActive = true;
+                        _categories.Add(category);
+                    }
+                }
+                //_activePoints = _metadata.Points;
+                SetActivePoints();
+                this.DataContext = _categories;
+                CategoriesListBox.ItemsSource = null;
+                CategoriesListBox.Items.Clear();
+                CategoriesListBox.ItemsSource = _categories;
+                contextMenuInitialized = _categories.Count;
+            });
+        }
+
+        private void SetActivePoints()
+        {
+
+            foreach (Point point in _metadata.Points)
+            {
+                int index = _categories.IndexOf(point.Category);
+                if (index >= 0 && _categories.ElementAt(index).IsActive)
+                {
+                    point.setPointVisibility(Visibility.Visible, _currentScale);
+                }
+                else
+                    point.setPointVisibility(Visibility.Collapsed, _currentScale);
+            }
+            if (isUIThreadReady)
+            {
+                useCompassCheckBox.IsChecked = false;
+                foreach (Point p in _metadata.Points)
+                {
+                    p.MinimumScaleDescriptionVisibility = MaxScale;
+                }
+                ScaleImages(_minScale, 0);
+
+                _normalPriorityTaskCallback = new TimerCallback(this.descCollisionsAlgorithm);
+                _normalPriorityTaskTimer = new Timer(_normalPriorityTaskCallback);
+                _normalPriorityTaskTimer.Change(0, Timeout.Infinite);
+            }
+        }
+
+
+        private void AddCategory(Category category)
+        {
+            if (!_categories.Contains(category))
+                _categories.Add(category);
+        }
+
+        private void RemoveCategory(Category category)
+        {
+            _categories.Remove(category);
         }
 
         private void LoadImageFromServer(int screenResolutionWidth, int screenResolutionHeight)
@@ -330,7 +399,7 @@ namespace Wanderer
 
                 SetPixelsPerDegree();
 
-                GenerateUIElementsForPoints(_metadata.Points);
+                GenerateUIElementsForPoints();
             }
 
         }
@@ -341,8 +410,6 @@ namespace Wanderer
             SetPointsDesctiptionsRotation(_metadata.Points);
 
             MoveHorizontial(_width * _currentScale);
-            ScaleImages(MaxScale, 0);
-            UpdateImagesBounds();
 
             isUIThreadReady = true;
         }
@@ -688,11 +755,9 @@ namespace Wanderer
 
                 translateX -= descriptionHeight * 0.5 * Math.Sin((-1.0) * point.Angle * (Math.PI / 180));
 
-                //  translateX += ( descriptionHeight *  Math.Sin((-1.0) * point.Angle * (Math.PI / 180)));
-                //  translateY += descriptionWidth * 0.5 * Math.Sin((-1.0) * point.Angle * (Math.PI / 180)); 
                 descriptionAlignmentWidth = (point.RightStackPanel.ActualWidth / 2.0);
 
-                point.LeftBall.Margin = new Thickness(point.RightStackPanel.ActualWidth / 2.0 - 10.0, point.RightStackPanel.ActualHeight / 2.0, 0.0, 0.0);
+                point.LeftBall.Margin = new Thickness(point.RightStackPanel.ActualWidth / 2.0 - 10.0 + descriptionHeight * 0.5 * Math.Sin((-1.0) * point.Angle * (Math.PI / 180)), point.RightStackPanel.ActualHeight / 2.0, 0.0, 0.0);
                 point.RightBall.Margin = new Thickness(point.RightStackPanel.ActualWidth / 2.0 - 10.0 + descriptionHeight * 0.5 * Math.Sin((-1.0) * point.Angle * (Math.PI / 180)), point.RightStackPanel.ActualHeight / 2.0, 0.0, 0.0);
             }
             else if (point.Alignment == 2)
@@ -707,21 +772,32 @@ namespace Wanderer
 
             }
 
-            if (point.MinimumScaleDescriptionVisibility < 1.0 && _currentScale < HidingDescriptionsMaxScale && _currentScale < point.MinimumScaleDescriptionVisibility)
+            //if(point.)
+            int index = _categories.IndexOf(point.Category);
+            if (index >= 0 && _categories.ElementAt(index).IsActive)
             {
-                point.LeftBall.Visibility = Visibility.Visible;
-                point.RightBall.Visibility = Visibility.Visible;
-                point.LeftStackPanel.Visibility = Visibility.Collapsed;
-                point.RightStackPanel.Visibility = Visibility.Collapsed;
+                if (point.MinimumScaleDescriptionVisibility < MaxScale && _currentScale < HidingDescriptionsMaxScale && _currentScale < point.MinimumScaleDescriptionVisibility)
+                {
+                    point.LeftBall.Visibility = Visibility.Visible;
+                    point.RightBall.Visibility = Visibility.Visible;
+                    point.LeftStackPanel.Visibility = Visibility.Collapsed;
+                    point.RightStackPanel.Visibility = Visibility.Collapsed;
+                }
+                else
+                {
+                    point.LeftBall.Visibility = Visibility.Collapsed;
+                    point.RightBall.Visibility = Visibility.Collapsed;
+                    point.LeftStackPanel.Visibility = Visibility.Visible;
+                    point.RightStackPanel.Visibility = Visibility.Visible;
+                }
             }
             else
             {
                 point.LeftBall.Visibility = Visibility.Collapsed;
                 point.RightBall.Visibility = Visibility.Collapsed;
-                point.LeftStackPanel.Visibility = Visibility.Visible;
-                point.RightStackPanel.Visibility = Visibility.Visible;
+                point.LeftStackPanel.Visibility = Visibility.Collapsed;
+                point.RightStackPanel.Visibility = Visibility.Collapsed;
             }
-
             TranslateTransform LeftCanvasTranslateTransform = point.LeftCanvas.RenderTransform as TranslateTransform;
             TranslateTransform RightCanvasTranslateTransform = point.RightCanvas.RenderTransform as TranslateTransform;
             RightCanvasTranslateTransform.X = translateX;
@@ -730,84 +806,85 @@ namespace Wanderer
             LeftCanvasTranslateTransform.X = translateX - (_width * _currentScale);
             LeftCanvasTranslateTransform.Y = translateY;
 
-
-            double heightOffset = descriptionWidth * Math.Sin((-1.0) * point.Angle * (Math.PI / 180));
-
-            if (point.Alignment == 0)
+            if (!isCollisionAlgorithmFinished)
             {
-                translateY += 5.0;
+                double heightOffset = descriptionWidth * Math.Sin((-1.0) * point.Angle * (Math.PI / 180));
 
-                point.BottomLine.X1 = translateX;// ComputeRelativeX(point.X) /*- translateX */- descriptionAlignmentWidth;
+                if (point.Alignment == 0)
+                {
+                    translateY += 5.0;
 
-                point.TopLine.X1 = point.BottomLine.X1;
+                    point.BottomLine.X1 = translateX;// ComputeRelativeX(point.X) /*- translateX */- descriptionAlignmentWidth;
 
-                point.BottomLine.X2 = point.BottomLine.X1 + descriptionWidth * Math.Cos((-1.0) * point.Angle * (Math.PI / 180));
-                point.TopLine.X2 = point.BottomLine.X2;
+                    point.TopLine.X1 = point.BottomLine.X1;
 
-                point.BottomLine.Y1 = translateY + descriptionHeight;// ComputeRelativeY(point.Y) - translateY - point.LineLength * _currentScale;
-                point.BottomLine.Y2 = point.BottomLine.Y1 - heightOffset;
+                    point.BottomLine.X2 = point.BottomLine.X1 + descriptionWidth * Math.Cos((-1.0) * point.Angle * (Math.PI / 180));
+                    point.TopLine.X2 = point.BottomLine.X2;
 
-                point.TopLine.Y1 = point.BottomLine.Y1 - descriptionHeight;
-                point.TopLine.Y2 = point.TopLine.Y1 - heightOffset;
+                    point.BottomLine.Y1 = translateY + descriptionHeight;// ComputeRelativeY(point.Y) - translateY - point.LineLength * _currentScale;
+                    point.BottomLine.Y2 = point.BottomLine.Y1 - heightOffset;
 
+                    point.TopLine.Y1 = point.BottomLine.Y1 - descriptionHeight;
+                    point.TopLine.Y2 = point.TopLine.Y1 - heightOffset;
+
+                }
+                else if (point.Alignment == 1)
+                {
+                    translateY += 5.0 + descriptionWidth * 0.5 * Math.Sin((-1.0) * point.Angle * (Math.PI / 180));
+                    translateX += descriptionHeight * Math.Sin((-1.0) * point.Angle * (Math.PI / 180));
+
+                    point.BottomLine.X1 = translateX;// -descriptionAlignmentWidth * Math.Cos((-1.0) * point.Angle * (Math.PI / 180));// (point.X) - translateX - descriptionAlignmentWidth * Math.Cos((-1.0) * point.Angle * (Math.PI / 180));
+
+                    point.TopLine.X1 = point.BottomLine.X1;
+
+                    point.BottomLine.X2 = point.BottomLine.X1 + descriptionWidth * Math.Cos((-1.0) * point.Angle * (Math.PI / 180));
+                    point.TopLine.X2 = point.BottomLine.X2;
+
+                    point.BottomLine.Y1 = translateY + descriptionHeight;// ComputeRelativeY(point.Y) - translateY - point.LineLength * _currentScale;
+                    point.BottomLine.Y2 = point.BottomLine.Y1 - heightOffset;
+
+                    point.TopLine.Y1 = point.BottomLine.Y1 - descriptionHeight;
+                    point.TopLine.Y2 = point.TopLine.Y1 - heightOffset;
+
+                }
+                else
+                {
+                    translateY += 5.0;
+                    translateX += descriptionHeight * Math.Cos((-1.0) * point.Angle * (Math.PI / 180));
+
+                    point.BottomLine.X1 = translateX;// +descriptionHeight * Math.Sin(point.Angle * (Math.PI / 180)); ;// +descriptionAlignmentWidth;
+
+                    // (point.X) - translateX - descriptionWidth * Math.Cos((-1.0) * point.Angle * (Math.PI / 180)); ;// +descriptionAlignmentWidth;
+
+                    point.TopLine.X1 = point.BottomLine.X1;
+
+                    point.BottomLine.X2 = point.BottomLine.X1 + descriptionWidth * Math.Cos((-1.0) * point.Angle * (Math.PI / 180));
+                    point.TopLine.X2 = point.BottomLine.X2;
+
+                    point.BottomLine.Y2 = translateY + descriptionHeight; // ComputeRelativeY(point.Y) - translateY - point.LineLength * _currentScale;
+                    point.BottomLine.Y1 = point.BottomLine.Y2 + heightOffset;
+
+                    point.TopLine.Y2 = point.BottomLine.Y2 - descriptionHeight;
+                    point.TopLine.Y1 = point.TopLine.Y2 + heightOffset;
+                }
+
+
+
+                point.TopLine.X1 += point.Angle / 90.0 * descriptionHeight / 2.0;
+                point.TopLine.X2 += point.Angle / 90.0 * descriptionHeight / 2.0;
+
+                point.BottomLine.X1 -= point.Angle / 90.0 * descriptionHeight / 2.0;
+                point.BottomLine.X2 -= point.Angle / 90.0 * descriptionHeight / 2.0;
+
+                point.BottomLine.StrokeThickness = 3;
+                point.BottomLine.Stroke = LoadingAnimation.Background;
+                point.TopLine.StrokeThickness = point.BottomLine.StrokeThickness;
+                point.TopLine.Stroke = LoadingAnimation.Background;
+
+
+                if (point.PrimaryDescription.Equals("Grand Mont Ruan"))
+                    Debug.WriteLine("[ " + point.PrimaryDescription + " ]:  X = " + (translateX - (_width * _currentScale)));
             }
-            else if (point.Alignment == 1)
-            {
-                translateY += 5.0 + descriptionWidth * 0.5 * Math.Sin((-1.0) * point.Angle * (Math.PI / 180));
-                translateX += descriptionHeight * Math.Sin((-1.0) * point.Angle * (Math.PI / 180));
-
-                point.BottomLine.X1 = translateX;// -descriptionAlignmentWidth * Math.Cos((-1.0) * point.Angle * (Math.PI / 180));// (point.X) - translateX - descriptionAlignmentWidth * Math.Cos((-1.0) * point.Angle * (Math.PI / 180));
-
-                point.TopLine.X1 = point.BottomLine.X1;
-
-                point.BottomLine.X2 = point.BottomLine.X1 + descriptionWidth * Math.Cos((-1.0) * point.Angle * (Math.PI / 180));
-                point.TopLine.X2 = point.BottomLine.X2;
-
-                point.BottomLine.Y1 = translateY + descriptionHeight;// ComputeRelativeY(point.Y) - translateY - point.LineLength * _currentScale;
-                point.BottomLine.Y2 = point.BottomLine.Y1 - heightOffset;
-
-                point.TopLine.Y1 = point.BottomLine.Y1 - descriptionHeight;
-                point.TopLine.Y2 = point.TopLine.Y1 - heightOffset;
-
-            }
-            else
-            {
-                translateY += 5.0;
-                translateX += descriptionHeight * Math.Cos((-1.0) * point.Angle * (Math.PI / 180));
-
-                point.BottomLine.X1 = translateX;// +descriptionHeight * Math.Sin(point.Angle * (Math.PI / 180)); ;// +descriptionAlignmentWidth;
-
-                // (point.X) - translateX - descriptionWidth * Math.Cos((-1.0) * point.Angle * (Math.PI / 180)); ;// +descriptionAlignmentWidth;
-
-                point.TopLine.X1 = point.BottomLine.X1;
-
-                point.BottomLine.X2 = point.BottomLine.X1 + descriptionWidth * Math.Cos((-1.0) * point.Angle * (Math.PI / 180));
-                point.TopLine.X2 = point.BottomLine.X2;
-
-                point.BottomLine.Y2 = translateY + descriptionHeight; // ComputeRelativeY(point.Y) - translateY - point.LineLength * _currentScale;
-                point.BottomLine.Y1 = point.BottomLine.Y2 + heightOffset;
-
-                point.TopLine.Y2 = point.BottomLine.Y2 - descriptionHeight;
-                point.TopLine.Y1 = point.TopLine.Y2 + heightOffset;
-            }
-
-
-
-            point.TopLine.X1 += point.Angle / 90.0 * descriptionHeight / 2.0;
-            point.TopLine.X2 += point.Angle / 90.0 * descriptionHeight / 2.0;
-
-            point.BottomLine.X1 -= point.Angle / 90.0 * descriptionHeight / 2.0;
-            point.BottomLine.X2 -= point.Angle / 90.0 * descriptionHeight / 2.0;
-
-            point.BottomLine.StrokeThickness = 3;
-            point.BottomLine.Stroke = new SolidColorBrush(Colors.Red);
-            point.TopLine.StrokeThickness = point.BottomLine.StrokeThickness;
-            point.TopLine.Stroke = new SolidColorBrush(Colors.Green);
-
-
-            if (point.PrimaryDescription.Equals("Grand Mont Ruan"))
-                Debug.WriteLine("[ " + point.PrimaryDescription + " ]:  X = " + (translateX - (_width * _currentScale)));
-
         }
 
 
@@ -830,11 +907,12 @@ namespace Wanderer
         }
 
         #region DAOCallbacksMethods
-
-        private void GenerateUIElementsForPoints(List<Point> points)
+        //private void GenerateUIElementsForPoints(List<Point> points)
+        private void GenerateUIElementsForPoints()
         {
             int index = 0;
-            foreach (Point point in points)
+            foreach (Point point in _metadata.Points)
+            //foreach (Point point in points)
             {
                 Deployment.Current.Dispatcher.BeginInvoke(delegate
                 {
@@ -923,16 +1001,16 @@ namespace Wanderer
                     /*
                      * Umieść przygotowane elementy na ekranie.
                      */
-                    LayoutRoot.Children.Add(point.LeftCanvas);
-                    LayoutRoot.Children.Add(point.RightCanvas);
-                    LayoutRoot.Children.Add(point.LeftPanoramaLine);
-                    LayoutRoot.Children.Add(point.RightPanoramaLine);
+                    GridLayoutPoints.Children.Add(point.LeftCanvas);
+                    GridLayoutPoints.Children.Add(point.RightCanvas);
+                    GridLayoutPoints.Children.Add(point.LeftPanoramaLine);
+                    GridLayoutPoints.Children.Add(point.RightPanoramaLine);
+
                     LayoutRoot.Children.Add(point.TopLine);
                     LayoutRoot.Children.Add(point.BottomLine);
 
                     index++;
-                    Debug.WriteLine(index + " : " + points.Count);
-                    if (index == points.Count)
+                    if (index == _metadata.Points.Count)
                     {
                         isUIThreadReady = false;
 
@@ -956,10 +1034,28 @@ namespace Wanderer
             Timer t = (Timer)state;
             t.Dispose();
 
+            isCollisionAlgorithmFinished = false;
+
             while (!isUIThreadReady)
             {
                 System.Threading.Thread.Sleep(1);
             }
+
+            isUIThreadReady = false;
+            Deployment.Current.Dispatcher.BeginInvoke(delegate
+            {
+                LoadingAnimation.Visibility = Visibility.Visible;
+                PanoramaTransformLeft.TranslateX = (-1.0) * _width * _currentScale;
+                PanoramaTransformRight.TranslateX = 0.0;
+
+                isUIThreadReady = true;
+            });
+
+            while (!isUIThreadReady)
+            {
+                System.Threading.Thread.Sleep(1);
+            }
+
 
             double scale = 0;
             Line PanoramaTopLine = null;
@@ -1003,13 +1099,13 @@ namespace Wanderer
                     for (int i = 0; i < _metadata.Points.Count; i++)
                     {
                         Point firstPoint = _metadata.Points.ElementAt(i);
- 
+
                         PanoramaTopLine.X2 = _width * scale;
                         PanoramaBottomLine.Y1 = _height * scale;
                         PanoramaBottomLine.X2 = _width * scale;
                         PanoramaBottomLine.Y2 = _height * scale;
 
-                        if (firstPoint.MinimumScaleDescriptionVisibility == 1.0)
+                        if (firstPoint.MinimumScaleDescriptionVisibility == MaxScale)
                         {
                             if (LineSegmentIntersection.LineSegmentIntersection.doQuadrilateralsIntersect(firstPoint.TopLine, firstPoint.BottomLine, PanoramaTopLine, PanoramaBottomLine))
                             {
@@ -1022,8 +1118,15 @@ namespace Wanderer
                                     for (int j = i + 1; j < _metadata.Points.Count; j++)
                                     {
                                         Point secondPoint = _metadata.Points.ElementAt(j);
-                                        if(LineSegmentIntersection.LineSegmentIntersection.doQuadrilateralsIntersect(firstPoint.TopLine, firstPoint.BottomLine, secondPoint.TopLine, secondPoint.BottomLine)){
-                                            firstPoint.MinimumScaleDescriptionVisibility = scale;
+
+                                        int firstPointCategoryIndex = _categories.IndexOf(firstPoint.Category);
+                                        int secondPointCategoryIndex = _categories.IndexOf(secondPoint.Category);
+                                        if (_categories.ElementAt(firstPointCategoryIndex).IsActive && _categories.ElementAt(secondPointCategoryIndex).IsActive)
+                                        {
+                                            if (LineSegmentIntersection.LineSegmentIntersection.doQuadrilateralsIntersect(firstPoint.TopLine, firstPoint.BottomLine, secondPoint.TopLine, secondPoint.BottomLine))
+                                            {
+                                                firstPoint.MinimumScaleDescriptionVisibility = scale;
+                                            }
                                         }
                                     }
                                 }
@@ -1040,12 +1143,13 @@ namespace Wanderer
             Deployment.Current.Dispatcher.BeginInvoke(delegate
                {
 
-                   foreach(Point p in _metadata.Points){
+                   foreach (Point p in _metadata.Points)
+                   {
                        p.TopLine.Visibility = Visibility.Collapsed;
                        p.BottomLine.Visibility = Visibility.Collapsed;
                    }
+                   isCollisionAlgorithmFinished = true;
                    StartCompass();
-
                    LoadingAnimation.Visibility = Visibility.Collapsed;
                });
         }
@@ -1083,7 +1187,7 @@ namespace Wanderer
                         Debug.WriteLine("Size: " + bitmapImage.PixelWidth + " x " + bitmapImage.PixelHeight);
                         ReloadContent();
 
-                        GenerateUIElementsForPoints(_metadata.Points);
+                        GenerateUIElementsForPoints();
                     }
                     catch (WebException)
                     {
@@ -1200,16 +1304,49 @@ namespace Wanderer
         private void PanoramaHold(object sender, System.Windows.Input.GestureEventArgs e)
         {
             ContextMenu.Visibility = Visibility.Visible;
-            useCompassCheckBox.Focus();
+            //useCompassCheckBox.Focus();
         }
 
         /* Metoda zamyka menu kontekstowe.
          */
-        private void ContextMenuLostFocus(object sender, RoutedEventArgs e)
+        private void HideContextMenu(object sender, RoutedEventArgs e)
         {
             ContextMenu.Visibility = Visibility.Collapsed;
         }
 
+        private void CategoryChecked(object sender, RoutedEventArgs e)
+        {
+            FrameworkElement element = (FrameworkElement)sender;
+            Category category = (Category)element.DataContext;
+            int index = _categories.IndexOf(category);
+            if (index >= 0)
+                _categories.ElementAt(index).IsActive = true;
+            if (contextMenuInitialized == 0)
+            {
+                SetActivePoints();
+            }
+            else
+            {
+                contextMenuInitialized--;
+            }
+        }
+
+        private void CategoryUnchecked(object sender, RoutedEventArgs e)
+        {
+            FrameworkElement element = (FrameworkElement)sender;
+            Category category = (Category)element.DataContext;
+            int index = _categories.IndexOf(category);
+            if (index >= 0)
+                _categories.ElementAt(index).IsActive = false;
+            if (contextMenuInitialized == 0)
+            {
+                SetActivePoints();
+            }
+            else
+            {
+                contextMenuInitialized--;
+            }
+        }
 
         #endregion
 

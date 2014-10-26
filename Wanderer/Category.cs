@@ -9,6 +9,7 @@ namespace Wanderer
     public class Category
     {
         public String Name { get; private set; }
+        public bool IsActive { get; set; }
 
         public Category(String name)
         {

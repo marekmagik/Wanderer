@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
@@ -45,7 +46,7 @@ namespace Wanderer
             this.PrimaryDescription = primaryDescription;
             this.SecondaryDescription = secondaryDescription;
 
-            MinimumScaleDescriptionVisibility = 1.0;
+            MinimumScaleDescriptionVisibility = PanoramaView.MaxScale;
         }
 
 
@@ -78,6 +79,46 @@ namespace Wanderer
             hash = (hash * 7) + PrimaryDescription.GetHashCode();
             hash = (hash * 7) + SecondaryDescription.GetHashCode();
             return hash;
+        }
+
+        public void setPointVisibility(Visibility visibility, double scale)
+        {
+            if (LeftPanoramaLine != null)
+            {
+                if (visibility.Equals(Visibility.Visible))
+                {
+                    if (MinimumScaleDescriptionVisibility < PanoramaView.MaxScale && scale < PanoramaView.HidingDescriptionsMaxScale && scale < MinimumScaleDescriptionVisibility)
+                    {
+
+                        LeftBall.Visibility = Visibility.Visible;
+                        RightBall.Visibility = Visibility.Visible;
+
+                        LeftStackPanel.Visibility = Visibility.Collapsed;
+                        RightStackPanel.Visibility = Visibility.Collapsed;
+                    }
+                    else
+                    {
+                        LeftBall.Visibility = Visibility.Collapsed;
+                        RightBall.Visibility = Visibility.Collapsed;
+
+                        LeftStackPanel.Visibility = Visibility.Visible;
+                        RightStackPanel.Visibility = Visibility.Visible;
+                    }
+                    LeftPanoramaLine.Visibility = Visibility.Visible;
+                    RightPanoramaLine.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    LeftBall.Visibility = visibility;
+                    RightBall.Visibility = visibility;
+
+                    LeftStackPanel.Visibility = visibility;
+                    RightStackPanel.Visibility = visibility;
+
+                    LeftPanoramaLine.Visibility = visibility;
+                    RightPanoramaLine.Visibility = visibility;
+                }
+            }
         }
 
     }
