@@ -1,12 +1,20 @@
 package pl.edu.agh.wanderer.util;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
+
+import pl.edu.agh.wanderer.model.Metadata;
+import pl.edu.agh.wanderer.model.Photo;
+import pl.edu.agh.wanderer.model.Point;
 
 /**
  * Klasa odpowiadajaca za konwertowanie wyników zapytania do baza danych na dane
@@ -186,4 +194,34 @@ public class JSONConverter {
 		return jsonObjects;
 	}
 
+	public JSONObject toJSONArray(String json) throws JSONException {
+		return new JSONObject(json);
+	}
+
+	public Metadata toMetadataObject(String json, byte [] image) throws JSONException, IOException, NoSuchAlgorithmException{
+		JSONObject metadataJson = new JSONObject(json);
+		JSONArray pointsJson = metadataJson.getJSONArray("Points");
+		
+		List<Point> points = new ArrayList<Point>();
+		
+		for(int i=0;i<pointsJson.length();i++){
+			JSONObject pointJson = pointsJson.getJSONObject(i);
+			Point point = new Point(pointJson);
+			System.out.println(point);
+			points.add(point);
+		}
+		
+		int width = metadataJson.getInt("Width");
+		int height = metadataJson.getInt("Height");
+		ByteArrayInputStream imageInputStream = new ByteArrayInputStream(image);
+		ByteArrayInputStream thumbnailInoutStream = ThumbnailsGenerator.generateThumbnail(imageInputStream, width, height);
+		Photo photo = new Photo(imageInputStream,thumbnailInoutStream,width,height);
+		System.out.println(photo);
+		
+		Metadata metadata = new Metadata(metadataJson,photo,points);
+		System.out.println(metadata);
+		
+		return metadata;
+	}
+	
 }

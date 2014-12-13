@@ -1,5 +1,6 @@
 package pl.edu.agh.wanderer.places;
 
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -65,5 +66,29 @@ public class Places {
 
 		return myString;
 	}
+	
+	@Path("/get/all")
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public String getAllPoints() throws Exception {
+		PostgresDB dao = new PostgresDB();
+		String myString = dao.getAllPointsFromWaitingRoom();
 
+		return myString;
+	}
+
+	@Path("/delete/waiting/{hash}")
+	@DELETE
+	@Produces(MediaType.TEXT_PLAIN)
+	public String deletePlaceFromWaitingRoom(@PathParam("hash")String hash) throws Exception {
+		System.out.println(" Received delete request "+hash);
+		
+		PostgresDB dao = new PostgresDB();
+		boolean result = dao.deletePlaceFromWaitingRoom(hash);
+		if(result)
+			return "200";
+		else
+			return "500";
+	}
+	
 }

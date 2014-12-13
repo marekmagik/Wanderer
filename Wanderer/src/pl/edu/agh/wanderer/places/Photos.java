@@ -1,6 +1,10 @@
 package pl.edu.agh.wanderer.places;
 
+import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.security.NoSuchAlgorithmException;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -10,6 +14,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import org.codehaus.jettison.json.JSONException;
 
 import pl.edu.agh.wanderer.dao.PostgresDB;
 
@@ -37,6 +43,19 @@ public class Photos {
 		return Response.ok(result).build();
 
 	}
+	
+	@Path("/get/waiting/{id}")
+	@GET
+	@Produces({ "image/jpeg" })
+	public Response getImageFromWaitingRoom(@PathParam("id") String photoId) throws Exception {
+
+		System.out.println(" Sending photo with id: " + photoId);
+
+		PostgresDB dao = new PostgresDB();
+		byte[] result = dao.getPhotoFromWaitingRoom(photoId);
+		return Response.ok(result).build();
+
+	}
 
 	/**
 	 * Metoda zwracajaca miniaturkê danego zdjêcia w postaci tablicy bajtów.
@@ -56,6 +75,20 @@ public class Photos {
 
 		PostgresDB dao = new PostgresDB();
 		byte[] result = dao.getThumbnail(photoId);
+		System.out.println(" Number of bytes: " + result.length);
+		return Response.ok(result).build();
+
+	}
+	
+	@Path("/get/waiting/thumbnail/{id}")
+	@GET
+	@Produces({ "image/jpeg" })
+	public Response getPlaceThumbnailFromWaitingRoom(@PathParam("id") String photoId) throws Exception {
+
+		System.out.println("Sending thumbnail of photo with id  " + photoId);
+
+		PostgresDB dao = new PostgresDB();
+		byte[] result = dao.getThumbnailFromWaitingRoom(photoId);
 		System.out.println(" Number of bytes: " + result.length);
 		return Response.ok(result).build();
 
@@ -107,5 +140,52 @@ public class Photos {
 		String myString = dao.getPhotoMetadata(Integer.parseInt(placeId));
 
 		return myString;
+	}
+
+	@Path("/insert/{mode}/{metadataLength}/{imageLength}")
+	@POST
+	@Consumes(MediaType.APPLICATION_OCTET_STREAM)
+	public String uploadPhotoWithMetadata(@PathParam("mode") String mode, @PathParam("metadataLength") String metadataLength,
+			@PathParam("imageLength") String imageLength, byte[] input) {
+		int lengthOfMetadata = 0;
+		int lengthOfImage = 0;
+		try {
+			lengthOfMetadata = Integer.parseInt(metadataLength);
+			lengthOfImage = Integer.parseInt(imageLength);
+		} catch (NumberFormatException ex) {
+			return "500";
+		}
+
+		byte[] json = new byte[lengthOfMetadata];
+		byte[] image = new byte[lengthOfImage];
+
+		try {
+			for (int i = 0; i < lengthOfMetadata; i++)
+				json[i] = input[i];
+
+			for (int i = 0; i < lengthOfImage; i++)
+				image[i] = input[i + lengthOfMetadata];
+		} catch (IndexOutOfBoundsException e) {
+			return "500";
+		}
+
+		String metadata;
+		try {
+			metadata = new String(json, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			return "500";
+		}
+		System.out.println(metadata);
+
+		PostgresDB dao = new PostgresDB();
+		try {
+			dao.insertPhotoAndMetadata(image, metadata, mode);
+		} catch (JSONException | IOException | NoSuchAlgorithmException e) {
+			e.printStackTrace();
+			return "500";
+		}
+
+		System.out.println(" New photo and metadata inserted ");
+		return "200";
 	}
 }

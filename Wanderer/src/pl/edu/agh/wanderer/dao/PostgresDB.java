@@ -1,5 +1,7 @@
 package pl.edu.agh.wanderer.dao;
 
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -7,8 +9,12 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
+import pl.edu.agh.wanderer.model.Metadata;
+import pl.edu.agh.wanderer.model.Photo;
+import pl.edu.agh.wanderer.model.Point;
 import pl.edu.agh.wanderer.util.JSONConverter;
 
 /**
@@ -107,6 +113,30 @@ public class PostgresDB extends DBConnection {
 
 		return result;
 	}
+	
+	public byte[] getPhotoFromWaitingRoom(String photoId) {
+		Connection connection = getConnection();
+		byte[] result = null;
+		try {
+			PreparedStatement ps = connection
+					.prepareStatement("SELECT photos.photo FROM photos_waiting_room as photos inner join metadata_waiting_room as metadata on metadata.metadata_id=photos.metadata_id where metadata.picture_hash=?");
+			ps.setString(1, photoId);
+			ResultSet rs = ps.executeQuery();
+			if (rs != null) {
+				while (rs.next()) {
+					result = rs.getBytes(1);
+
+				}
+				rs.close();
+			}
+			ps.close();
+			connection.close();
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+
+		return result;
+	}
 
 	/**
 	 * Metoda wykonujaca zapytanie na bazie danych w celu uzyskania miniatruki
@@ -122,6 +152,30 @@ public class PostgresDB extends DBConnection {
 		try {
 			PreparedStatement ps = connection
 					.prepareStatement("SELECT photos.thumbnail FROM photos inner join metadata on metadata.metadata_id=photos.metadata_id where metadata.picture_hash=?");
+			ps.setString(1, photoId);
+			ResultSet rs = ps.executeQuery();
+			if (rs != null) {
+				while (rs.next()) {
+					result = rs.getBytes(1);
+
+				}
+				rs.close();
+			}
+			ps.close();
+			connection.close();
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+
+		return result;
+	}
+	
+	public byte[] getThumbnailFromWaitingRoom(String photoId) {
+		Connection connection = getConnection();
+		byte[] result = null;
+		try {
+			PreparedStatement ps = connection
+					.prepareStatement("SELECT photos.thumbnail FROM photos_waiting_room as photos inner join metadata_waiting_room as metadata on metadata.metadata_id=photos.metadata_id where metadata.picture_hash=?");
 			ps.setString(1, photoId);
 			ResultSet rs = ps.executeQuery();
 			if (rs != null) {
@@ -170,7 +224,7 @@ public class PostgresDB extends DBConnection {
 			e.printStackTrace();
 		}
 		for (JSONObject json : jsonObjects) {
-			getPointsAndUpdateSpecifiedJSONMetadata(json);
+			getPointsAndUpdateSpecifiedJSONMetadata(json,"normal");
 		}
 
 		return toJsonConverter.convertListOfJSONObjects(jsonObjects);
@@ -180,11 +234,18 @@ public class PostgresDB extends DBConnection {
 	 * Metoda pobierajaca punkty (opisujace zdjecie dla danego miejsca) i
 	 * aktualizujaca obiekt JSON z uzyciem uzyskanych danych.
 	 * 
-	 * @param json obiekt JSON, zawierajacy liste miejsc wraz z metadanymi
+	 * @param json
+	 *            obiekt JSON, zawierajacy liste miejsc wraz z metadanymi
 	 */
-	public void getPointsAndUpdateSpecifiedJSONMetadata(JSONObject json) {
+	public void getPointsAndUpdateSpecifiedJSONMetadata(JSONObject json, String mode) {
 		Connection connection = getConnection();
 
+		String query="";
+		if("normal".equals(mode))
+			query="select primary_description, secondary_description, category, x, y, alignment, line_length, angle, color from points where metadata_id = ? ;";
+		else if("admin".equals(mode))
+			query="select primary_description, secondary_description, category, x, y, alignment, line_length, angle, color from points_waiting_room where metadata_id = ? ;";
+		
 		try {
 			ResultSet result = null;
 
@@ -192,7 +253,7 @@ public class PostgresDB extends DBConnection {
 			System.out.println("metadataID: " + metadataID);
 
 			PreparedStatement querry = connection
-					.prepareStatement("select primary_description, secondary_description, category, x, y, alignment, line_length, angle, color from points where metadata_id = ? ;");
+					.prepareStatement(query);
 			querry.setInt(1, metadataID);
 			result = querry.executeQuery();
 			String pointsInJSONArray = toJsonConverter.toJSONArray(result).toString();
@@ -208,6 +269,198 @@ public class PostgresDB extends DBConnection {
 				e.printStackTrace();
 			}
 		}
+	}
+
+	public boolean insertPhotoAndMetadata(byte[] image, String metadata, String mode) throws JSONException, IOException,
+			NoSuchAlgorithmException {
+		JSONConverter converter = new JSONConverter();
+		Metadata metadataObject = converter.toMetadataObject(metadata, image);
+		Connection connection = getConnection();
+
+		String metadataQuery = "";
+		String photoQuery = "";
+		String pointsQuery = "";
+		
+		if("admin".equals(mode)){
+			metadataQuery="insert into metadata values (default,?, ? ,? , ?, ?, ?, ?, ?, st_geogfromtext(?));";
+			photoQuery="INSERT INTO photos VALUES (default , ?, ? , ?, ? ,?);";
+			pointsQuery="insert into points values (default,?, ? ,? , ?, ?, ?, ?, ?, ?, ?);";
+		}else if("normal".equals(mode)){
+			metadataQuery="insert into metadata_waiting_room values (default,?, ? ,? , ?, ?, ?, ?, ?, st_geogfromtext(?));";
+			photoQuery="INSERT INTO photos_waiting_room VALUES (default , ?, ? , ?, ? ,?);";
+			pointsQuery="insert into points_waiting_room values (default,?, ? ,? , ?, ?, ?, ?, ?, ?, ?);";
+		} else
+			return false;
+		
+		try {
+			PreparedStatement querry = connection
+					.prepareStatement(metadataQuery);
+			querry.setString(1, metadataObject.getPrimaryDescription());
+			querry.setString(2, metadataObject.getSecondaryDescription());
+			querry.setDouble(3, metadataObject.getLongitude());
+			querry.setDouble(4, metadataObject.getLatitude());
+			querry.setDouble(5, metadataObject.getCoverage());
+			querry.setDouble(6, metadataObject.getOrientation());
+			querry.setDouble(7, metadataObject.getVersion());
+			querry.setString(8, metadataObject.getHash());
+			querry.setString(9, "srid=4326;point(" + metadataObject.getLongitude() + " " + metadataObject.getLatitude() + ")");
+			querry.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		} finally {
+			try {
+				connection.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+				return false;
+			}
+		}
+
+		int metadataIndex = getMetadataIndex(metadataObject.getHash(),mode);
+		if (metadataIndex == 0)
+			return false;
+
+		Photo photo = metadataObject.getPhoto();
+		connection = getConnection();
+		try {
+			PreparedStatement querry = connection.prepareStatement(photoQuery);
+			querry.setBinaryStream(1, photo.getPhoto(), photo.getPhoto().available());
+			querry.setBinaryStream(2, photo.getThumbnail(), photo.getThumbnail().available());
+			querry.setInt(3, photo.getWidth());
+			querry.setInt(4, photo.getHeight());
+			querry.setInt(5, metadataIndex);
+			querry.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		} finally {
+			try {
+				connection.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+				return false;
+			}
+		}
+
+		for (Point point : metadataObject.getPoints()) {
+			connection = getConnection();
+			try {
+				PreparedStatement querry = connection
+						.prepareStatement(pointsQuery);
+				querry.setString(1, point.getPrimaryDescription());
+				querry.setString(2, point.getSecondaryDescription());
+				querry.setString(3, point.getCategory());
+				querry.setInt(4, metadataIndex);
+				querry.setInt(5, (int) point.getX());
+				querry.setInt(6, (int) point.getY());
+				querry.setInt(7, point.getAlignment());
+				querry.setInt(8, (int) point.getLineLength());
+				querry.setInt(9, (int) point.getAngle());
+				querry.setString(10, point.getColor());
+				querry.executeUpdate();
+			} catch (SQLException e) {
+				e.printStackTrace();
+				return false;
+			} finally {
+				try {
+					connection.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+					return false;
+				}
+			}
+		}
+
+		return true;
+	}
+
+	private int getMetadataIndex(String hash, String mode) {
+		Connection connection = getConnection();
+		
+		String query="";
+		if("admin".equals(mode))
+			query="select metadata_id from metadata where picture_hash=?";
+		else if("normal".equals(mode))
+			query="select metadata_id from metadata_waiting_room where picture_hash=?";
+		
+		int result = 0;
+		try {
+			PreparedStatement querry = connection.prepareStatement(query);
+			querry.setString(1, hash);
+			ResultSet rs = querry.executeQuery();
+			if (rs.next())
+				result = rs.getInt(1);
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return result;
+		} finally {
+			try {
+				connection.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+				return result;
+			}
+		}
+		return result;
+	}
+
+	public String getAllPointsFromWaitingRoom() {
+		Connection connection = getConnection();
+		System.out.println("got an query");
+		List<JSONObject> jsonObjects = new ArrayList<JSONObject>();
+		try {
+			PreparedStatement querry = connection
+					.prepareStatement("select metadata.coverage, metadata.orientation, photos.width, photos.height, metadata.metadata_id, metadata.longitude, metadata.latitude, metadata.primary_description, metadata.secondary_description, metadata.picture_hash from photos_waiting_room as photos inner join metadata_waiting_room as metadata on (photos.metadata_id = metadata.metadata_id)");
+
+			ResultSet rs = querry.executeQuery();
+			jsonObjects = toJsonConverter.toJSONObjectsList(rs);
+			connection.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		for (JSONObject json : jsonObjects) {
+			getPointsAndUpdateSpecifiedJSONMetadata(json,"admin");
+		}
+
+		return toJsonConverter.convertListOfJSONObjects(jsonObjects);
+	}
+
+	public boolean deletePlaceFromWaitingRoom(String hash) {
+		Connection connection = getConnection();
+		boolean result = true;
+		int metadataIndex = getMetadataIndex(hash, "normal");
+		try {
+			PreparedStatement querry = connection
+					.prepareStatement("delete from points_waiting_room where metadata_id=?");
+
+			querry.setInt(1, metadataIndex);
+			querry.execute();
+			
+			querry = connection
+					.prepareStatement("delete from photos_waiting_room where metadata_id=?");
+
+			querry.setInt(1, metadataIndex);
+			querry.execute();
+			
+			querry = connection
+					.prepareStatement("delete from metadata_waiting_room where metadata_id=?");
+
+			querry.setInt(1, metadataIndex);
+			querry.execute();
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			result=false;
+		} finally{
+			try {
+				connection.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+
+		return result;
 	}
 
 }
