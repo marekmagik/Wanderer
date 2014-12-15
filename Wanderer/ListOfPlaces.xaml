@@ -23,7 +23,11 @@
 
         <!--TitlePanel contains the name of the application and page title-->
         <StackPanel Grid.Row="0" Margin="12,17,0,10">
-            <TextBlock Text="Punkty widokowe w okolicy" Style="{StaticResource PhoneTextNormalStyle}"/>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Punkty widokowe w okolicy" Style="{StaticResource PhoneTextNormalStyle}"/>
+                <Image Height="30" Margin="30,0,0,0" Name="GpsSign" Width="30"/>
+                <Image Height="30" Margin="30,0,0,0" Name="InternetSign" Source="Images/InternetOffline.png" Width="25"/>
+            </StackPanel>
         </StackPanel>
 
         <!--ContentPanel - place additional content here-->
@@ -40,7 +44,10 @@
                                 <TextBlock Text="{Binding PictureAdditionalDescription}" MaxWidth="380" TextWrapping="Wrap" FontSize="20" Margin="0,5,40,0"/>
                                 <StackPanel Orientation="Horizontal">
                                     <Image Margin="5,0,0,0" Name="PanoramaCachedTick" Opacity="{Binding IsPanoramaCached}" Source="/Images/PanoramaCached.png"/>
-                                    <TextBlock Text="W odległości: 100.00 km" FontSize="15" FontStyle="Italic" Margin="150,0,0,5"/>
+                                    <StackPanel Margin="150,0,0,5" Orientation="Horizontal">
+                                        <TextBlock Text="W odległości:" FontSize="15" FontStyle="Italic"/>
+                                        <TextBlock Text="{Binding CurrentDistance}" FontSize="15" FontStyle="Italic" Margin="10,0,0,0" Name="DistanceTextBock"/>
+                                    </StackPanel>
                                 </StackPanel>
                             </StackPanel>
                         </StackPanel>

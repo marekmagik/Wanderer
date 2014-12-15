@@ -166,6 +166,10 @@
     </Content>
     <None Include="Resources\Compass_calibration8.png" />
     <Content Include="Images\CompassCalibration.png" />
+    <Content Include="Images\GpsOffline.png" />
+    <Content Include="Images\GpsOnline.png" />
+    <Content Include="Images\InternetOffline.png" />
+    <Content Include="Images\InternetOnline.png" />
     <Content Include="Images\PanoramaCached.png" />
     <Content Include="Toolkit.Content\ApplicationBar.Add.png" />
     <Content Include="Toolkit.Content\ApplicationBar.Cancel.png" />

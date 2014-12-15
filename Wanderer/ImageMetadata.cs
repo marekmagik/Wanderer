@@ -5,11 +5,12 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Media;
 
 namespace Wanderer
 {
-    public class ImageMetadata
+    public class ImageMetadata : INotifyPropertyChanged
     {
         public List<Point> Points { get; set; }
         public List<Category> Categories { get; set; }
@@ -32,11 +33,27 @@ namespace Wanderer
                 return IsolatedStorageDAO.IsPhotoCached(PictureSHA256);
             }
         }
+        private String _currentDistance;
+        public String CurrentDistance
+        {
+            get
+            {
+                return _currentDistance;
+            }
+            set
+            {
+                _currentDistance = value;
+                OnPropertyChanged("CurrentDistance");
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public ImageMetadata()
         {
             Points = new List<Point>();
             Categories = new List<Category>();
+            CurrentDistance = "-.-- km";
         }
 
         public void ToggleDescriptions()
@@ -44,6 +61,30 @@ namespace Wanderer
             string temp = PictureAdditionalDescription;
             PictureAdditionalDescription = PictureDescriptionToChange;
             PictureDescriptionToChange = temp;
+        }
+
+        public void UpdateDistance(double longitude, double lattitude)
+        {
+            double distance = GPSTracker.ComputeDistance(Longitude, Latitude, longitude, lattitude);
+            if (longitude == GPSTracker.LocationUnknown) {
+                CurrentDistance = "-.-- km";
+            }
+            else
+            {
+                CurrentDistance = String.Format("{0:0.00}", distance) + " km";
+            }
+        }
+
+        protected void OnPropertyChanged(string name)
+        {
+            PropertyChangedEventHandler handler = PropertyChanged;
+            if (handler != null)
+            {
+                Deployment.Current.Dispatcher.BeginInvoke(delegate
+                {
+                    handler(this, new PropertyChangedEventArgs(name));
+                });
+            }
         }
     }
 }

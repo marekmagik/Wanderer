@@ -108,6 +108,7 @@ namespace Wanderer
                 place.Image = bitmapImage;
                 ReloadContent();
                 _actualIndex++;
+                UpdateDistanceForAllPlaces(GPSTracker.CurrentLongitude, GPSTracker.CurrentLatitude);
             });
         }
 
@@ -141,7 +142,8 @@ namespace Wanderer
                             Debug.WriteLine("wyjatek wewnatrz UI!");
                             return;
                         }
-                });
+                        UpdateDistanceForAllPlaces(GPSTracker.CurrentLongitude, GPSTracker.CurrentLatitude);
+                    });
             }
         }
 
@@ -191,6 +193,14 @@ namespace Wanderer
                     _actualNumberOfElementsInList += _increaseAmount;
                     ProcessNextPlace();
                 }
+            }
+        }
+
+        public void UpdateDistanceForAllPlaces(double currentLogitude, double currentLatitude)
+        {
+            foreach (ImageMetadata place in _places)
+            {
+                place.UpdateDistance(currentLogitude, currentLatitude);
             }
         }
 
