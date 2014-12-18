@@ -14,7 +14,7 @@ using System.Diagnostics;
 
 namespace Wanderer
 {
-    public partial class ListOfPlaces : PhoneApplicationPage
+    public partial class ListOfPlaces : PhoneApplicationPage, IThumbnailCallbackReceiver
     {
         private List<ImageMetadata> _places;
         private List<ImageMetadata> _notCachedPlaces;

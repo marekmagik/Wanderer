@@ -92,13 +92,14 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
-    <Compile Include="CategoriesBudlesPage.xaml.cs">
-      <DependentUpon>CategoriesBudlesPage.xaml</DependentUpon>
+    <Compile Include="CategoriesBundlesPage.xaml.cs">
+      <DependentUpon>CategoriesBundlesPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Category.cs" />
     <Compile Include="GPSTracker.cs" />
     <Compile Include="Configuration.cs" />
     <Compile Include="DAO.cs" />
+    <Compile Include="ICallbackReceiver.cs" />
     <Compile Include="ImageMetadata.cs" />
     <Compile Include="IsolatedStorageDAO.cs" />
     <Compile Include="JSONParser.cs" />
@@ -127,7 +128,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </ApplicationDefinition>
-    <Page Include="CategoriesBudlesPage.xaml">
+    <Page Include="CategoriesBundlesPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

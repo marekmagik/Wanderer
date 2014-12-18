@@ -29,7 +29,7 @@ using System.Threading;
 
 namespace Wanderer
 {
-    public partial class PanoramaView : PhoneApplicationPage
+    public partial class PanoramaView : PhoneApplicationPage, IImageCallbackReceiver
     {
 
         private TimerCallback _normalPriorityTaskCallback;

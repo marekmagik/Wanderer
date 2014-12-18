@@ -36,7 +36,7 @@
                         <StackPanel Background="DimGray" Width="400" Margin="0,15,0,15"  Orientation="Vertical">
                             <Grid>
                                 <TextBlock Text="{Binding}" VerticalAlignment="Center" TextWrapping="Wrap" FontSize="30" Margin="10,0,40,0"/>
-                                <Button Content="Pobierz" HorizontalAlignment="Right"/>
+                                <Button Content="Pobierz" HorizontalAlignment="Right" Click="DownloadBundleClick"/>
                             </Grid>
                         </StackPanel>
                     </DataTemplate>
