@@ -27,8 +27,10 @@ namespace Wanderer
             Configuration.UseGPS = false;
 
             ListOfPlaces listOfPlaces = new ListOfPlaces(this);
+            CategoriesBudlesPage categoriesPage = new CategoriesBudlesPage();
 
             ListOfPlacesPanoraaItem.Content = listOfPlaces;
+            CategoriesBundlesPanoramaItem.Content = categoriesPage;
             IsolatedStorageDAO.InitIsolatedStorageDAO();
 
             _gpsTracker = new GPSTracker(listOfPlaces);

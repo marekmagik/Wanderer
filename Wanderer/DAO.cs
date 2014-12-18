@@ -49,5 +49,15 @@ namespace Wanderer
             request.BeginGetResponse(new AsyncCallback(callback.ImageRequestCallback), request);
         }
 
+        public static void SendRequestForCategories(CategoriesBudlesPage callback)
+        {
+            string uri = "http://" + Address + ":7001/Wanderer/api/places/get/categories";
+
+            HttpWebRequest request =
+                (HttpWebRequest)HttpWebRequest.Create(uri);
+            request.Method = "GET";
+            request.BeginGetResponse(new AsyncCallback(callback.CategoriesRequestCallback), request);
+        }
+
     }
 }

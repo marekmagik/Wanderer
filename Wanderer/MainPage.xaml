@@ -43,6 +43,9 @@
         <controls:PanoramaItem Name="ListOfPlacesPanoraaItem">
             
         </controls:PanoramaItem>
+        <controls:PanoramaItem Name="CategoriesBundlesPanoramaItem">
+
+        </controls:PanoramaItem>
 
 
     </controls:Panorama>
