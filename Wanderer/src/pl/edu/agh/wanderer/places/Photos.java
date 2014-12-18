@@ -1,6 +1,5 @@
 package pl.edu.agh.wanderer.places;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;

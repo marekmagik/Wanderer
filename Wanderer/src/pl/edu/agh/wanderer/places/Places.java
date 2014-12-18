@@ -91,4 +91,22 @@ public class Places {
 			return "500";
 	}
 	
+	@Path("/get/category/{category}")
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public String getPlacesWithSpecifiedCategory(@PathParam("category") String category) throws Exception{
+		PostgresDB dao = new PostgresDB();
+		String json = dao.getPlacesWithCategory(category);
+		return json;
+	}
+	
+	@Path("/get/categories")
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public String getPlacesCategories(){
+		PostgresDB dao = new PostgresDB();
+		String json = dao.getAllPlacesCategories();
+		return json;
+	}
+	
 }

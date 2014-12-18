@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
@@ -212,7 +213,7 @@ public class PostgresDB extends DBConnection {
 		List<JSONObject> jsonObjects = new ArrayList<JSONObject>();
 		try {
 			PreparedStatement querry = connection
-					.prepareStatement("select metadata.coverage, metadata.orientation, photos.width, photos.height, metadata.metadata_id, metadata.longitude, metadata.latitude, metadata.primary_description, metadata.secondary_description, metadata.picture_hash, st_distance(metadata.geog,st_geogfromtext(?)) as distance from photos inner join metadata on (photos.metadata_id = metadata.metadata_id) where (st_dwithin(metadata.geog,st_geogfromtext(?),?)) order by 7;");
+					.prepareStatement("select metadata.coverage, metadata.orientation, photos.width, photos.height, metadata.metadata_id, metadata.longitude, metadata.latitude, metadata.primary_description, metadata.secondary_description, metadata.picture_hash, metadata.category, st_distance(metadata.geog,st_geogfromtext(?)) as distance from photos inner join metadata on (photos.metadata_id = metadata.metadata_id) where (st_dwithin(metadata.geog,st_geogfromtext(?),?)) order by 7;");
 
 			querry.setString(1, "srid=4326;point(" + lon + " " + lat + ")");
 			querry.setString(2, "srid=4326;point(" + lon + " " + lat + ")");
@@ -461,6 +462,51 @@ public class PostgresDB extends DBConnection {
 		}
 
 		return result;
+	}
+	
+	public String getPlacesWithCategory(String category) {
+		Connection connection = getConnection();
+		List<JSONObject> jsonObjects = new ArrayList<JSONObject>();
+		try {
+			PreparedStatement querry = connection
+					.prepareStatement("select metadata.coverage, metadata.orientation, photos.width, photos.height, metadata.metadata_id, metadata.longitude, metadata.latitude, metadata.primary_description, metadata.secondary_description, metadata.picture_hash, metadata.category from photos inner join metadata on (photos.metadata_id = metadata.metadata_id) where metadata.category=?");
+
+			querry.setString(1,category);
+			ResultSet rs = querry.executeQuery();
+			jsonObjects = toJsonConverter.toJSONObjectsList(rs);
+			connection.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		for (JSONObject json : jsonObjects) {
+			getPointsAndUpdateSpecifiedJSONMetadata(json,"normal");
+		}
+
+		return toJsonConverter.convertListOfJSONObjects(jsonObjects);
+	}
+	
+	public String getAllPlacesCategories(){
+		Connection connection = getConnection();
+		String resultJson = "{}";
+		try {
+			PreparedStatement query = connection
+					.prepareStatement("select distinct category from metadata");
+			ResultSet result = query.executeQuery();
+			JSONConverter converter = new JSONConverter();
+			JSONArray jsonArray = converter.toJSONArray(result);
+			resultJson = jsonArray.toString();
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally{
+			try {
+				connection.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		return resultJson;
 	}
 
 }
