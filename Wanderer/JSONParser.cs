@@ -91,6 +91,8 @@ namespace Wanderer
                 metadata.Version = Convert.ToDouble(property.Value.ToString());
             else if (property.Name.Equals("picture_hash"))
                 metadata.PictureSHA256 = property.Value.ToString();
+            else if (property.Name.Equals("category"))
+                metadata.Category = property.Value.ToString();
             else if (property.Name.Equals("points"))
             {
                 double x = 0, y = 0, linelength = 0, angle = 0;

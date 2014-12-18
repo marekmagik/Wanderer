@@ -26,6 +26,7 @@ namespace Wanderer
         public int Width { get; set; }
         public ImageSource Image { get; set; }
         public String PictureSHA256 { get; set; }
+        public String Category { get; set; }
         public bool IsPanoramaCached
         {
             get
