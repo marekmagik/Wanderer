@@ -9,14 +9,22 @@ using Microsoft.Phone.Controls;
 using Microsoft.Phone.Shell;
 using System.IO;
 using System.Diagnostics;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace Wanderer
 {
     public partial class CategoriesBudlesPage : PhoneApplicationPage
     {
 
-        public List<String> _categories = new List<String>();
-        public IEnumerator<ImageMetadata> _metadataEnumerator = null; 
+        private List<String> _categories = new List<String>();
+        private IEnumerator<ImageMetadata> _metadataEnumerator = null;
+        private Boolean _isDownloadingInProgress = false;
+        private Button _hiddenButton = null;
+        private ProgressBar _progressBar = null;
+        private Grid _parentGrid = null;
+        private String _actualCategory;
+        private int _countOfCategory;
 
         public CategoriesBudlesPage()
         {
@@ -69,6 +77,7 @@ namespace Wanderer
                 }
                 catch (WebException)
                 {
+                    HandleWebException();
                     Debug.WriteLine("wyjatek wewnatrz UI!");
                     return;
                 }
@@ -87,17 +96,46 @@ namespace Wanderer
 
                     ImageMetadata place = _metadataEnumerator.Current;
                     IsolatedStorageDAO.CachePhoto(stream, place.Width, place.Height, place);
-
+                    _countOfCategory++;
                     if (_metadataEnumerator.MoveNext())
-                        DAO.SendRequestForThumbnail(this, _metadataEnumerator.Current.PictureSHA256);
+                    {
+                            DAO.SendRequestForThumbnail(this, _metadataEnumerator.Current.PictureSHA256);
+                    }
+                    else
+                    {
+                        _isDownloadingInProgress = false;
+                        ChangeUIElements();
+                        IsolatedStorageDAO.CacheCategory(_actualCategory, _countOfCategory);
+                    }
 
                 }
                 catch (WebException)
                 {
+                    HandleWebException();
                     Debug.WriteLine("wyjatek wewnatrz UI!");
                     return;
                 }
             }
+        }
+
+        private void ChangeUIElements()
+        {
+            Deployment.Current.Dispatcher.BeginInvoke(delegate
+            {
+                _parentGrid.Height = _parentGrid.ActualHeight;     
+                        _parentGrid.Children.Remove(_progressBar);
+                        
+                        Image image = new Image();
+                        image.HorizontalAlignment = _hiddenButton.HorizontalAlignment;
+                        image.Width = _hiddenButton.ActualHeight/2;
+                        image.Height = _hiddenButton.ActualHeight/2;
+                        image.Source = new BitmapImage(new Uri("/Images/PanoramaCached.png", UriKind.Relative));
+                        image.Margin = new Thickness(0, 0, 10.0, 0);
+                        _parentGrid.Children.Remove(_hiddenButton);
+                      
+                        _parentGrid.Children.Add(image);
+               
+            });
         }
 
         public void PlacesRequestCallback(IAsyncResult result)
@@ -122,7 +160,14 @@ namespace Wanderer
                     if (_metadataEnumerator.MoveNext())
                     {
                         Debug.WriteLine(" Sending request for thumbnail ");
-                        DAO.SendRequestForThumbnail(this, _metadataEnumerator.Current.PictureSHA256);
+                        try
+                        {
+                            DAO.SendRequestForThumbnail(this, _metadataEnumerator.Current.PictureSHA256);
+                        }
+                        catch (WebException)
+                        {
+                            HandleWebException();
+                        }
                     }
 
                 });
@@ -131,10 +176,54 @@ namespace Wanderer
 
         private void DownloadBundleClick(object sender, RoutedEventArgs e)
         {
-            Button button = sender as Button;
-            String category = (String)button.DataContext;
-            Debug.WriteLine(" Selected category: " + category);
-            DAO.SendRequestForPlacesWithCategory(this, category);
+            if (!_isDownloadingInProgress)
+            {
+                _countOfCategory = 0;
+                _isDownloadingInProgress = true;
+                Button button = sender as Button;
+                String category = (String)button.DataContext;
+                _actualCategory = category;
+                CreateProgressBar(button, category);
+                Debug.WriteLine(" Selected category: " + category);
+
+                try
+                {
+                    DAO.SendRequestForPlacesWithCategory(this, category);
+                }
+                catch (WebException)
+                {
+                    HandleWebException();
+                }
+            }
+        }
+
+        private void HandleWebException()
+        {
+            Deployment.Current.Dispatcher.BeginInvoke(delegate
+            {
+                _isDownloadingInProgress = false;
+                _parentGrid.Children.Remove(_progressBar);
+                _hiddenButton.Visibility = Visibility.Visible;
+            });
+        }
+
+        private void CreateProgressBar(Button button, string category)
+        {
+            button.Visibility = Visibility.Collapsed;
+            Grid grid = (Grid)button.Parent;
+            ProgressBar progressBar = new ProgressBar();
+            progressBar.IsEnabled = true;
+            progressBar.IsIndeterminate = true;
+            progressBar.Visibility = Visibility.Visible;
+            progressBar.Height = button.ActualHeight;
+            progressBar.HorizontalAlignment = button.HorizontalAlignment;
+            progressBar.Width = button.ActualWidth;
+
+            _parentGrid = grid;
+            _progressBar = progressBar;
+            _hiddenButton = button;
+
+            grid.Children.Add(progressBar);
         }
     }
 }

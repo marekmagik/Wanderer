@@ -19,6 +19,7 @@ namespace Wanderer
         private const string Filename = "places_data.wdf";
         private static List<String> _cachedPhotos;
         private static List<String> _cachedThumbnails;
+        private static List<String> _cachedCategories;
 
         public static void InitIsolatedStorageDAO()
         {
@@ -26,9 +27,27 @@ namespace Wanderer
                 _cachedPhotos = new List<string>();
             if (_cachedThumbnails == null)
                 _cachedThumbnails = new List<string>();
+            if (_cachedCategories == null)
+                _cachedCategories = new List<string>();
 
             LoadPlacesData();
             LoadNewFiles();
+            LoadCategories();
+        }
+
+        private static void LoadCategories()
+        {
+            using (IsolatedStorageFile storage = IsolatedStorageFile.GetUserStoreForApplication())
+            {
+                string[] categories = storage.GetFileNames("/categories/*");
+                foreach (string category in categories)
+                {
+                    Debug.WriteLine(category.Remove(category.Length - 4));
+                    if (!_cachedPhotos.Contains(category))
+                        _cachedPhotos.Add(category.Remove(category.Length-4));
+                }
+
+            }
         }
 
         public static ImageMetadata getCachedMetadata(string hash)
@@ -79,6 +98,9 @@ namespace Wanderer
 
                 if (!storage.DirectoryExists("metadata"))
                     storage.CreateDirectory("metadata");
+
+                if (!storage.DirectoryExists("categories"))
+                    storage.CreateDirectory("categories");
 
                 if (storage.FileExists(Filename))
                 {
@@ -175,6 +197,18 @@ namespace Wanderer
 
             _cachedPhotos.Add(hash);
             Debug.WriteLine(" size of list " + _cachedPhotos.Count);
+        }
+
+        public static void CacheCategory(String category, int count)
+        {
+            using (IsolatedStorageFile storage = IsolatedStorageFile.GetUserStoreForApplication())
+            {
+                IsolatedStorageFileStream fileStream = storage.CreateFile("/categories/" + category + ".wmf");
+                byte[] buffer = BitConverter.GetBytes(count);
+                fileStream.Write(buffer, 0, buffer.Length);
+                Debug.WriteLine("saving category");
+                fileStream.Close();
+            }
         }
 
         public static void CacheThumbnail(Stream image, int width, int height, string hash)
