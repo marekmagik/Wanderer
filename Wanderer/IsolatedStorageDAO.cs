@@ -43,11 +43,19 @@ namespace Wanderer
                 foreach (string category in categories)
                 {
                     Debug.WriteLine(category.Remove(category.Length - 4));
-                    if (!_cachedPhotos.Contains(category))
-                        _cachedPhotos.Add(category.Remove(category.Length-4));
+                    if (!_cachedCategories.Contains(category))
+                        _cachedCategories.Add(category.Remove(category.Length-4));
                 }
 
             }
+        }
+
+        public static bool IsCategoryCached(String category)
+        {
+            if(_cachedCategories.Contains(category))
+                return true;
+            else
+                return false;
         }
 
         public static ImageMetadata getCachedMetadata(string hash)

@@ -25,6 +25,7 @@ namespace Wanderer
         private Grid _parentGrid = null;
         private String _actualCategory;
         private int _countOfCategory;
+        private List<String> _cachedCategories;
 
         public CategoriesBudlesPage()
         {
@@ -32,7 +33,6 @@ namespace Wanderer
             InitializeComponent();
             CategoriesListBox.DataContext = _categories;
             DAO.SendRequestForCategories(this);
-
         }
 
 
@@ -53,6 +53,7 @@ namespace Wanderer
 
                     CategoriesListBox.DataContext = null;
                     CategoriesListBox.DataContext = _categories;
+
 
                     Debug.WriteLine("---JSON, req : " + json);
                 });
@@ -122,19 +123,7 @@ namespace Wanderer
         {
             Deployment.Current.Dispatcher.BeginInvoke(delegate
             {
-                _parentGrid.Height = _parentGrid.ActualHeight;     
-                        _parentGrid.Children.Remove(_progressBar);
-                        
-                        Image image = new Image();
-                        image.HorizontalAlignment = _hiddenButton.HorizontalAlignment;
-                        image.Width = _hiddenButton.ActualHeight/2;
-                        image.Height = _hiddenButton.ActualHeight/2;
-                        image.Source = new BitmapImage(new Uri("/Images/PanoramaCached.png", UriKind.Relative));
-                        image.Margin = new Thickness(0, 0, 10.0, 0);
-                        _parentGrid.Children.Remove(_hiddenButton);
-                      
-                        _parentGrid.Children.Add(image);
-               
+                SetCategoryCached(_parentGrid, _hiddenButton, _progressBar);
             });
         }
 
@@ -224,6 +213,36 @@ namespace Wanderer
             _hiddenButton = button;
 
             grid.Children.Add(progressBar);
+        }
+
+        private void Grid_Loaded(object sender, RoutedEventArgs e)
+        {
+            Grid grid = (Grid)sender;
+            TextBlock textBlock = (TextBlock)grid.Children[0];
+            Button button = (Button)grid.Children[1];
+            Debug.WriteLine(textBlock.Text);
+            if (IsolatedStorageDAO.IsCategoryCached(textBlock.Text))
+            {
+                SetCategoryCached(grid, button, null);
+            }
+        }
+
+        private void SetCategoryCached(Grid grid, Button button, ProgressBar progressBar)
+        {
+            grid.Height = grid.ActualHeight;
+
+            if(progressBar!=null)
+                grid.Children.Remove(progressBar);
+
+            Image image = new Image();
+            image.HorizontalAlignment = button.HorizontalAlignment;
+            image.Width = button.ActualHeight / 2;
+            image.Height = button.ActualHeight / 2;
+            image.Source = new BitmapImage(new Uri("/Images/PanoramaCached.png", UriKind.Relative));
+            image.Margin = new Thickness(0, 0, 10.0, 0);
+            grid.Children.Remove(button);
+
+            grid.Children.Add(image);
         }
     }
 }
