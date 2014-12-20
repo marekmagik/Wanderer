@@ -17,6 +17,10 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Newtonsoft.Json;
 using System.Diagnostics;
+using System.Net;
+using System.Collections.ObjectModel;
+using System.Windows.Markup;
+using System.Xml;
 
 namespace WandererPanoramasEditor
 {
@@ -36,7 +40,21 @@ namespace WandererPanoramasEditor
         private ImageMetadata _metadata;
         private Point _selectedPoint;
         private string _imageFileName;
+        private byte[] _imageBytes;
+        public double DisplayedImageScale { get; set; }
 
+        private BindingList<ImageMetadata> _waitingRoomList;
+        private int _actualProcessedIndex;
+        private Boolean _isWaitingListInitialized;
+        private ImageMetadata _metadataTempHolder = null;
+        private Boolean _isPlaceFromWaitingList = false;
+
+        private int _previousClick = System.Windows.Forms.SystemInformation.DoubleClickTime;
+        private List<Canvas> _descriptionCanvasList = new List<Canvas>();
+        private List<Line> _pointToTextLinesList = new List<Line>();
+
+        public bool ResetPoint { get; set; }
+        public int SelectedIndex { get; set; }
         public MainWindow()
         {
             InitializeComponent();
@@ -47,10 +65,20 @@ namespace WandererPanoramasEditor
             this.Top = System.Windows.Forms.Screen.PrimaryScreen.WorkingArea.Top - 3;
             this.ResizeMode = ResizeMode.CanMinimize;
             this.WindowState = WindowState.Normal;
-
+            this.ResetPoint = false;
 
             this.Closing += new CancelEventHandler(closeApplication);
             Panorama.DataContext = PanoramaImage;
+
+            if (ConfigurationFactory.GetConfiguration().Mode.Equals(Modes.ADMIN_MODE))
+            {
+                AdminPanelButton.Visibility = Visibility.Visible;
+                RejectImageButton.Visibility = Visibility.Visible;
+            }
+            this._waitingRoomList = new BindingList<ImageMetadata>();
+            this.DataContext = _waitingRoomList;
+            this._actualProcessedIndex = 0;
+            this._isWaitingListInitialized = false;
         }
 
         private void closeApplication(object sender, EventArgs e)
@@ -64,72 +92,140 @@ namespace WandererPanoramasEditor
             Microsoft.Win32.OpenFileDialog dialog = new Microsoft.Win32.OpenFileDialog();
             dialog.Filter = "Zdjęcia|*.jpg; *.jpeg";
             dialog.ShowDialog();
-
+            Debug.WriteLine(" End of dialog");
             if (File.Exists(dialog.FileName))
             {
+
+
+
                 _imageFileName = dialog.FileName;
+                _isPlaceFromWaitingList = false;
+                RejectImageButton.IsEnabled = false;
                 using (FileStream stream = OpenFileStream(dialog.FileName))
                 {
-
-                    ResetUIAndData();
-
-                    JpegBitmapDecoder decoder = new JpegBitmapDecoder(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.Default);
-                    BitmapSource bitmapSource = decoder.Frames[0];
-                    WriteableBitmap bitmapImage = new WriteableBitmap(bitmapSource);
-
-                    PanoramaImage = bitmapImage;
-                    Panorama.DataContext = PanoramaImage;
-
-                    _height = PanoramaImage.Height;
-                    _width = PanoramaImage.Width;
-
-                    ScrollViewer.Height = ImageCanvas.ActualHeight;
-                    ScrollViewer.Width = ImageCanvas.ActualWidth;
-
-                    _crossMovingInProgress = false;
-                    _currentScale = 1.0;
-
-                    ScaleTransform scaleTransform = Panorama.RenderTransform as ScaleTransform;
-                    scaleTransform.ScaleX = 1.0;
-                    scaleTransform.ScaleY = 1.0;
-
-
-                    TranslateTransform transform = Cross.RenderTransform as TranslateTransform;
-
-
-                    _marginToTopOfCanvas = (ImageCanvas.ActualHeight - _height) / 2.0;
-                    _marginToLeftOfCanvas = (ImageCanvas.ActualWidth - _width) / 2.0;
-
-
-                    if (_marginToTopOfCanvas > 0 && _marginToLeftOfCanvas < 0)
+                    using (MemoryStream ms = new MemoryStream())
                     {
-                        _marginToTopOfCanvas -= (SystemParameters.HorizontalScrollBarHeight / 2.0);
-                    }
-                    if (_marginToLeftOfCanvas > 0 && _marginToTopOfCanvas < 0)
-                    {
-                        _marginToLeftOfCanvas -= (SystemParameters.VerticalScrollBarWidth / 2.0);
+                        stream.CopyTo(ms);
+                        _imageBytes = ms.ToArray();
+                        stream.Position = 0;
                     }
 
-
-                    if (_marginToTopOfCanvas < 0)
-                    {
-                        _marginToTopOfCanvas = 0;
-                    }
-                    if (_marginToLeftOfCanvas < 0)
-                    {
-                        _marginToLeftOfCanvas = 0;
-                    }
-
-                    transform.X = _marginToLeftOfCanvas + 20;
-                    transform.Y = _marginToTopOfCanvas + 20;
-
-                    UpdatePositionDisplay();
-
-                    GenerateJSONButton.IsEnabled = true;
-                    MetaDataMenuItem.IsEnabled = true;
+                    LoadPanoramaFromStream(stream);
                 }
 
             }
+        }
+
+        private void LoadPanoramaFromStream(Stream stream)
+        {
+
+
+            ResetUIAndData();
+
+            foreach (Canvas canvas in _descriptionCanvasList)
+            {
+                WrappingCanvas.Children.Remove(canvas);
+            }
+
+            foreach (Line line in _pointToTextLinesList)
+            {
+                WrappingCanvas.Children.Remove(line);
+            }
+
+            _descriptionCanvasList.Clear();
+            _pointToTextLinesList.Clear();
+
+
+            JpegBitmapDecoder decoder = new JpegBitmapDecoder(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.Default);
+            BitmapSource bitmapSource = decoder.Frames[0];
+            WriteableBitmap bitmapImage = new WriteableBitmap(bitmapSource);
+
+            _metadata.Height = bitmapImage.PixelHeight;
+            _metadata.Width = bitmapImage.PixelWidth;
+
+            PanoramaImage = bitmapImage;
+            WrappingCanvas.Width = bitmapImage.PixelWidth;
+            WrappingCanvas.Height = bitmapImage.PixelHeight;
+            Panorama.Width = bitmapImage.PixelWidth;
+            Panorama.Height = bitmapImage.PixelHeight;
+            Panorama.DataContext = bitmapImage;
+
+            DisplayedImageScale = bitmapSource.PixelWidth / bitmapSource.Width;
+            Debug.WriteLine("New scale " + DisplayedImageScale);
+
+            _height = bitmapImage.PixelHeight;
+            _width = bitmapImage.PixelWidth;
+
+            ScrollViewer.Height = ImageCanvas.ActualHeight;
+            ScrollViewer.Width = ImageCanvas.ActualWidth;
+
+            _crossMovingInProgress = false;
+            _currentScale = 1.0;
+
+            ScaleTransform scaleTransform = Panorama.RenderTransform as ScaleTransform;
+            scaleTransform.ScaleX = 1.0;
+            scaleTransform.ScaleY = 1.0;
+
+
+            TranslateTransform transform = Cross.RenderTransform as TranslateTransform;
+
+
+            _marginToTopOfCanvas = (ImageCanvas.ActualHeight - _height) / 2.0;
+            _marginToLeftOfCanvas = (ImageCanvas.ActualWidth - _width) / 2.0;
+
+
+            if (_marginToTopOfCanvas > 0 && _marginToLeftOfCanvas < 0)
+            {
+                _marginToTopOfCanvas -= (SystemParameters.HorizontalScrollBarHeight / 2.0);
+            }
+            if (_marginToLeftOfCanvas > 0 && _marginToTopOfCanvas < 0)
+            {
+                _marginToLeftOfCanvas -= (SystemParameters.VerticalScrollBarWidth / 2.0);
+            }
+
+
+            if (_marginToTopOfCanvas < 0)
+            {
+                _marginToTopOfCanvas = 0;
+            }
+            if (_marginToLeftOfCanvas < 0)
+            {
+                _marginToLeftOfCanvas = 0;
+            }
+
+            transform.X = _marginToLeftOfCanvas + 20;
+            transform.Y = _marginToTopOfCanvas + 20;
+
+            UpdatePositionDisplay();
+
+            GenerateJSONButton.IsEnabled = true;
+            MetaDataMenuItem.IsEnabled = true;
+            SendToServerButton.IsEnabled = true;
+
+            ScaleTransform scaleTransformPanorama = Panorama.RenderTransform as ScaleTransform;
+            scaleTransformPanorama.CenterX =  bitmapImage.Width * 0.5;
+            scaleTransformPanorama.CenterY = bitmapImage.Height * 0.5;
+            scaleTransformPanorama.ScaleX = DisplayedImageScale;
+            scaleTransformPanorama.ScaleY = DisplayedImageScale;
+            
+        }
+
+        private BitmapSource BitmapImageFromBitmapSourceResized(BitmapSource bitmapSource, int newWidth, int newHeight)
+        {
+            BmpBitmapEncoder encoder = new BmpBitmapEncoder();
+            MemoryStream memoryStream = new MemoryStream();
+            BitmapImage bImg = new BitmapImage();
+
+            encoder.Frames.Add(BitmapFrame.Create(bitmapSource));
+            encoder.Save(memoryStream);
+
+            bImg.BeginInit();
+            bImg.StreamSource = new MemoryStream(memoryStream.ToArray());
+            bImg.DecodePixelWidth = newWidth;
+            bImg.DecodePixelHeight = newHeight;
+            bImg.EndInit();
+            memoryStream.Close();
+            return bImg;
         }
 
         private void ResetUIAndData()
@@ -215,19 +311,20 @@ namespace WandererPanoramasEditor
 
         private void rescale(double newScale)
         {
+
             ScaleTransform scaleTransformPanorama = Panorama.RenderTransform as ScaleTransform;
             ScaleTransform scaleTransformPointToTextLine = PointToTextLine.RenderTransform as ScaleTransform;
             TranslateTransform translateTransformCross = Cross.RenderTransform as TranslateTransform;
             TranslateTransform translateTransformPointToTextLine = PointToTextLine.RenderTransform as TranslateTransform;
 
             newScale = ((newScale) / (100.0));
+           
+            scaleTransformPanorama.CenterX = _width / DisplayedImageScale * 0.5;
+            scaleTransformPanorama.CenterY = _height / DisplayedImageScale * 0.5;
+            scaleTransformPanorama.ScaleX = newScale * DisplayedImageScale;
+            scaleTransformPanorama.ScaleY = newScale * DisplayedImageScale;
 
-            scaleTransformPanorama.CenterX = _width * 0.5;
-            scaleTransformPanorama.CenterY = _height * 0.5;
-            scaleTransformPanorama.ScaleX = newScale;
-            scaleTransformPanorama.ScaleY = newScale;
-
-
+            
             translateTransformCross.X = ComputeAbsoluteX(translateTransformCross.X, _currentScale, newScale);
             translateTransformCross.Y = ComputeAbsoluteY(translateTransformCross.Y, _currentScale, newScale);
 
@@ -238,6 +335,21 @@ namespace WandererPanoramasEditor
             PointToTextLine.Y1 = ComputeAbsoluteY(PointToTextLine.Y1, _currentScale, newScale);
             PointToTextLine.X2 = ComputeAbsoluteX(PointToTextLine.X2, _currentScale, newScale);
             PointToTextLine.Y2 = ComputeAbsoluteY(PointToTextLine.Y2, _currentScale, newScale);
+
+            foreach (Canvas canvas in _descriptionCanvasList)
+            {
+                TranslateTransform translateTransformCanvas = canvas.RenderTransform as TranslateTransform;
+                translateTransformCanvas.X = ComputeAbsoluteX(translateTransformCanvas.X, _currentScale, newScale);
+                translateTransformCanvas.Y = ComputeAbsoluteY(translateTransformCanvas.Y, _currentScale, newScale);
+            }
+
+            foreach (Line line in _pointToTextLinesList)
+            {
+                line.X1 = ComputeAbsoluteX(line.X1, _currentScale, newScale);
+                line.Y1 = ComputeAbsoluteY(line.Y1, _currentScale, newScale);
+                line.X2 = ComputeAbsoluteX(line.X2, _currentScale, newScale);
+                line.Y2 = ComputeAbsoluteY(line.Y2, _currentScale, newScale);
+            }
 
             _currentScale = newScale;
 
@@ -253,6 +365,11 @@ namespace WandererPanoramasEditor
 
         private void CrossMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
+            if (DoubleClickCount())
+            {
+                CrossMouseMove(sender, e);
+                AddPoint(sender, e);
+            }
             _crossMovingInProgress = false;
         }
 
@@ -267,8 +384,8 @@ namespace WandererPanoramasEditor
 
             TranslateTransform transform = Cross.RenderTransform as TranslateTransform;
 
-            transform.X = ((_width / 2.0 - (_width * _currentScale) / 2.0)) + (mousePos.X * _currentScale) - (Cross.Width / 2) - ScrollViewer.HorizontalOffset + _marginToLeftOfCanvas + 20;
-            transform.Y = ((_height / 2.0 - (_height * _currentScale) / 2.0)) + (mousePos.Y * _currentScale) - (Cross.Height / 2) - ScrollViewer.VerticalOffset + _marginToTopOfCanvas + 20;
+            transform.X = ((_width / 2.0 - (_width * _currentScale) / 2.0)) + (mousePos.X * _currentScale * DisplayedImageScale) - (Cross.Width / 2)  + 20;
+            transform.Y = ((_height / 2.0 - (_height * _currentScale) / 2.0)) + (mousePos.Y * _currentScale * DisplayedImageScale) - (Cross.Height / 2)  + 20;
 
             UpdatePositionDisplay();
             if (_realX < 0)
@@ -302,18 +419,33 @@ namespace WandererPanoramasEditor
 
         private void ScrollViewerScrollChanged(object sender, ScrollChangedEventArgs e)
         {
-            TranslateTransform crossTransform = Cross.RenderTransform as TranslateTransform;
-            TranslateTransform descriptionTransform = DescriptionCanvas.RenderTransform as TranslateTransform;
+            //TranslateTransform crossTransform = Cross.RenderTransform as TranslateTransform;
+            //TranslateTransform descriptionTransform = DescriptionCanvas.RenderTransform as TranslateTransform;
 
-            crossTransform.X -= e.HorizontalChange;
-            crossTransform.Y -= e.VerticalChange;
+            //crossTransform.X -= e.HorizontalChange;
+            //crossTransform.Y -= e.VerticalChange;
 
-            PointToTextLine.X1 -= e.HorizontalChange;
-            PointToTextLine.Y1 -= e.VerticalChange;
-            PointToTextLine.X2 -= e.HorizontalChange;
-            PointToTextLine.Y2 -= e.VerticalChange;
+            //PointToTextLine.X1 -= e.HorizontalChange;
+            //PointToTextLine.Y1 -= e.VerticalChange;
+            //PointToTextLine.X2 -= e.HorizontalChange;
+            //PointToTextLine.Y2 -= e.VerticalChange;
 
-            UpdatePositionDisplay();
+            //foreach (Canvas canvas in _descriptionCanvasList)
+            //{
+            //    TranslateTransform canvasTransform = canvas.RenderTransform as TranslateTransform;
+            //    canvasTransform.X -= e.HorizontalChange;
+            //    canvasTransform.Y -= e.VerticalChange;
+            //}
+
+            //foreach (Line line in _pointToTextLinesList)
+            //{
+            //    line.X1 -= e.HorizontalChange;
+            //    line.Y1 -= e.VerticalChange;
+            //    line.X2 -= e.HorizontalChange;
+            //    line.Y2 -= e.VerticalChange;
+            //}
+
+            //UpdatePositionDisplay();
         }
 
         private void UpdatePositionDisplay()
@@ -331,16 +463,18 @@ namespace WandererPanoramasEditor
 
         public double ComputeRealX(double relativeX)
         {
-            double distanceFromCenterToTopBorderX = _currentScale * (_width / 2.0);
-            double realX = ((relativeX - (_width / 2.0 - distanceFromCenterToTopBorderX)) / (_currentScale)) + (ScrollViewer.HorizontalOffset / (_currentScale)) - _marginToLeftOfCanvas / _currentScale;
-            return realX;
+            //double distanceFromCenterToTopBorderX = _currentScale * (_width / 2.0);
+            //double realX = ((relativeX - (_width / 2.0 - distanceFromCenterToTopBorderX)) / (_currentScale)) + (ScrollViewer.HorizontalOffset / (_currentScale)) - _marginToLeftOfCanvas / _currentScale;
+            //return realX;
+            return relativeX;
         }
 
         public double ComputeRealY(double relativeY)
         {
-            double distanceFromCenterToTopBorderY = _currentScale * (_height / 2.0);
-            double realY = ((relativeY - (_height / 2.0 - distanceFromCenterToTopBorderY)) / (_currentScale)) + (ScrollViewer.VerticalOffset / (_currentScale)) - _marginToTopOfCanvas / _currentScale;
-            return realY;
+            //double distanceFromCenterToTopBorderY = _currentScale * (_height / 2.0);
+            //double realY = ((relativeY - (_height / 2.0 - distanceFromCenterToTopBorderY)) / (_currentScale)) + (ScrollViewer.VerticalOffset / (_currentScale)) - _marginToTopOfCanvas / _currentScale;
+            //return realY;
+            return relativeY;
         }
 
 
@@ -349,8 +483,8 @@ namespace WandererPanoramasEditor
 
             double distanceFromCenterToLeftBorderX = currentScale * (_width / 2.0);
             double newDiscanceFromCenterToLeftBorderX = newScale * (_width / 2.0);
-            double realX = ((transformX - _marginToLeftOfCanvas - (_width / 2.0 - distanceFromCenterToLeftBorderX)) / (currentScale)) + (ScrollViewer.HorizontalOffset / (currentScale));
-            double newX = (newScale * realX) - ScrollViewer.HorizontalOffset + _marginToLeftOfCanvas;
+            double realX = ((transformX  - (_width / 2.0 - distanceFromCenterToLeftBorderX)) / (currentScale));
+            double newX = (newScale * realX);
             double newAbsoluteX = (_width / 2.0) - newDiscanceFromCenterToLeftBorderX + newX;
 
             return newAbsoluteX;
@@ -361,8 +495,8 @@ namespace WandererPanoramasEditor
 
             double distanceFromCenterToTopBorderY = currentScale * (_height / 2.0);
             double newDiscanceFromCenterToTopBorderY = newScale * (_height / 2.0);
-            double realY = ((transformY - _marginToTopOfCanvas - (_height / 2.0 - distanceFromCenterToTopBorderY)) / (currentScale)) + (ScrollViewer.VerticalOffset / (currentScale));
-            double newY = (newScale * realY) - ScrollViewer.VerticalOffset + _marginToTopOfCanvas;
+            double realY = ((transformY - (_height / 2.0 - distanceFromCenterToTopBorderY)) / (currentScale));
+            double newY = (newScale * realY);
             double newAbsoluteY = (_height / 2.0) - newDiscanceFromCenterToTopBorderY + newY;
 
             return newAbsoluteY;
@@ -371,21 +505,24 @@ namespace WandererPanoramasEditor
         public double ComputeRelativeX(double realX)
         {
 
-            double distanceFromCenterToTopBorderX = _currentScale * (_width / 2.0);
-            double newX = (_currentScale * realX) - ScrollViewer.HorizontalOffset + _marginToLeftOfCanvas;
-            double newRelativeX = (_width / 2.0) - distanceFromCenterToTopBorderX + newX;
+            //double distanceFromCenterToTopBorderX = _currentScale * (_width / 2.0);
+            //double newX = (_currentScale * realX) - ScrollViewer.HorizontalOffset + _marginToLeftOfCanvas;
+            //double newRelativeX = (_width / 2.0) - distanceFromCenterToTopBorderX + newX;
 
-            return newRelativeX;
+            //return newRelativeX;
+            return realX;
         }
 
         public double ComputeRelativeY(double realY)
         {
 
-            double distanceFromCenterToTopBorderY = _currentScale * (_height / 2.0);
-            double newY = (_currentScale * realY) - ScrollViewer.VerticalOffset + _marginToTopOfCanvas;
-            double newRelativeY = (_height / 2.0) - distanceFromCenterToTopBorderY + newY;
+            //double distanceFromCenterToTopBorderY = _currentScale * (_height / 2.0);
+            //double newY = (_currentScale * realY) - ScrollViewer.VerticalOffset + _marginToTopOfCanvas;
+            //double newRelativeY = (_height / 2.0) - distanceFromCenterToTopBorderY + newY;
 
-            return newRelativeY;
+            //return newRelativeY;
+
+            return realY;
         }
 
         #endregion
@@ -538,10 +675,49 @@ namespace WandererPanoramasEditor
             addPointWindow.ShowDialog();
             RefreshPointsComboBox();
             ResetSelectedPoint();
+            Debug.Write("should reset " + ResetPoint);
+            if (!ResetPoint)
+            {
+                Canvas newCanvas = (Canvas)CopyXamlObject(DescriptionCanvas);
+                Line newLine = (Line)CopyXamlObject(PointToTextLine);
+
+                ChangeCanvasAndLineToColor(Colors.Black);
+
+                newCanvas.Name = "canvas" + _descriptionCanvasList.Count;
+                newLine.Name = "line" + _pointToTextLinesList.Count;
+                Debug.WriteLine(newCanvas);
+                WrappingCanvas.Children.Add(newCanvas);
+                WrappingCanvas.Children.Add(newLine);
+                _descriptionCanvasList.Add(newCanvas);
+                _pointToTextLinesList.Add(newLine);
+            }
+            
             Cross.Visibility = Visibility.Visible;
             PointToTextLine.Visibility = Visibility.Hidden;
             DescriptionCanvas.Visibility = Visibility.Hidden;
+            
         }
+
+        private void ChangeCanvasAndLineToColor(Color color)
+        {
+            PrimaryDescriptionTextBlock.Foreground = new SolidColorBrush(color);
+            SecondaryDescriptionTextBlock.Foreground = new SolidColorBrush(color);
+            PointToTextLine.Stroke = new SolidColorBrush(color);
+        }
+
+        private Object CopyXamlObject(Object objectToCopy)
+        {
+            var xaml = XamlWriter.Save(objectToCopy);
+
+            var xamlString = new StringReader(xaml);
+
+            var xmlTextReader = new XmlTextReader(xamlString);
+
+            var deepCopyObject = XamlReader.Load(xmlTextReader);
+
+            return deepCopyObject;
+        }
+
 
 
         private void PointsComboBoxDropDownClosed(object sender, EventArgs e)
@@ -565,11 +741,41 @@ namespace WandererPanoramasEditor
             {
                 return;
             }
+
             Cross.Visibility = Visibility.Hidden;
             PointToTextLine.Visibility = Visibility.Visible;
             DescriptionCanvas.Visibility = Visibility.Visible;
+
+            //pobranie aktualnych elementow i ukrycie ich
+            Canvas actualCanvas = _descriptionCanvasList.ElementAt(PointsComboBox.SelectedIndex);
+            Line actualLine = _pointToTextLinesList.ElementAt(PointsComboBox.SelectedIndex);
+            actualCanvas.Visibility = Visibility.Collapsed;
+            actualLine.Visibility = Visibility.Collapsed;
+
             AddOrEditPointToListWindow editPointWindow = new AddOrEditPointToListWindow(_metadata, _realX, _realY, _selectedPoint, this);
             editPointWindow.ShowDialog();
+
+            //stworzenie nowych elementow i dodanie ich zamiast starych 
+            if (ResetPoint)
+            {
+                actualCanvas.Visibility = Visibility.Visible;
+                actualLine.Visibility = Visibility.Visible;
+                ResetPoint = false;
+            }
+            else{
+                Canvas newCanvas = (Canvas)CopyXamlObject(DescriptionCanvas);
+                Line newLine = (Line)CopyXamlObject(PointToTextLine);
+                WrappingCanvas.Children.Remove(actualCanvas);
+                WrappingCanvas.Children.Remove(actualLine);
+                _descriptionCanvasList[SelectedIndex] = newCanvas;
+                _pointToTextLinesList[SelectedIndex] = newLine;
+                WrappingCanvas.Children.Add(newCanvas);
+                WrappingCanvas.Children.Add(newLine);
+                RefreshPointsComboBox();
+            }
+            
+
+
             RefreshPointsComboBox();
             ResetSelectedPoint();
             Cross.Visibility = Visibility.Visible;
@@ -581,6 +787,17 @@ namespace WandererPanoramasEditor
         {
             if (PointsComboBox.SelectedItem != null)
             {
+
+                Debug.WriteLine(WrappingCanvas.Children);
+
+                Canvas canvas = _descriptionCanvasList.ElementAt(PointsComboBox.SelectedIndex);
+                WrappingCanvas.Children.Remove(canvas);
+                _descriptionCanvasList.Remove(canvas);
+
+                Line line = _pointToTextLinesList.ElementAt(PointsComboBox.SelectedIndex);
+                WrappingCanvas.Children.Remove(line);
+                _pointToTextLinesList.Remove(line);
+
                 _metadata.Points.Remove((Point)PointsComboBox.SelectedItem);
                 ResetSelectedPoint();
                 RefreshPointsComboBox();
@@ -590,6 +807,7 @@ namespace WandererPanoramasEditor
 
         public void RefreshPointsComboBox()
         {
+            Debug.WriteLine(_metadata.Points.Count);
             PointsComboBox.ItemsSource = null;
             PointsComboBox.ItemsSource = _metadata.Points;
         }
@@ -603,11 +821,260 @@ namespace WandererPanoramasEditor
 
         private void GenerateJSONClick(object sender, RoutedEventArgs e)
         {
-            GenerateJSONWindow jsonWindow = new GenerateJSONWindow(_metadata, _imageFileName);
+            GenerateJSONWindow jsonWindow = new GenerateJSONWindow(_metadata, _imageFileName, GenerateJSONWindow.GENERATE_JSON_MODE, _imageBytes,_isPlaceFromWaitingList,_waitingRoomList);
             jsonWindow.ShowDialog();
         }
 
+        private void SendDataToServer(object sender, RoutedEventArgs e)
+        {
+            GenerateJSONWindow jsonWindow = new GenerateJSONWindow(_metadata, _imageFileName, GenerateJSONWindow.SEND_TO_SERVER_MODE, _imageBytes, _isPlaceFromWaitingList,_waitingRoomList);
+            jsonWindow.ShowDialog();
+        }
 
+        private void AdminPanelButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (ImageCanvas.Visibility.Equals(Visibility.Visible))
+            {
+                ImageCanvas.Visibility = Visibility.Collapsed;
+                WaitingRoomListBox.Visibility = Visibility.Visible;
+                AdminPanelButton.Header = "Edycja zdjęcia";
+                if (!_isWaitingListInitialized)
+                {
+                    _isWaitingListInitialized = true;
+                    ServerDAO.GetWaitingRoomContent(this);
+                }        
+            }
+            else
+            {
+                ImageCanvas.Visibility = Visibility.Visible;
+                WaitingRoomListBox.Visibility = Visibility.Collapsed;
+                AdminPanelButton.Header = "Panel administratora";
+            }
+        }
+
+        public void WaitingRoomListRequestCallback(IAsyncResult result)
+        {
+            try
+            {
+                HttpWebRequest request = result.AsyncState as HttpWebRequest;
+                if (request != null)
+                {
+                    WebResponse response = request.EndGetResponse(result);
+                    Stream stream = response.GetResponseStream();            
+                    StreamReader streamReader = new StreamReader(stream);
+                    String json = streamReader.ReadToEnd();
+                    response.Close();
+                    Debug.WriteLine(json);
+                    JSONParser parser = new JSONParser();
+                    List<ImageMetadata> metadataList = parser.ParsePlacesJSON(json);
+
+                    Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.Normal, new Action(delegate()
+                    {
+                        foreach (ImageMetadata meta in metadataList)
+                        {
+                            _waitingRoomList.Add(meta);
+                        }
+                    }));
+
+                }
+                ProcessNextPlace();
+            }
+            catch (WebException)
+            {
+                MessageBox.Show("Nieudana próba połączenia z serwerem", "Wanderer");
+            }
+        }
+
+        private void ProcessNextPlace()
+        {
+            if (_actualProcessedIndex < _waitingRoomList.Count)
+            {
+                ServerDAO.GetThumbnail(_waitingRoomList.ElementAt(_actualProcessedIndex).PictureSHA256, this);
+            }
+        }
+
+
+        public void ThumbnailRequestCallback(IAsyncResult result)
+        {
+            HttpWebRequest request = result.AsyncState as HttpWebRequest;
+            if (request != null)
+            {
+                Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.Normal, new Action(delegate()
+                {
+                    
+                    try
+                    {
+                        WebResponse response = request.EndGetResponse(result);
+                        Stream stream = response.GetResponseStream();
+                        JpegBitmapDecoder decoder = new JpegBitmapDecoder(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.Default);
+                        response.Close();
+                        BitmapSource bitmapSource = decoder.Frames[0];
+                        WriteableBitmap bitmapImage = new WriteableBitmap(bitmapSource);
+                        _waitingRoomList.ElementAt(_actualProcessedIndex).Thumbnail = bitmapImage;
+                    }
+                    catch (WebException)
+                    {
+                        Debug.WriteLine("wyjatek wewnatrz UI!");
+                        return;
+                    }
+                }));
+            }
+            _actualProcessedIndex++;
+            ProcessNextPlace();
+        }
+
+        public void ImageRequestCallback(IAsyncResult result)
+        {
+            HttpWebRequest request = result.AsyncState as HttpWebRequest;
+            if (request != null)
+            {
+                Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.Normal, new Action(delegate()
+                {
+
+                    try
+                    {
+                        WebResponse response = request.EndGetResponse(result);
+                        Stream stream = response.GetResponseStream();
+                        stream = CopyStreamToByteArray(stream);
+                        LoadPanoramaFromStream(stream);
+                        response.Close();
+                        _metadata = _metadataTempHolder;
+
+                        //foreach (Point point in _metadata.Points)
+                        //{
+                        //    point.X /= DisplayedImageScale;
+                        //    point.Y /= DisplayedImageScale;
+                        //    point.LineLength /= DisplayedImageScale;
+                        //}
+
+                        InitalizePointsAfterImport();
+                        _metadataTempHolder = null;
+                        AdminPanelButton.Header = "Panel administratora";
+                        RefreshPointsComboBox();
+                        RejectImageButton.IsEnabled = true;
+                    }
+                    catch (WebException)
+                    {
+                        Debug.WriteLine("wyjatek wewnatrz UI!");
+                        return;
+                    }
+                }));
+            }
+            _isPlaceFromWaitingList = true;
+            LoadDescriptionCanvases();
+        }
+
+        private void InitalizePointsAfterImport()
+        {
+            return;
+        }
+
+        private Stream CopyStreamToByteArray(Stream stream)
+        {
+
+            using (MemoryStream ms = new MemoryStream())
+            {
+                stream.CopyTo(ms);
+                _imageBytes = ms.ToArray();
+            }
+            return new MemoryStream(_imageBytes);
+
+        }
+
+        void MouseDoubleClickHandler(object sender, MouseEventArgs e)
+        {
+            ListBox listbox = (ListBox)sender;
+            ImageMetadata metadata = (ImageMetadata) listbox.SelectedItem;
+            this._metadataTempHolder = metadata;
+            Debug.WriteLine("Double click "+metadata.PictureSHA256);
+            ImageCanvas.Visibility = Visibility.Visible;
+            WaitingRoomListBox.Visibility = Visibility.Collapsed;
+            ServerDAO.GetImage(metadata.PictureSHA256, this);
+        }
+
+        void PanoramaMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            _crossMovingInProgress = true;
+            CrossMouseMove(sender, e);
+            _crossMovingInProgress = false;
+            if (DoubleClickCount())
+            {
+                AddPoint(sender, e);
+            }
+        }
+
+        bool DoubleClickCount()
+        {
+            bool result = false;
+            int now = System.Environment.TickCount;
+            Debug.WriteLine(now - _previousClick);
+            Debug.WriteLine(System.Windows.Forms.SystemInformation.DoubleClickTime);
+            if (now - _previousClick <= System.Windows.Forms.SystemInformation.DoubleClickTime)
+            {
+                result = true;
+            }
+            _previousClick = now;
+
+            return result;
+        }
+
+        private void RejectImage(object sender, RoutedEventArgs e)
+        {
+            Boolean resultOfRequest = ServerDAO.DeletePlaceFromWaitingRoom(_metadata.PictureSHA256);
+            if (resultOfRequest)
+            {
+                Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.Normal, new Action(delegate()
+                {
+                    _waitingRoomList.Remove(_metadata);
+                }));
+
+                MessageBox.Show("Zdjęcie pomyślnie usunięte", "Wanderer");
+            }
+            else
+                MessageBox.Show("Błąd podczas usuwania zdjęcia", "Wanderer");
+        }
+
+        private void LoadDescriptionCanvases(){
+            Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.Normal, new Action(delegate()
+            {
+                DescriptionCanvas.Visibility = Visibility.Visible;
+                PointToTextLine.Visibility = Visibility.Visible;
+
+                _metadata.addCategory(new Category("Szczyty"));
+                _metadata.addCategory(new Category("Przełęcze"));
+                _metadata.addCategory(new Category("Doliny"));
+
+                foreach (Point point in _metadata.Points)
+                {
+                    MoveCursorToSpecifiedPosition(point.X, point.Y);
+                    AddOrEditPointToListWindow window = new AddOrEditPointToListWindow(_metadata,point.X,point.Y,point,this);
+
+                    char colorName = point.Color;
+                    Color color = Colors.Black;
+                    if (colorName.Equals('w'))
+                        color = Colors.White;
+                    else if (colorName.Equals('y'))
+                        color = Colors.Yellow;
+
+                    ChangeCanvasAndLineToColor(color);
+
+
+                    Canvas newCanvas = (Canvas)CopyXamlObject(DescriptionCanvas);
+                    Line newLine = (Line)CopyXamlObject(PointToTextLine);
+
+                    ChangeCanvasAndLineToColor(Colors.Black);
+
+                    _descriptionCanvasList.Add(newCanvas);
+                    _pointToTextLinesList.Add(newLine);
+                    WrappingCanvas.Children.Add(newCanvas);
+                    WrappingCanvas.Children.Add(newLine);
+                    RefreshPointsComboBox();
+                }
+                DescriptionCanvas.Visibility = Visibility.Collapsed;
+                PointToTextLine.Visibility = Visibility.Collapsed;
+            }));
+            
+        }
 
     }
 }

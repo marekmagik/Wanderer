@@ -15,7 +15,7 @@ namespace WandererPanoramasEditor
         public double X { get; set; }
         public double Y { get; set; }
         public byte Alignment { get; set; }
-        public byte Color { get; set; }
+        public Char Color { get; set; }
         public double LineLength { get; set; }
         public double Angle { get; set; }
 
@@ -28,6 +28,10 @@ namespace WandererPanoramasEditor
             this.SecondaryDescription = secondaryDescription;
         }
 
+        public Point()
+        {
+
+        }
 
         public override string ToString()
         {
@@ -60,6 +64,17 @@ namespace WandererPanoramasEditor
             return hash;
         }
 
-
+        public void SetValues(Point point)
+        {
+            this.PrimaryDescription = point.PrimaryDescription;
+            this.SecondaryDescription = point.SecondaryDescription;
+            this.Category = point.Category;
+            this.X = point.X;
+            this.Y = point.Y;
+            this.Alignment = point.Alignment;
+            this.Color = point.Color;
+            this.LineLength = point.LineLength;
+            this.Angle = point.Angle;
+        }
     }
 }

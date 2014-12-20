@@ -4,14 +4,15 @@
         Title="Panoramas Editor" Height="450" Width="1055" SizeChanged="WindowSizeChanged">
     <Grid Background="Beige">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="20*"/>
+            <ColumnDefinition Width="329*"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"></RowDefinition>
             <RowDefinition Height="*"></RowDefinition>
             <RowDefinition Height="50"></RowDefinition>
         </Grid.RowDefinitions>
-        <DockPanel Grid.Row="0">
+        <DockPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,21">
             <Border Background="SkyBlue" BorderBrush="Black" 
         BorderThickness="1" DockPanel.Dock="Top">
                 <Menu DockPanel.Dock="Top" Background="Black" Foreground="White">
@@ -29,54 +30,102 @@
 
                         </MenuItem>
                     </MenuItem>
+                    <MenuItem Background="Black" Header="Panel administratora" Name="AdminPanelButton" Visibility="Collapsed" Click="AdminPanelButton_Click">
+                    </MenuItem>
                 </Menu>
             </Border>
         </DockPanel>
-        <Canvas Name="ImageCanvas" Background="DimGray" Grid.Row="1" SizeChanged="ImageCanvasSizeChanged">
+        <Canvas Name="ImageCanvas" Background="DimGray" SizeChanged="ImageCanvasSizeChanged" Grid.ColumnSpan="2" Margin="0,23,0,0" Grid.RowSpan="2">
             <ScrollViewer Name="ScrollViewer" ScrollChanged="ScrollViewerScrollChanged" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                <Image Name="Panorama" Source="{Binding}" Stretch="None">
+                <Canvas Name="WrappingCanvas" VerticalAlignment="Center">
+                <Image Name="Panorama" MouseLeftButtonUp="PanoramaMouseLeftButtonUp" Source="{Binding}"  Stretch="None">
                     <Image.RenderTransform>
                         <ScaleTransform></ScaleTransform>
                     </Image.RenderTransform>
                 </Image>
+
+                    <Line Name="PointToTextLine" Stroke="Black" StrokeThickness="2" X1="0" Y1="0" X2="100" Y2="100" Visibility="Hidden" />
+
+                    <Canvas Margin="0,0" Name="DescriptionCanvas" Visibility="Hidden">
+                        <StackPanel Name="DescriptionStackPanel">
+                            <TextBlock FontSize="18" FontWeight="Bold" Name="PrimaryDescriptionTextBlock" TextAlignment="Center"/>
+                            <TextBlock FontSize="13" Margin="0,1,0,0" Name="SecondaryDescriptionTextBlock" TextAlignment="Center"/>
+                            <StackPanel.RenderTransform>
+                                <RotateTransform/>
+                            </StackPanel.RenderTransform>
+                        </StackPanel>
+                        <Canvas.RenderTransform>
+                            <TranslateTransform/>
+                        </Canvas.RenderTransform>
+                    </Canvas>
+
+                    <Canvas Height="40" Width="40" Name="Cross" MouseLeftButtonDown="CrossMouseLeftButtonDown" MouseLeftButtonUp="CrossMouseLeftButtonUp" MouseMove="CrossMouseMove" MouseLeave="CrossMouseLeave"  Visibility="Hidden">
+                        <Path Name="CrossColor" Stroke="Black" StrokeThickness="5">
+                            <Path.Data>
+                                <GeometryGroup>
+                                    <EllipseGeometry Center="0, 0" RadiusX="4" RadiusY="4"></EllipseGeometry>
+                                    <LineGeometry StartPoint="0,-20" EndPoint="00,20" />
+                                    <LineGeometry StartPoint="-20,0" EndPoint="20,0" />
+                                </GeometryGroup>
+                            </Path.Data>
+                        </Path>
+                        <Canvas.RenderTransform>
+                            <TranslateTransform></TranslateTransform>
+                        </Canvas.RenderTransform>
+                    </Canvas>
+                </Canvas>
             </ScrollViewer>
 
-            <Line Name="PointToTextLine" Stroke="Black" StrokeThickness="2" X1="0" Y1="0" X2="100" Y2="100" Visibility="Hidden" />
-
-            <Canvas Margin="0,0" Name="DescriptionCanvas" Visibility="Hidden">
-                <StackPanel Name="DescriptionStackPanel">
-                    <TextBlock FontSize="18" FontWeight="Bold" Name="PrimaryDescriptionTextBlock" TextAlignment="Center"/>
-                    <TextBlock FontSize="13" Margin="0,1,0,0" Name="SecondaryDescriptionTextBlock" TextAlignment="Center"/>
-                    <StackPanel.RenderTransform>
-                        <RotateTransform/>
-                    </StackPanel.RenderTransform>
-                </StackPanel>
-                <Canvas.RenderTransform>
-                    <TranslateTransform/>
-               </Canvas.RenderTransform>
-            </Canvas>
             
-            <Canvas Height="40" Width="40" Name="Cross" MouseLeftButtonDown="CrossMouseLeftButtonDown" MouseLeftButtonUp="CrossMouseLeftButtonUp" MouseMove="CrossMouseMove" MouseLeave="CrossMouseLeave" Visibility="Hidden">
-                <Path Name="CrossColor" Stroke="Black" StrokeThickness="5">
-                    <Path.Data>         
-                        <GeometryGroup>
-                            <EllipseGeometry Center="0, 0" RadiusX="4" RadiusY="4"></EllipseGeometry>
-                            <LineGeometry StartPoint="0,-20" EndPoint="00,20" />
-                            <LineGeometry StartPoint="-20,0" EndPoint="20,0" />
-                        </GeometryGroup>
-                    </Path.Data>
-                </Path>
-                <Canvas.RenderTransform>
-                    <TranslateTransform></TranslateTransform>
-                </Canvas.RenderTransform>
-            </Canvas>
+
+            
 
         </Canvas>
+
+        <ListBox ItemsSource="{Binding}" Name="WaitingRoomListBox" Grid.Row="1" Visibility="Collapsed" Grid.ColumnSpan="2" MouseDoubleClick="MouseDoubleClickHandler">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal" Margin="10,5,0,5" >
+                        <Image Source="{Binding Thumbnail}" Name="Thumbnail" Width="570" Height="140" Margin="0,0,10,0"/>
+                        <StackPanel Orientation="Vertical">
+                            <TextBlock Text="{Binding PictureDescription}" FontSize="20" MaxWidth="600" TextWrapping="Wrap"/>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Kategoria: " FontSize="15"/>
+                                <TextBlock Text="{Binding Category}" FontSize="15"/>
+                            </StackPanel>
+                            <TextBlock Text="{Binding PictureAdditionalDescription}" FontSize="15" TextWrapping="Wrap" Width="600" />
+                        </StackPanel>
+                        <StackPanel Orientation="Vertical" Margin="30,0,0,0">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Długość: " FontSize="15"/>
+                                <TextBlock Text="{Binding Longitude}" FontSize="15"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Szerokość: " FontSize="15"/>
+                                <TextBlock Text="{Binding Latitude}" FontSize="15"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Orientacja: " FontSize="15"/>
+                                <TextBlock Text="{Binding OrientationOfLeftBorder}" FontSize="15"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Pokrycie: " FontSize="15"/>
+                                <TextBlock Text="{Binding CoverageInPercent}" FontSize="15"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Wersja: " FontSize="15"/>
+                                <TextBlock Text="{Binding Version}" FontSize="15"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
 
         <Border Grid.Row="2" Height="50"
                 BorderBrush="Gray"
                 BorderThickness="0,2,0,0"
-                Padding="1">
+                Padding="1" Grid.ColumnSpan="2">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="60"/>
@@ -86,6 +135,8 @@
                     <ColumnDefinition Width="120"/>
                     <ColumnDefinition Width="120"/>
                     <ColumnDefinition Width="150"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <DockPanel Grid.Column="0">
@@ -103,7 +154,8 @@
                     <Button Click="AddPoint" Height="20" IsEnabled="False" Name="AddPointButton"  Width="90">Dodaj punkt</Button>
                 </DockPanel>
                 <DockPanel Grid.Column="3">
-                    <ComboBox Height="20" Name="PointsComboBox" DropDownClosed="PointsComboBoxDropDownClosed" Width="150"></ComboBox>
+                    <ComboBox Height="20" Name="PointsComboBox" HorizontalAlignment="Center" VerticalAlignment="Center" DropDownClosed="PointsComboBoxDropDownClosed" Width="150">
+                    </ComboBox>
                 </DockPanel>
                 <DockPanel Grid.Column="4">
                     <Button Click="EditPoint" Height="20" IsEnabled="False" Name="EditPointButton" Width="90">Edytuj punkt</Button>
@@ -116,6 +168,12 @@
                 </DockPanel>
                 <DockPanel Grid.Column="7">
                     <Button Click="GenerateJSONClick" Height="20" HorizontalAlignment="Right" IsEnabled="False" Margin="0,0,10,0" Name="GenerateJSONButton" Width="130">Generuj plik!</Button>
+                </DockPanel>
+                <DockPanel Grid.Column="8">
+                    <Button Click="SendDataToServer" Height="20" HorizontalAlignment="Right" IsEnabled="False" Margin="0,0,10,0" Name="SendToServerButton" Width="130">Wyślij na serwer</Button>
+                </DockPanel>
+                <DockPanel Grid.Column="9">
+                    <Button Click="RejectImage" Height="20" HorizontalAlignment="Right" IsEnabled="False" Margin="0,0,10,0" Visibility="Collapsed" Name="RejectImageButton" Width="130">Odrzuć zdjęcie</Button>
                 </DockPanel>
             </Grid>
         </Border>

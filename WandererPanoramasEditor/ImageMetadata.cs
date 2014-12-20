@@ -5,10 +5,11 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media;
 
 namespace WandererPanoramasEditor
 {
-    public class ImageMetadata
+    public class ImageMetadata : INotifyPropertyChanged
     {
 
         public List<Point> Points { get; private set; }
@@ -22,6 +23,26 @@ namespace WandererPanoramasEditor
         public double Version { get; set; }
         public String PictureSHA256 { get; set; }
 
+        public String Category { get; set; }
+
+        public int Width { get; set; }
+
+        public int Height { get; set; }
+        //public ImageSource Thumbnail { get; set; }
+
+        private ImageSource m_thumbnail=null;
+        public ImageSource Thumbnail
+        {
+            get { return m_thumbnail; }
+            set
+            {
+                if (value != this.m_thumbnail)
+                {
+                    this.m_thumbnail = value;
+                    NotifyPropertyChanged("Thumbnail");
+                }
+            }
+        }
 
         public ImageMetadata()
         {
@@ -81,6 +102,16 @@ namespace WandererPanoramasEditor
             else
             {
                 return false;
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        private void NotifyPropertyChanged(String info)
+        {
+            if (PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(info));
             }
         }
     }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -29,15 +30,22 @@ namespace WandererPanoramasEditor
         private readonly TranslateTransform _translateTransform;
         private readonly RotateTransform _rotateTransform; 
         private const int TopPointMargin = 50;
+        private List<String> _colors = new List<String>{"Biały","Czarny","Żółty"};
+
+        private Point _initialPoint = new Point();
+        private bool _closeWindowWithButton;
 
         public AddOrEditPointToListWindow(ImageMetadata metadata, double x, double y, Point pointToEdit, MainWindow mainWindow)
         {
             InitializeComponent();
+            _closeWindowWithButton = false;
             _translateTransform = new TranslateTransform();
             _rotateTransform = new RotateTransform();
 
             this._metadata = metadata;
             CategoryComboBox.ItemsSource = metadata.Categories;
+            ColorComboBox.ItemsSource = _colors;
+            ColorComboBox.SelectedIndex = 1;
             this._x = x;
             this.y = y;
             this._mainWindow = mainWindow;
@@ -46,6 +54,8 @@ namespace WandererPanoramasEditor
 
             mainWindow.PrimaryDescriptionTextBlock.Text = PrimaryDescription.Text;
             mainWindow.SecondaryDescriptionTextBlock.Text = SecondaryDescription.Text;
+
+            mainWindow.ResetPoint = false;
 
             if ((y - TopPointMargin) <= 0)
             {
@@ -66,6 +76,9 @@ namespace WandererPanoramasEditor
 
             if (pointToEdit != null)
             {
+                mainWindow.SelectedIndex = mainWindow.PointsComboBox.SelectedIndex;
+                mainWindow.PointsComboBox.SelectedIndex = -1;
+                _initialPoint.SetValues(pointToEdit);
                 this.Title = "Edytuj punkt";
                 ConfirmButton.Content = "Zakończ edycję";
                 ConfirmButton.Click += new RoutedEventHandler(EditPoint);
@@ -94,7 +107,9 @@ namespace WandererPanoramasEditor
             }
             else
             {
+                //this._pointToEdit = new Point(x*_mainWindow.DisplayedImageScale, y*_mainWindow.DisplayedImageScale, null, "", "");
                 this._pointToEdit = new Point(x, y, null, "", "");
+                this._pointToEdit.Color = 'b';
                 ConfirmButton.Click += new RoutedEventHandler(AddPointToList);
                 DescriptionAlignmentRight.IsChecked = true;
             }
@@ -155,6 +170,7 @@ namespace WandererPanoramasEditor
             }
             _pointToEdit.Category = (Category)CategoryComboBox.SelectedItem;
             _metadata.addPoint(_pointToEdit);
+            _closeWindowWithButton = true;
             Close();
         }
 
@@ -164,15 +180,22 @@ namespace WandererPanoramasEditor
             {
                 return;
             }
-            _pointToEdit.X = _x;
-            _pointToEdit.Y = y;
+            Debug.WriteLine(_mainWindow.DisplayedImageScale);
+
+            //_pointToEdit.X = _x * _mainWindow.DisplayedImageScale;
+            //_pointToEdit.Y = y * _mainWindow.DisplayedImageScale;
+            _pointToEdit.X = _x ;
+            _pointToEdit.Y = y ;
             _pointToEdit.Category = (Category)CategoryComboBox.SelectedItem;
+            Debug.WriteLine(" Length from slider "+PointToTextLineLengthSlider.Value);
+            _closeWindowWithButton = true;
             Close();
         }
 
         private void PointToTextLineLengthSliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             _mainWindow.PointToTextLine.Y2 = _mainWindow.PointToTextLine.Y1 - PointToTextLineLengthSlider.Value;
+            //_pointToEdit.LineLength = PointToTextLineLengthSlider.Value*_mainWindow.DisplayedImageScale;
             _pointToEdit.LineLength = PointToTextLineLengthSlider.Value;
             UpdateDescriptionCanvasProperties();
         }
@@ -215,6 +238,45 @@ namespace WandererPanoramasEditor
             UpdateDescriptionCanvasProperties();
         }
 
+        private void ColorComboBoxSelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            String colorName = _colors.ElementAt(ColorComboBox.SelectedIndex);
+            Color color = Colors.Black;
+            Char colorSymbol = 'b';
+            if ("Biały".Equals(colorName))
+            {
+                colorSymbol = 'w';
+                color = Colors.White;
+            }
+            else if ("Czarny".Equals(colorName))
+            {
+                colorSymbol = 'b';
+                color = Colors.Black;
+            }
+            else if ("Żółty".Equals(colorName))
+            {
+                colorSymbol = 'y';
+                color = Colors.Yellow;
+            }
+
+            if (_mainWindow != null)
+            {
+                _mainWindow.PrimaryDescriptionTextBlock.Foreground = new SolidColorBrush(color);
+                _mainWindow.SecondaryDescriptionTextBlock.Foreground = new SolidColorBrush(color);
+                _mainWindow.PointToTextLine.Stroke = new SolidColorBrush(color);
+                _pointToEdit.Color = colorSymbol;
+                UpdateDescriptionCanvasProperties();
+            }
+        }
+
+        void DataWindow_Closing(object sender, CancelEventArgs e)
+        {
+            if (!_closeWindowWithButton)
+            {
+                _pointToEdit.SetValues(_initialPoint);
+                _mainWindow.ResetPoint = true;
+            }
+        }
 
     }
 }

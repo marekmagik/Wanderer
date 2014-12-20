@@ -1,7 +1,7 @@
 ﻿<Window x:Class="WandererPanoramasEditor.GenerateJSONWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Generuj plik" Height="380" Width="250">
+        Title="Generuj plik" Height="420" Width="250">
     <Grid Background="Beige">
         <DockPanel>
              <StackPanel DockPanel.Dock="Top">
@@ -11,6 +11,10 @@
             <StackPanel DockPanel.Dock="Top">
                 <TextBlock HorizontalAlignment="Left" Margin="10,0,0,5" Text="Dodatkowy opis zdjęcia:" VerticalAlignment="Top" Width="130"></TextBlock>
                 <TextBox FontWeight="Bold" Height="25" HorizontalAlignment="Left" Margin="10,0,0,0" MaxLength="40" MaxLines="1" Name="ImageAdditionalDescriptionTextBox" VerticalAlignment="Bottom" Width="220"></TextBox>
+            </StackPanel>
+            <StackPanel DockPanel.Dock="Top">
+                <TextBlock HorizontalAlignment="Left" Margin="10,0,0,5" Text="Kategoria zdjęcia" VerticalAlignment="Top" Width="130"></TextBlock>
+                <TextBox FontWeight="Bold" Height="25" HorizontalAlignment="Left" Margin="10,0,0,0" MaxLength="40" MaxLines="1" Name="ImageCategoryTextBox" VerticalAlignment="Bottom" Width="220"></TextBox>
             </StackPanel>
             <StackPanel DockPanel.Dock="Top">
                 <TextBlock TextWrapping="Wrap" HorizontalAlignment="Left" Margin="10,10,0,5" Text="Orientacja lewej krawędzi zdjęcia względem bieguna północnego:" VerticalAlignment="Top" Width="200"></TextBlock>
@@ -30,7 +34,9 @@
             </StackPanel>
 
             <DockPanel DockPanel.Dock="Top">
-                <Button Click="GenerateButtonClick" Height="30" Width="150" Name="GenerateButton">Generuj plik metadanych</Button>
+                <Button Click="GenerateButtonClick" Height="30" Width="150" Name="GenerateButton">
+                    <TextBlock Name="GenerateButtonTextBlock"/>
+                </Button>
             </DockPanel>
         </DockPanel>
     </Grid>
