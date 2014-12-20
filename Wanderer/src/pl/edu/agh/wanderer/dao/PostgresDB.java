@@ -283,11 +283,11 @@ public class PostgresDB extends DBConnection {
 		String pointsQuery = "";
 		
 		if("admin".equals(mode)){
-			metadataQuery="insert into metadata values (default,?, ? ,? , ?, ?, ?, ?, ?, st_geogfromtext(?));";
+			metadataQuery="insert into metadata values (default,?, ? ,? , ?, ?, ?, ?, ?, st_geogfromtext(?), ?);";
 			photoQuery="INSERT INTO photos VALUES (default , ?, ? , ?, ? ,?);";
 			pointsQuery="insert into points values (default,?, ? ,? , ?, ?, ?, ?, ?, ?, ?);";
 		}else if("normal".equals(mode)){
-			metadataQuery="insert into metadata_waiting_room values (default,?, ? ,? , ?, ?, ?, ?, ?, st_geogfromtext(?));";
+			metadataQuery="insert into metadata_waiting_room values (default,?, ? ,? , ?, ?, ?, ?, ?, st_geogfromtext(?), ?);";
 			photoQuery="INSERT INTO photos_waiting_room VALUES (default , ?, ? , ?, ? ,?);";
 			pointsQuery="insert into points_waiting_room values (default,?, ? ,? , ?, ?, ?, ?, ?, ?, ?);";
 		} else
@@ -305,6 +305,7 @@ public class PostgresDB extends DBConnection {
 			querry.setDouble(7, metadataObject.getVersion());
 			querry.setString(8, metadataObject.getHash());
 			querry.setString(9, "srid=4326;point(" + metadataObject.getLongitude() + " " + metadataObject.getLatitude() + ")");
+			querry.setString(10, metadataObject.getCategory());
 			querry.executeUpdate();
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -412,7 +413,7 @@ public class PostgresDB extends DBConnection {
 		List<JSONObject> jsonObjects = new ArrayList<JSONObject>();
 		try {
 			PreparedStatement querry = connection
-					.prepareStatement("select metadata.coverage, metadata.orientation, photos.width, photos.height, metadata.metadata_id, metadata.longitude, metadata.latitude, metadata.primary_description, metadata.secondary_description, metadata.picture_hash from photos_waiting_room as photos inner join metadata_waiting_room as metadata on (photos.metadata_id = metadata.metadata_id)");
+					.prepareStatement("select metadata.coverage, metadata.orientation, photos.width, photos.height, metadata.metadata_id, metadata.longitude, metadata.latitude, metadata.primary_description, metadata.secondary_description, metadata.picture_hash, metadata.category from photos_waiting_room as photos inner join metadata_waiting_room as metadata on (photos.metadata_id = metadata.metadata_id)");
 
 			ResultSet rs = querry.executeQuery();
 			jsonObjects = toJsonConverter.toJSONObjectsList(rs);

@@ -20,9 +20,10 @@ public class Metadata {
 	private String hash;
 	private Photo photo;
 	private List<Point> points;
+	private String category;
 
 	public Metadata(String primaryDescription, String secondaryDescription, double longitude, double latitude, double coverage,
-			double orientation, double version, String hash, Photo photo, List<Point> points) {
+			double orientation, double version, String hash, Photo photo, List<Point> points, String category) {
 		this.primaryDescription = primaryDescription;
 		this.secondaryDescription = secondaryDescription;
 		this.longitude = longitude;
@@ -33,6 +34,7 @@ public class Metadata {
 		this.hash = hash;
 		this.photo = photo;
 		this.points = points;
+		this.category = category;
 	}
 
 	public Metadata(JSONObject metadataJson, Photo photo, List<Point> points) throws JSONException, NoSuchAlgorithmException, IOException {
@@ -46,6 +48,7 @@ public class Metadata {
 		this.hash = HashGenerator.generateHash(photo.getPhoto());
 		this.photo = photo;
 		this.points = points;
+		this.category = metadataJson.getString("Category");
 	}
 
 	public String getPrimaryDescription() {
@@ -88,11 +91,16 @@ public class Metadata {
 		return points;
 	}
 
+	public String getCategory() {
+		return category;
+	}
+
 	@Override
 	public String toString() {
 		return "Metadata [primaryDescription=" + primaryDescription + ", secondaryDescription=" + secondaryDescription
 				+ ", longitude=" + longitude + ", latitude=" + latitude + ", coverage=" + coverage + ", orientation="
-				+ orientation + ", version=" + version + ", hash=" + hash + ", photo=" + photo + ", points=" + points + "]";
+				+ orientation + ", version=" + version + ", hash=" + hash + ", photo=" + photo + ", points=" + points
+				+ ", category=" + category + "]";
 	}
 
 	
