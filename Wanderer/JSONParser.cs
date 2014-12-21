@@ -40,6 +40,22 @@ namespace Wanderer
             return placesInJSON;
         }
 
+        public List<String> ParceCategoriesJSON(string json)
+        {
+            List<String> categories = new List<String>();
+
+            JArray jsonArray = JArray.Parse(json);
+            foreach (JObject obj in jsonArray.Children<JObject>())
+            {
+                foreach (JProperty property in obj.Properties())
+                {
+                    if (property.Name.Equals("category"))
+                        categories.Add(property.Value.ToString());
+                }
+            }
+
+            return categories;
+        }
 
         public List<ImageMetadata> ParsePlacesJSON(string json)
         {
@@ -91,6 +107,8 @@ namespace Wanderer
                 metadata.Version = Convert.ToDouble(property.Value.ToString());
             else if (property.Name.Equals("picture_hash"))
                 metadata.PictureSHA256 = property.Value.ToString();
+            else if (property.Name.Equals("category"))
+                metadata.Category = property.Value.ToString();
             else if (property.Name.Equals("points"))
             {
                 double x = 0, y = 0, linelength = 0, angle = 0;

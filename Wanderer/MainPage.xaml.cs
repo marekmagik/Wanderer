@@ -70,8 +70,16 @@ namespace Wanderer
             IsolatedStorageDAO.InitIsolatedStorageDAO();
 
             ListOfPlaces listOfPlaces = new ListOfPlaces(this);
+            CategoriesBudlesPage categoriesPage = new CategoriesBudlesPage();
+            MapWithPlacesPage mapPage = new MapWithPlacesPage(this);
 
             ListOfPlacesPanoraaItem.Content = listOfPlaces;
+//<<<<<<< HEAD
+///=======
+            CategoriesBundlesPanoramaItem.Content = categoriesPage;
+            MapWithPlacesItem.Content = mapPage;
+//            IsolatedStorageDAO.InitIsolatedStorageDAO();
+//>>>>>>> 2ee94d284e8ac258dbc28922c767b943f64be3ca
 
             _gpsTracker = new GPSTracker(listOfPlaces);
         }

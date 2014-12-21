@@ -18,6 +18,7 @@ namespace Wanderer
 
         private static List<String> _cachedPhotos;
         private static List<String> _cachedThumbnails;
+        private static List<String> _cachedCategories;
 
         public static void InitIsolatedStorageDAO()
         {
@@ -25,9 +26,40 @@ namespace Wanderer
                 _cachedPhotos = new List<string>();
             if (_cachedThumbnails == null)
                 _cachedThumbnails = new List<string>();
+            if (_cachedCategories == null)
+                _cachedCategories = new List<string>();
 
+//<<<<<<< HEAD
             InitializeDirectories();
             LoadCachedFiles();
+//=======
+//            LoadPlacesData();
+//            LoadNewFiles();
+            LoadCategories();
+        }
+
+        private static void LoadCategories()
+        {
+            using (IsolatedStorageFile storage = IsolatedStorageFile.GetUserStoreForApplication())
+            {
+                string[] categories = storage.GetFileNames("/categories/*");
+                foreach (string category in categories)
+                {
+                    Debug.WriteLine(category.Remove(category.Length - 4));
+                    if (!_cachedCategories.Contains(category))
+                        _cachedCategories.Add(category.Remove(category.Length-4));
+                }
+
+            }
+        }
+
+        public static bool IsCategoryCached(String category)
+        {
+            if(_cachedCategories.Contains(category))
+                return true;
+            else
+                return false;
+//>>>>>>> 2ee94d284e8ac258dbc28922c767b943f64be3ca
         }
 
         public static ImageMetadata getCachedMetadata(string hash)
@@ -82,7 +114,25 @@ namespace Wanderer
 
                 if (!storage.DirectoryExists("metadata"))
                     storage.CreateDirectory("metadata");
-            }
+//<<<<<<< HEAD
+//=======
+
+                if (!storage.DirectoryExists("categories"))
+                    storage.CreateDirectory("categories");
+
+/*                if (storage.FileExists(Filename))
+                {
+                    // tutaj zaladowanie places oraz cachedFiles z pliku
+                    // czyli informacji o cahcowanych mmiejscach oraz o plikach ktore sa chachowane
+                    // takze dodawanie do dictonary
+                    // ^ DEPRECATED
+                }
+                else
+                {
+                    storage.CreateFile(Filename);
+                }
+>>>>>>> 2ee94d284e8ac258dbc28922c767b943f64be3ca
+*/            }
         }
 
         //TODO: Merge obu metod ładowania, dodanie do listy wszystkich zapisanych zdjęć
@@ -171,6 +221,18 @@ namespace Wanderer
 
             _cachedPhotos.Add(hash);
             Debug.WriteLine(" size of list " + _cachedPhotos.Count);
+        }
+
+        public static void CacheCategory(String category, int count)
+        {
+            using (IsolatedStorageFile storage = IsolatedStorageFile.GetUserStoreForApplication())
+            {
+                IsolatedStorageFileStream fileStream = storage.CreateFile("/categories/" + category + ".wmf");
+                byte[] buffer = BitConverter.GetBytes(count);
+                fileStream.Write(buffer, 0, buffer.Length);
+                Debug.WriteLine("saving category");
+                fileStream.Close();
+            }
         }
 
         public static void CacheThumbnail(Stream image, int width, int height, string hash)

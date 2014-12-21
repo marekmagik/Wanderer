@@ -29,7 +29,7 @@ using System.Threading;
 
 namespace Wanderer
 {
-    public partial class PanoramaView : PhoneApplicationPage
+    public partial class PanoramaView : PhoneApplicationPage, IImageCallbackReceiver
     {
 
         private TimerCallback _normalPriorityTaskCallback;
@@ -1149,7 +1149,7 @@ namespace Wanderer
                        p.BottomLine.Visibility = Visibility.Collapsed;
                    }
                    isCollisionAlgorithmFinished = true;
-                   StartCompass();
+                   //StartCompass();
                    LoadingAnimation.Visibility = Visibility.Collapsed;
                });
         }

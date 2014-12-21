@@ -15,7 +15,7 @@ using System.ComponentModel;
 
 namespace Wanderer
 {
-    public partial class ListOfPlaces : PhoneApplicationPage
+    public partial class ListOfPlaces : PhoneApplicationPage, IThumbnailCallbackReceiver
     {
         private List<ImageMetadata> _places = new List<ImageMetadata>();
         public List<ImageMetadata> Places
@@ -109,14 +109,20 @@ namespace Wanderer
             if (_actualIndex < _actualNumberOfElementsInList)
             {
                 ImageMetadata place = _allPlaces.ElementAt(_actualIndex);
-                Places.Add(place);
-                if (IsolatedStorageDAO.IsThumbnailCached(place.PictureSHA256))
+                if (!Places.Contains(place))
                 {
-                    LoadPhotoFromIsolatedStorage(place);
+                    Places.Add(place);
+                    if (IsolatedStorageDAO.IsThumbnailCached(place.PictureSHA256))
+                    {
+                        LoadPhotoFromIsolatedStorage(place);
+                    }
+                    else
+                    {
+                        DAO.SendRequestForThumbnail(this, Places.ElementAt(_actualIndex).PictureSHA256);
+                    }
                 }
-                else
-                {
-                    DAO.SendRequestForThumbnail(this, Places.ElementAt(_actualIndex).PictureSHA256);
+                else {
+                    _actualIndex++;
                 }
             }
         }
@@ -252,11 +258,11 @@ namespace Wanderer
                 {
                     return 0;
                 }
-                else if (x.CurrentDistance == null)
+                else if (x.CurrentDistance == null || x.CurrentDistance.Equals("-.-- km"))
                 {
                     return -1;
                 }
-                else if (y.CurrentDistance == null)
+                else if (y.CurrentDistance == null || y.CurrentDistance.Equals("-.-- km"))
                 {
                     return 1;
                 }

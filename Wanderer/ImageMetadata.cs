@@ -26,6 +26,7 @@ namespace Wanderer
         public int Width { get; set; }
         public ImageSource Image { get; set; }
         public String PictureSHA256 { get; set; }
+        public String Category { get; set; }
         public bool IsPanoramaCached
         {
             get
@@ -86,5 +87,14 @@ namespace Wanderer
                 });
             }
         }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null || !obj.GetType().Equals(this.GetType())) {
+                return false;
+            }
+            return PictureSHA256.Equals(((ImageMetadata)obj).PictureSHA256);
+        }
+
     }
 }

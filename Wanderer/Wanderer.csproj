@@ -92,10 +92,14 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="CategoriesBundlesPage.xaml.cs">
+      <DependentUpon>CategoriesBundlesPage.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Category.cs" />
     <Compile Include="GPSTracker.cs" />
     <Compile Include="Configuration.cs" />
     <Compile Include="DAO.cs" />
+    <Compile Include="ICallbackReceiver.cs" />
     <Compile Include="ImageMetadata.cs" />
     <Compile Include="IsolatedStorageDAO.cs" />
     <Compile Include="JSONParser.cs" />
@@ -106,6 +110,9 @@
     <Compile Include="LocalizedStrings.cs" />
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="MapWithPlacesPage.xaml.cs">
+      <DependentUpon>MapWithPlacesPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="PanoramaView.xaml.cs">
       <DependentUpon>PanoramaView.xaml</DependentUpon>
@@ -124,11 +131,19 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </ApplicationDefinition>
+    <Page Include="CategoriesBundlesPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="ListOfPlaces.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="MainPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="MapWithPlacesPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
