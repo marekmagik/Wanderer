@@ -89,5 +89,18 @@ namespace Wanderer
             request.BeginGetResponse(new AsyncCallback(callback.ImageRequestCallback), request);
         }
 
+
+        internal static void SendRequestForMetadataOfPlacesWithinRange(MapWithPlacesPage callback, double lon, double lat, int distance)
+        {
+            string longitude = Convert.ToString(lon).Replace(',', '.');
+            string latitude = Convert.ToString(lat).Replace(',', '.');
+
+            string uri = "http://" + Address + ":7001/Wanderer/api/places/get/" + longitude + "/" + latitude + "/" + distance;
+
+            HttpWebRequest request =
+                (HttpWebRequest)HttpWebRequest.Create(uri);
+            request.Method = "GET";
+            request.BeginGetResponse(new AsyncCallback(callback.RequestCallback), request);
+        }
     }
 }
