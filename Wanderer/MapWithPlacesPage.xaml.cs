@@ -25,8 +25,8 @@ namespace Wanderer
         private ImageMetadata _selectedMetadata;
         private MainPage _mainPage;
         private MapOverlay myLocationOverlay = new MapOverlay();
-        private Dictionary<ImageMetadata,MapOverlay> _pointOnMapDictionary= new Dictionary<ImageMetadata,MapOverlay>();
-        private MapLayer pointsLayer = new MapLayer();
+        private Dictionary<ImageMetadata, MapOverlay> _pointOnMapDictionary = new Dictionary<ImageMetadata, MapOverlay>();
+        private MapLayer _pointsLayer = new MapLayer();
 
         public MapWithPlacesPage(MainPage mainPage)
         {
@@ -35,7 +35,7 @@ namespace Wanderer
             _mainPage = mainPage;
 
             //na razie testowo ustawione na krakow
-            _actualPosition = new GeoCoordinate(50.3,19.9);
+            _actualPosition = new GeoCoordinate(50.3, 19.9);
             Map.CartographicMode = MapCartographicMode.Terrain;
             Map.Center = _actualPosition;
             //Map.ZoomLevel = 10;
@@ -52,7 +52,7 @@ namespace Wanderer
             myCircle.Width = 20;
             myCircle.Opacity = 50;
 
-            
+
             myLocationOverlay.Content = myCircle;
             myLocationOverlay.PositionOrigin = new System.Windows.Point(0.5, 0.5);
             myLocationOverlay.GeoCoordinate = position;
@@ -90,11 +90,11 @@ namespace Wanderer
 
         private void ShowPointsOnMap()
         {
-            Debug.WriteLine(" Creating points overlay "+_metadataList.Count);
+            Debug.WriteLine(" Creating points overlay " + _metadataList.Count);
             Deployment.Current.Dispatcher.BeginInvoke(delegate
                 {
 
-                    
+
                     foreach (ImageMetadata metadata in _metadataList)
                     {
                         Ellipse myCircle = new Ellipse();
@@ -110,15 +110,17 @@ namespace Wanderer
                         myPointOverlay.PositionOrigin = new System.Windows.Point(0.5, 0.5);
                         myPointOverlay.GeoCoordinate = new GeoCoordinate(metadata.Latitude, metadata.Longitude);
 
-                        pointsLayer.Add(myPointOverlay);
+                        _pointOnMapDictionary.Add(metadata, myPointOverlay);
+
+                        _pointsLayer.Add(myPointOverlay);
                     }
-                    Map.Layers.Add(pointsLayer);
+                    Map.Layers.Add(_pointsLayer);
                 });
         }
 
         void myCircle_Tap(object sender, System.Windows.Input.GestureEventArgs e)
         {
-            ContextMenu.Width = MainGrid.ActualWidth-10;
+            ContextMenu.Width = MainGrid.ActualWidth - 10;
 
             Debug.WriteLine(" Tap on point handler ");
             Ellipse ellipse = sender as Ellipse;
@@ -169,6 +171,55 @@ namespace Wanderer
             ContextMenu.Visibility = Visibility.Collapsed;
             Uri uri = new Uri("/PanoramaView.xaml?&hash=" + _selectedMetadata.PictureSHA256, UriKind.Relative);
             _mainPage.NavigationService.Navigate(uri);
+        }
+
+        public void NotifyGeolocatorPositionChanged(double longitude, double latitude)
+        {
+            myLocationOverlay.GeoCoordinate = new GeoCoordinate(latitude, longitude);
+        }
+
+        public void NotifyPlacesListUpdated(List<ImageMetadata> newList)
+        {
+            Deployment.Current.Dispatcher.BeginInvoke(delegate
+                {
+                    List<ImageMetadata> toRemove = new List<ImageMetadata>();
+
+                    foreach (ImageMetadata metadata in _pointOnMapDictionary.Keys)
+                    {
+                        if (!newList.Contains(metadata))
+                        {
+                            _pointsLayer.Remove(_pointOnMapDictionary[metadata]);
+                            toRemove.Add(metadata);
+
+                        }
+                    }
+
+                    foreach (ImageMetadata metadata in toRemove)
+                        _pointOnMapDictionary.Remove(metadata);
+
+                    foreach (ImageMetadata metadata in newList)
+                    {
+                        if (!_pointOnMapDictionary.Keys.Contains(metadata))
+                        {
+                            Ellipse myCircle = new Ellipse();
+                            myCircle.Fill = new SolidColorBrush(Colors.Red);
+                            myCircle.Height = 20;
+                            myCircle.Width = 20;
+                            myCircle.Opacity = 50;
+                            myCircle.Tap += myCircle_Tap;
+                            myCircle.DataContext = metadata;
+
+                            MapOverlay myPointOverlay = new MapOverlay();
+                            myPointOverlay.Content = myCircle;
+                            myPointOverlay.PositionOrigin = new System.Windows.Point(0.5, 0.5);
+                            myPointOverlay.GeoCoordinate = new GeoCoordinate(metadata.Latitude, metadata.Longitude);
+
+                            _pointOnMapDictionary.Add(metadata, myPointOverlay);
+
+                            _pointsLayer.Add(myPointOverlay);
+                        }
+                    }
+                });
         }
     }
 }
