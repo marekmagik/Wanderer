@@ -152,9 +152,11 @@ namespace Wanderer
                     {
                         WebResponse response = request.EndGetResponse(result);
                         Stream stream = response.GetResponseStream();
-
+                        IsolatedStorageDAO.CacheThumbnail(stream,_selectedMetadata.Width,_selectedMetadata.Height ,_selectedMetadata.PictureSHA256);
                         BitmapImage image = new BitmapImage();
                         image.SetSource(stream);
+                        
+
                         Thumbnail.Source = image;
                     }
                     catch (WebException)

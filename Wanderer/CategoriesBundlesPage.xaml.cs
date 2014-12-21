@@ -227,11 +227,14 @@ namespace Wanderer
         {
             Grid grid = (Grid)sender;
             TextBlock textBlock = (TextBlock)grid.Children[0];
-            Button button = (Button)grid.Children[1];
-            Debug.WriteLine(textBlock.Text);
-            if (IsolatedStorageDAO.IsCategoryCached(textBlock.Text))
+            if (grid.Children[1] is Button)
             {
-                SetCategoryCached(grid, button, null);
+                Button button = (Button)grid.Children[1];
+                Debug.WriteLine(textBlock.Text);
+                if (IsolatedStorageDAO.IsCategoryCached(textBlock.Text))
+                {
+                    SetCategoryCached(grid, button, null);
+                }
             }
         }
 
