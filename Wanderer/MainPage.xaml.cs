@@ -28,7 +28,7 @@ namespace Wanderer
 
             ListOfPlaces listOfPlaces = new ListOfPlaces(this);
             CategoriesBudlesPage categoriesPage = new CategoriesBudlesPage();
-            MapWithPlacesPage mapPage = new MapWithPlacesPage();
+            MapWithPlacesPage mapPage = new MapWithPlacesPage(this);
 
             ListOfPlacesPanoraaItem.Content = listOfPlaces;
             CategoriesBundlesPanoramaItem.Content = categoriesPage;

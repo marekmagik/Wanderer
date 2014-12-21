@@ -22,10 +22,15 @@ namespace Wanderer
 
         private GeoCoordinate _actualPosition;
         private List<ImageMetadata> _metadataList = new List<ImageMetadata>();
+        private ImageMetadata _selectedMetadata;
+        private MainPage _mainPage;
 
-        public MapWithPlacesPage()
+        public MapWithPlacesPage(MainPage mainPage)
         {
             InitializeComponent();
+
+            _mainPage = mainPage;
+
             //na razie testowo ustawione na krakow
             _actualPosition = new GeoCoordinate(50.3,19.9);
             Map.CartographicMode = MapCartographicMode.Terrain;
@@ -110,15 +115,19 @@ namespace Wanderer
 
         void myCircle_Tap(object sender, System.Windows.Input.GestureEventArgs e)
         {
+            ContextMenu.Width = MainGrid.ActualWidth-10;
+
             Debug.WriteLine(" Tap on point handler ");
             Ellipse ellipse = sender as Ellipse;
             ImageMetadata metadata = ellipse.DataContext as ImageMetadata;
+            _selectedMetadata = metadata;
 
             DAO.SendRequestForThumbnail(this, metadata.PictureSHA256);
 
             Debug.WriteLine(metadata.PictureDescription);
             PrimaryDescription.Text = metadata.PictureDescription;
             SecondaryDescription.Text = metadata.PictureAdditionalDescription;
+            CategoryTextBlock.Text = metadata.Category;
             ContextMenu.Visibility = Visibility.Visible;
         }
 
@@ -150,6 +159,13 @@ namespace Wanderer
                     }
                 });
             }
+        }
+
+        private void ShowPanorama(object sender, RoutedEventArgs e)
+        {
+            ContextMenu.Visibility = Visibility.Collapsed;
+            Uri uri = new Uri("/PanoramaView.xaml?&hash=" + _selectedMetadata.PictureSHA256, UriKind.Relative);
+            _mainPage.NavigationService.Navigate(uri);
         }
     }
 }

@@ -1149,7 +1149,7 @@ namespace Wanderer
                        p.BottomLine.Visibility = Visibility.Collapsed;
                    }
                    isCollisionAlgorithmFinished = true;
-                   StartCompass();
+                   //StartCompass();
                    LoadingAnimation.Visibility = Visibility.Collapsed;
                });
         }
