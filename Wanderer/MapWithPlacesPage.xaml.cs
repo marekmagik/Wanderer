@@ -13,6 +13,7 @@ using Microsoft.Phone.Maps.Controls;
 using System.Device.Location;
 using System.IO;
 using System.Diagnostics;
+using System.Windows.Media.Imaging;
 
 namespace Wanderer
 {
@@ -112,8 +113,43 @@ namespace Wanderer
             Debug.WriteLine(" Tap on point handler ");
             Ellipse ellipse = sender as Ellipse;
             ImageMetadata metadata = ellipse.DataContext as ImageMetadata;
+
+            DAO.SendRequestForThumbnail(this, metadata.PictureSHA256);
+
             Debug.WriteLine(metadata.PictureDescription);
+            PrimaryDescription.Text = metadata.PictureDescription;
+            SecondaryDescription.Text = metadata.PictureAdditionalDescription;
+            ContextMenu.Visibility = Visibility.Visible;
         }
 
+        private void HideContextMenu(object sender, RoutedEventArgs e)
+        {
+            ContextMenu.Visibility = Visibility.Collapsed;
+        }
+
+        public void ThumbRequestCallback(IAsyncResult result)
+        {
+            HttpWebRequest request = result.AsyncState as HttpWebRequest;
+            if (request != null)
+            {
+                Deployment.Current.Dispatcher.BeginInvoke(delegate
+                {
+                    try
+                    {
+                        WebResponse response = request.EndGetResponse(result);
+                        Stream stream = response.GetResponseStream();
+
+                        BitmapImage image = new BitmapImage();
+                        image.SetSource(stream);
+                        Thumbnail.Source = image;
+                    }
+                    catch (WebException)
+                    {
+                        Debug.WriteLine("wyjatek wewnatrz UI!");
+                        return;
+                    }
+                });
+            }
+        }
     }
 }

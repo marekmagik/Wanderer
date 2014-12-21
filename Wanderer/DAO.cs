@@ -102,5 +102,13 @@ namespace Wanderer
             request.Method = "GET";
             request.BeginGetResponse(new AsyncCallback(callback.RequestCallback), request);
         }
+
+        internal static void SendRequestForThumbnail(MapWithPlacesPage callback, string pictureSHA256)
+        {
+            string uri = "http://" + Address + ":7001/Wanderer/api/photos/get/thumbnail/" + pictureSHA256;
+            HttpWebRequest request =
+                (HttpWebRequest)HttpWebRequest.Create(uri);
+            request.BeginGetResponse(callback.ThumbRequestCallback, request);
+        }
     }
 }
