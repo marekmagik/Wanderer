@@ -19,6 +19,7 @@ namespace Wanderer
         private static List<String> _cachedPhotos;
         private static List<String> _cachedThumbnails;
         private static List<String> _cachedCategories;
+        private static List<String> _cachedMetadata;
 
         public static void InitIsolatedStorageDAO()
         {
@@ -28,6 +29,8 @@ namespace Wanderer
                 _cachedThumbnails = new List<string>();
             if (_cachedCategories == null)
                 _cachedCategories = new List<string>();
+            if (_cachedMetadata == null)
+                _cachedMetadata = new List<String>();
 
 //<<<<<<< HEAD
             InitializeDirectories();
@@ -88,6 +91,7 @@ namespace Wanderer
                 {
                     if (!storage.FileExists("/metadata/" + metadataAndHash.Key + ".meta"))
                     {
+                        _cachedMetadata.Add(metadataAndHash.Key);
                         using (StreamWriter writer = new StreamWriter(storage.CreateFile("/metadata/" + metadataAndHash.Key + ".meta")))
                         {
                             writer.Write("[" + metadataAndHash.Value + "]");
@@ -158,6 +162,13 @@ namespace Wanderer
                         _cachedThumbnails.Add(thumbnail.Remove(64, 4));
                 }
 
+                string[] metadatas = storage.GetFileNames("/metadata/*");
+                foreach (string metadata in metadatas)
+                {
+                    if (!_cachedMetadata.Contains(metadata))
+                        _cachedMetadata.Add(metadata.Remove(64, 5));
+                }
+
             }
         }
 
@@ -186,6 +197,14 @@ namespace Wanderer
             Debug.WriteLine(" arg " + hash);
 */
             if (_cachedPhotos.Contains(hash))
+                return true;
+            else
+                return false;
+        }
+
+        public static bool IsMetadataCached(string hash)
+        {
+            if (_cachedMetadata.Contains(hash))
                 return true;
             else
                 return false;
@@ -223,16 +242,35 @@ namespace Wanderer
             Debug.WriteLine(" size of list " + _cachedPhotos.Count);
         }
 
-        public static void CacheCategory(String category, int count)
+        public static void CacheCategory(String category, List<ImageMetadata> metadataForCategory)
         {
             using (IsolatedStorageFile storage = IsolatedStorageFile.GetUserStoreForApplication())
             {
                 IsolatedStorageFileStream fileStream = storage.CreateFile("/categories/" + category + ".wmf");
-                byte[] buffer = BitConverter.GetBytes(count);
+                JSONParser parser = new JSONParser();
+                String json = parser.ConvertMetadataCategoryToJson(metadataForCategory);
+                byte[] buffer = Encoding.UTF8.GetBytes(json);
                 fileStream.Write(buffer, 0, buffer.Length);
                 Debug.WriteLine("saving category");
                 fileStream.Close();
             }
+        }
+
+        public static List<String> GetCachedPlacesForCategory(String category)
+        {
+            List<String> result = new List<String>();
+            using (IsolatedStorageFile storage = IsolatedStorageFile.GetUserStoreForApplication())
+            {
+                IsolatedStorageFileStream fileStream = storage.OpenFile("/categories/" + category + ".wmf", System.IO.FileMode.Open, FileAccess.Read);
+                StreamReader streamReader = new StreamReader(fileStream);
+                String json = streamReader.ReadToEnd();
+                Debug.WriteLine(" Loaded category places: "+json);
+                JSONParser parser = new JSONParser();
+                result = parser.ConvertJsonToMetadataCategory(json);
+                fileStream.Close();
+            }
+
+            return result;
         }
 
         public static void CacheThumbnail(Stream image, int width, int height, string hash)
@@ -278,7 +316,8 @@ namespace Wanderer
             List<ImageMetadata> cachedMetadata = new List<ImageMetadata>();
 
             foreach (String hash in _cachedPhotos) {
-                cachedMetadata.Add(getCachedMetadata(hash));
+                if(_cachedThumbnails.Contains(hash))
+                    cachedMetadata.Add(getCachedMetadata(hash));
             }
             return cachedMetadata;
             //throw new NotImplementedException();

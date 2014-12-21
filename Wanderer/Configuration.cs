@@ -111,7 +111,7 @@ namespace Wanderer
 
         public static void loadConfiguration()
         {
-            if (/*getSettingProperty("GPSRange") != null*/ false)
+            if (getSettingProperty("GPSRange") != null)
             {
                 Configuration.PrimaryDescriptionFontSize = (int)getSettingProperty("primaryDescriptionFontSize");
                 Configuration.SecondaryDescriptionFontSize = (int)getSettingProperty("secondaryDescriptionFontSize");

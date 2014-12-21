@@ -24,8 +24,10 @@ namespace Wanderer
         private ProgressBar _progressBar = null;
         private Grid _parentGrid = null;
         private String _actualCategory;
-        private int _countOfCategory;
         private List<String> _cachedCategories;
+        private List<ImageMetadata> _metadataForActualCategory;
+        private const String _actionDownloadThumbnail = "thumb";
+        private const String _actionDownloadPanorama = "pano";
 
         public CategoriesBudlesPage()
         {
@@ -81,7 +83,8 @@ namespace Wanderer
                     ImageMetadata place = _metadataEnumerator.Current;
                     IsolatedStorageDAO.CacheThumbnail(stream, place.Width, place.Height, place.PictureSHA256);
 
-                    DAO.SendRequestForPanorama(this, place.PictureSHA256);
+                    PerformNearestAction(_actionDownloadPanorama);
+                    //DAO.SendRequestForPanorama(this, place.PictureSHA256);
 
                 }
                 catch (WebException)
@@ -105,16 +108,16 @@ namespace Wanderer
 
                     ImageMetadata place = _metadataEnumerator.Current;
                     IsolatedStorageDAO.CachePhoto(stream, place.Width, place.Height, place);
-                    _countOfCategory++;
                     if (_metadataEnumerator.MoveNext())
                     {
-                            DAO.SendRequestForThumbnail(this, _metadataEnumerator.Current.PictureSHA256);
+                        // DAO.SendRequestForThumbnail(this, _metadataEnumerator.Current.PictureSHA256);
+                        PerformNearestAction(_actionDownloadThumbnail);
                     }
                     else
                     {
                         _isDownloadingInProgress = false;
                         ChangeUIElements();
-                        IsolatedStorageDAO.CacheCategory(_actualCategory, _countOfCategory);
+                        IsolatedStorageDAO.CacheCategory(_actualCategory, _metadataForActualCategory);
                     }
 
                 }
@@ -150,16 +153,17 @@ namespace Wanderer
                     Debug.WriteLine("---JSON, req : " + json);
 
                     JSONParser parser = new JSONParser();
-                    List<ImageMetadata> metadataList = parser.ParsePlacesJSON(json);
+                    _metadataForActualCategory = parser.ParsePlacesJSON(json);
                     IsolatedStorageDAO.CacheMetadata(json);
 
-                    _metadataEnumerator = metadataList.GetEnumerator();
+                    _metadataEnumerator = _metadataForActualCategory.GetEnumerator();
                     if (_metadataEnumerator.MoveNext())
                     {
                         Debug.WriteLine(" Sending request for thumbnail ");
                         try
                         {
-                            DAO.SendRequestForThumbnail(this, _metadataEnumerator.Current.PictureSHA256);
+                            PerformNearestAction(_actionDownloadThumbnail);
+                            //DAO.SendRequestForThumbnail(this, _metadataEnumerator.Current.PictureSHA256);
                         }
                         catch (WebException)
                         {
@@ -171,11 +175,52 @@ namespace Wanderer
             }
         }
 
+        private void PerformNearestAction(String action)
+        {
+            bool shouldRunning = true;
+            String currentAction = action;
+            while (shouldRunning)
+            {
+                ImageMetadata metadata = _metadataEnumerator.Current;
+                if (currentAction.Equals(_actionDownloadThumbnail))
+                {
+                    if (!IsolatedStorageDAO.IsThumbnailCached(metadata.PictureSHA256))
+                    {
+                        DAO.SendRequestForThumbnail(this, metadata.PictureSHA256);
+                        shouldRunning = false;
+                    }
+                    else
+                        currentAction = _actionDownloadPanorama;
+                }
+                else if (currentAction.Equals(_actionDownloadPanorama))
+                {
+                    if (!IsolatedStorageDAO.IsPhotoCached(metadata.PictureSHA256))
+                    {
+                        DAO.SendRequestForPanorama(this, metadata.PictureSHA256);
+                        shouldRunning = false; 
+                    }
+                    else
+                    {
+                        if (_metadataEnumerator.MoveNext())
+                        {
+                            currentAction = _actionDownloadThumbnail;
+                        }
+                        else
+                        {
+                            _isDownloadingInProgress = false;
+                            ChangeUIElements();
+                            IsolatedStorageDAO.CacheCategory(_actualCategory, _metadataForActualCategory);
+                            shouldRunning = false;
+                        }
+                    }
+                }
+            }
+        }
+
         private void DownloadBundleClick(object sender, RoutedEventArgs e)
         {
             if (!_isDownloadingInProgress)
             {
-                _countOfCategory = 0;
                 _isDownloadingInProgress = true;
                 Button button = sender as Button;
                 String category = (String)button.DataContext;
@@ -192,6 +237,11 @@ namespace Wanderer
                     HandleWebException();
                 }
             }
+        }
+
+        private void UpdateBundleClick(object sender, RoutedEventArgs e)
+        {
+            Debug.WriteLine(" Update ");
         }
 
         private void HandleWebException()
@@ -230,10 +280,30 @@ namespace Wanderer
             if (grid.Children[1] is Button)
             {
                 Button button = (Button)grid.Children[1];
+                String category = textBlock.Text;
                 Debug.WriteLine(textBlock.Text);
-                if (IsolatedStorageDAO.IsCategoryCached(textBlock.Text))
+                if (IsolatedStorageDAO.IsCategoryCached(category))
                 {
-                    SetCategoryCached(grid, button, null);
+                    List<String> hashes = IsolatedStorageDAO.GetCachedPlacesForCategory(category);
+                    bool isReallyCached = true;
+                    foreach (String hash in hashes)
+                    {
+                        if (!IsolatedStorageDAO.IsPhotoCached(hash))
+                            isReallyCached = false;
+                        if (!IsolatedStorageDAO.IsThumbnailCached(hash))
+                            isReallyCached = false;
+                        if (!IsolatedStorageDAO.IsMetadataCached(hash))
+                            isReallyCached = false;
+                    }
+
+                    if (isReallyCached)
+                        SetCategoryCached(grid, button, null);
+                    else
+                    {
+                        button.Content = "Aktualizuj";
+                        //button.Click -= DownloadBundleClick;
+                        //button.Click += UpdateBundleClick;
+                    }
                 }
             }
         }
