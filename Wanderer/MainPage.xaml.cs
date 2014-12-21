@@ -28,9 +28,11 @@ namespace Wanderer
 
             ListOfPlaces listOfPlaces = new ListOfPlaces(this);
             CategoriesBudlesPage categoriesPage = new CategoriesBudlesPage();
+            MapWithPlacesPage mapPage = new MapWithPlacesPage();
 
             ListOfPlacesPanoraaItem.Content = listOfPlaces;
             CategoriesBundlesPanoramaItem.Content = categoriesPage;
+            MapWithPlacesItem.Content = mapPage;
             IsolatedStorageDAO.InitIsolatedStorageDAO();
 
             _gpsTracker = new GPSTracker(listOfPlaces);

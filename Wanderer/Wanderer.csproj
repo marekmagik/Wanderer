@@ -111,6 +111,9 @@
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
+    <Compile Include="MapWithPlacesPage.xaml.cs">
+      <DependentUpon>MapWithPlacesPage.xaml</DependentUpon>
+    </Compile>
     <Compile Include="PanoramaView.xaml.cs">
       <DependentUpon>PanoramaView.xaml</DependentUpon>
     </Compile>
@@ -137,6 +140,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="MainPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="MapWithPlacesPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
