@@ -24,6 +24,9 @@ namespace Wanderer
         private List<ImageMetadata> _metadataList = new List<ImageMetadata>();
         private ImageMetadata _selectedMetadata;
         private MainPage _mainPage;
+        private MapOverlay myLocationOverlay = new MapOverlay();
+        private Dictionary<ImageMetadata,MapOverlay> _pointOnMapDictionary= new Dictionary<ImageMetadata,MapOverlay>();
+        private MapLayer pointsLayer = new MapLayer();
 
         public MapWithPlacesPage(MainPage mainPage)
         {
@@ -35,7 +38,7 @@ namespace Wanderer
             _actualPosition = new GeoCoordinate(50.3,19.9);
             Map.CartographicMode = MapCartographicMode.Terrain;
             Map.Center = _actualPosition;
-            //Map.ZoomLevel = 11;
+            //Map.ZoomLevel = 10;
 
             ShowLocationOnMap(_actualPosition);
             DAO.SendRequestForMetadataOfPlacesWithinRange(this, _actualPosition.Longitude, _actualPosition.Latitude, 100000000);
@@ -49,7 +52,7 @@ namespace Wanderer
             myCircle.Width = 20;
             myCircle.Opacity = 50;
 
-            MapOverlay myLocationOverlay = new MapOverlay();
+            
             myLocationOverlay.Content = myCircle;
             myLocationOverlay.PositionOrigin = new System.Windows.Point(0.5, 0.5);
             myLocationOverlay.GeoCoordinate = position;
@@ -91,7 +94,7 @@ namespace Wanderer
             Deployment.Current.Dispatcher.BeginInvoke(delegate
                 {
 
-                    MapLayer pointsLayer = new MapLayer();
+                    
                     foreach (ImageMetadata metadata in _metadataList)
                     {
                         Ellipse myCircle = new Ellipse();
