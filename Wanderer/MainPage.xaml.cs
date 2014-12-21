@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
@@ -17,19 +18,60 @@ namespace Wanderer
         private GPSTracker _gpsTracker;
         private static bool _initialized = false;
 
+        public int PrimaryDescriptionFontSize
+        {
+            get
+            {
+                return Configuration.PrimaryDescriptionFontSize;
+            }
+            set
+            {
+                Configuration.PrimaryDescriptionFontSize = value;
+            }
+        }
+        private int SecondaryDescriptionFontSize
+        {
+            get
+            {
+                return Configuration.SecondaryDescriptionFontSize;
+            }
+            set
+            {
+                Configuration.SecondaryDescriptionFontSize = value;
+            }
+        }
+        private Int32 GPSRange
+        {
+            get
+            {
+                return Configuration.GPSRange;
+            }
+            set
+            {
+                Configuration.GPSRange = value;
+            }
+        }
+
+
+        private List<int> PossiblePrimaryDescriptionFontSizes = new List<int>() { 15, 20, 25, 30, 35 };
+        private List<int> PossibleSecondaryDescriptionFontSizes = new List<int>() { 10, 15, 20, 25, 30 };
         public MainPage()
         {
             InitializeComponent();
 
-            Configuration.PrimaryDescriptionFontSize = 18;
-            Configuration.SecondaryDescriptionFontSize = 13;
-            Configuration.ServerAddress = "192.168.1.103";
-            Configuration.UseGPS = false;
+            Configuration.loadConfiguration();
+            GPSTracker.LoadLastKnownPositionIfExists();
+            
+            PrimaryDescriptionFontSizePicker.ItemsSource = PossiblePrimaryDescriptionFontSizes;
+            PrimaryDescriptionFontSizePicker.SelectedItem = PrimaryDescriptionFontSize;
+            SecondaryDescriptionFontSizePicker.ItemsSource = PossibleSecondaryDescriptionFontSizes;
+            SecondaryDescriptionFontSizePicker.SelectedItem = SecondaryDescriptionFontSize;
+
+            IsolatedStorageDAO.InitIsolatedStorageDAO();
 
             ListOfPlaces listOfPlaces = new ListOfPlaces(this);
 
             ListOfPlacesPanoraaItem.Content = listOfPlaces;
-            IsolatedStorageDAO.InitIsolatedStorageDAO();
 
             _gpsTracker = new GPSTracker(listOfPlaces);
         }
@@ -40,6 +82,12 @@ namespace Wanderer
             if (_initialized)
             {
                 _gpsTracker.activateGPSTracker();
+            }
+            else {
+                if (Configuration.UseGPS) {
+                    Configuration.UseGPS = false;
+                    UseGPSCheckbox.IsChecked = true;
+                }
             }
             _initialized = true;
             base.OnNavigatedTo(e);
@@ -53,26 +101,43 @@ namespace Wanderer
 
         private void UseGPSCheckboxChecked(object sender, RoutedEventArgs e)
         {
-            if (!Configuration.UseGPS)
+            lock (this)
             {
-                Deployment.Current.Dispatcher.BeginInvoke(delegate
+                if (!Configuration.UseGPS)
                 {
-                    _gpsTracker.activateGPSTracker();
-                    Configuration.UseGPS = true;
-                });
+                    Deployment.Current.Dispatcher.BeginInvoke(delegate
+                    {
+                        _gpsTracker.activateGPSTracker();
+                        Configuration.UseGPS = true;
+                    });
+                }
             }
         }
 
         private void UseGPSCheckboxUnchecked(object sender, RoutedEventArgs e)
         {
-            if (Configuration.UseGPS)
+            lock (this)
             {
-                Deployment.Current.Dispatcher.BeginInvoke(delegate
-                    {
-                        _gpsTracker.deactivateGPSTracker();
-                        Configuration.UseGPS = false;
-                    });
+                if (Configuration.UseGPS)
+                {
+                    Deployment.Current.Dispatcher.BeginInvoke(delegate
+                        {
+                            _gpsTracker.deactivateGPSTracker();
+                            Configuration.UseGPS = false;
+                        });
+                }
             }
         }
+
+        private void PrimaryDescriptionFontSizeSelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            Configuration.PrimaryDescriptionFontSize = (int)((ListPicker)sender).SelectedItem;
+        }
+
+        private void SecondaryDescriptionFontSizeSelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            Configuration.SecondaryDescriptionFontSize = (int)((ListPicker)sender).SelectedItem;
+        }
+
     }
 }

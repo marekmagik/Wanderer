@@ -16,7 +16,6 @@ namespace Wanderer
     static class IsolatedStorageDAO
     {
 
-        private const string Filename = "places_data.wdf";
         private static List<String> _cachedPhotos;
         private static List<String> _cachedThumbnails;
 
@@ -27,18 +26,22 @@ namespace Wanderer
             if (_cachedThumbnails == null)
                 _cachedThumbnails = new List<string>();
 
-            LoadPlacesData();
-            LoadNewFiles();
+            InitializeDirectories();
+            LoadCachedFiles();
         }
 
         public static ImageMetadata getCachedMetadata(string hash)
         {
             JSONParser parser = new JSONParser();
 
-            using (IsolatedStorageFile storage = IsolatedStorageFile.GetUserStoreForApplication())
+            lock (_cachedPhotos)
             {
-                using (StreamReader reader = new StreamReader(storage.OpenFile("/metadata/" + hash + ".meta", FileMode.Open, FileAccess.Read))) {
-                    return parser.ParsePhotoMetadataJSON(reader.ReadToEnd());
+                using (IsolatedStorageFile storage = IsolatedStorageFile.GetUserStoreForApplication())
+                {
+                    using (StreamReader reader = new StreamReader(storage.OpenFile("/metadata/" + hash + ".meta", FileMode.Open, FileAccess.Read)))
+                    {
+                        return parser.ParsePhotoMetadataJSON(reader.ReadToEnd());
+                    }
                 }
             }
         }
@@ -66,7 +69,7 @@ namespace Wanderer
             }
         }
 
-        public static void LoadPlacesData()
+        public static void InitializeDirectories()
         {
             using (IsolatedStorageFile storage = IsolatedStorageFile.GetUserStoreForApplication())
             {
@@ -79,22 +82,14 @@ namespace Wanderer
 
                 if (!storage.DirectoryExists("metadata"))
                     storage.CreateDirectory("metadata");
-
-                if (storage.FileExists(Filename))
-                {
-                    // tutaj zaladowanie places oraz cachedFiles z pliku
-                    // czyli informacji o cahcowanych mmiejscach oraz o plikach ktore sa chachowane
-                    // takze dodawanie do dictonary
-                    // ^ DEPRECATED
-                }
-                else
-                {
-                    storage.CreateFile(Filename);
-                }
             }
         }
 
-        public static void LoadNewFiles()
+        //TODO: Merge obu metod ładowania, dodanie do listy wszystkich zapisanych zdjęć
+        //      plik słownikowy nie będzie potrzebny, operujemy jedynie na nazwach plików.
+
+
+        public static void LoadCachedFiles()
         {
             using (IsolatedStorageFile storage = IsolatedStorageFile.GetUserStoreForApplication())
             {
@@ -133,12 +128,13 @@ namespace Wanderer
 
         public static bool IsPhotoCached(string hash)
         {
+/*           
             foreach (string photo in _cachedPhotos)
             {
                 Debug.WriteLine(photo);
             }
             Debug.WriteLine(" arg " + hash);
-
+*/
             if (_cachedPhotos.Contains(hash))
                 return true;
             else
@@ -214,5 +210,16 @@ namespace Wanderer
             }
         }
 
+
+        public static List<ImageMetadata> getAllCachedMetadatas()
+        {
+            List<ImageMetadata> cachedMetadata = new List<ImageMetadata>();
+
+            foreach (String hash in _cachedPhotos) {
+                cachedMetadata.Add(getCachedMetadata(hash));
+            }
+            return cachedMetadata;
+            //throw new NotImplementedException();
+        }
     }
 }

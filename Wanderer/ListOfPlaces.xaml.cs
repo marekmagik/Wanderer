@@ -11,29 +11,52 @@ using System.IO;
 using System.Windows.Media.Imaging;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.ComponentModel;
 
 namespace Wanderer
 {
     public partial class ListOfPlaces : PhoneApplicationPage
     {
-        private List<ImageMetadata> _places;
+        private List<ImageMetadata> _places = new List<ImageMetadata>();
+        public List<ImageMetadata> Places
+        {
+            get
+            {
+                return _places;
+            }
+            private set
+            {
+                _places = value;            
+            }
+        }
         private List<ImageMetadata> _notCachedPlaces;
-        private List<ImageMetadata> _points;
         private List<ImageMetadata> _allPlaces;
         private int _actualIndex;
         private MainPage _mainPage;
         private int _increaseAmount = 1;
         private int _actualNumberOfElementsInList = 1;
 
-
         public ListOfPlaces(MainPage mainPage)
         {
             InitializeComponent();
-            _places = new List<ImageMetadata>();
+
+            DataContext = this;
+
             _allPlaces = new List<ImageMetadata>();
+            Places = IsolatedStorageDAO.getAllCachedMetadatas();
+
+            UpdateDistanceForAllPlaces(GPSTracker.CurrentLongitude, GPSTracker.CurrentLatitude);
+
+            foreach (ImageMetadata place in Places)
+            {
+                Debug.WriteLine("deb: " + place.CurrentDistance);
+                LoadPhotoFromIsolatedStorage(place);
+            }
+            ReloadContent();
+
             _notCachedPlaces = new List<ImageMetadata>();
-            DAO.SendRequestForMetadataOfPlacesWithinRange(this, 20.5, 40.6, 100000000);
-            this.DataContext = _places;
+            DAO.SendRequestForMetadataOfPlacesWithinRange(this, GPSTracker.CurrentLongitude, GPSTracker.CurrentLatitude, Configuration.GPSRange);
+
             _actualIndex = 0;
 
             this._mainPage = mainPage;
@@ -41,11 +64,10 @@ namespace Wanderer
 
         public void ReloadContent()
         {
-            Deployment.Current.Dispatcher.BeginInvoke(delegate
-                {
-                    PlacesListBox.ItemsSource = null;
-                    PlacesListBox.ItemsSource = _places;
-                });
+            PlacesListBox.ItemsSource = null;
+            PlacesListBox.ItemsSource = Places;
+                
+           // NotifyPropertyChanged("Places");
         }
 
         public void RequestCallback(IAsyncResult result)
@@ -87,14 +109,14 @@ namespace Wanderer
             if (_actualIndex < _actualNumberOfElementsInList)
             {
                 ImageMetadata place = _allPlaces.ElementAt(_actualIndex);
-                _places.Add(place);
+                Places.Add(place);
                 if (IsolatedStorageDAO.IsThumbnailCached(place.PictureSHA256))
                 {
                     LoadPhotoFromIsolatedStorage(place);
                 }
                 else
                 {
-                    DAO.SendRequestForThumbnail(this, _places.ElementAt(_actualIndex).PictureSHA256);
+                    DAO.SendRequestForThumbnail(this, Places.ElementAt(_actualIndex).PictureSHA256);
                 }
             }
         }
@@ -106,9 +128,10 @@ namespace Wanderer
             {
                 WriteableBitmap bitmapImage = IsolatedStorageDAO.loadThumbnail(place.PictureSHA256);
                 place.Image = bitmapImage;
-                ReloadContent();
+                //ReloadContent();
                 _actualIndex++;
                 UpdateDistanceForAllPlaces(GPSTracker.CurrentLongitude, GPSTracker.CurrentLatitude);
+                //ReloadContent();
             });
         }
 
@@ -124,7 +147,7 @@ namespace Wanderer
                             WebResponse response = request.EndGetResponse(result);
                             Stream stream = response.GetResponseStream();
 
-                            ImageMetadata place = _places.ElementAt(_actualIndex);
+                            ImageMetadata place = Places.ElementAt(_actualIndex);
                             IsolatedStorageDAO.CacheThumbnail(stream, place.Width, place.Height, place.PictureSHA256);
 
                             BitmapImage image = new BitmapImage();
@@ -132,8 +155,8 @@ namespace Wanderer
                             Debug.WriteLine(_actualIndex);
                             place.Image = image;
 
-                            ReloadContent();
-                            Debug.WriteLine("elements returned " + _places.Count);
+                            //ReloadContent();
+                            Debug.WriteLine("elements returned " + Places.Count);
                             _actualIndex++;
                             ProcessNextPlace();
                         }
@@ -143,6 +166,7 @@ namespace Wanderer
                             return;
                         }
                         UpdateDistanceForAllPlaces(GPSTracker.CurrentLongitude, GPSTracker.CurrentLatitude);
+                        //ReloadContent();
                     });
             }
         }
@@ -169,18 +193,23 @@ namespace Wanderer
                     FrameworkElement element = (FrameworkElement)sender;
                     ImageMetadata metadata = (ImageMetadata)element.DataContext;
                     metadata.ToggleDescriptions();
-                    PlacesListBox.ItemsSource = null;
-                    PlacesListBox.ItemsSource = _places;
+                 
+                    ReloadContent();
+                //    PlacesListBox.ItemsSource = null;
+                //    PlacesListBox.ItemsSource = Places;
                 }
             });
         }
 
         private void ButtonClick(object sender, RoutedEventArgs e)
         {
-            if (_actualNumberOfElementsInList != _allPlaces.Count)
+            lock (this)
             {
-                _actualNumberOfElementsInList += _increaseAmount;
-                ProcessNextPlace();
+                if (_actualNumberOfElementsInList != _allPlaces.Count)
+                {
+                    _actualNumberOfElementsInList += _increaseAmount;
+                    ProcessNextPlace();
+                }
             }
         }
 
@@ -198,15 +227,48 @@ namespace Wanderer
 
         public void UpdateDistanceForAllPlaces(double currentLogitude, double currentLatitude)
         {
-            foreach (ImageMetadata place in _places)
+            lock (this)
             {
-                place.UpdateDistance(currentLogitude, currentLatitude);
+                foreach (ImageMetadata place in Places)
+                {
+                    place.UpdateDistance(currentLogitude, currentLatitude);
+                }
+                sortByDistance(_allPlaces);
+                sortByDistance(Places);
             }
         }
 
         private void PlacesListBoxManipulationCompleted(object sender, System.Windows.Input.ManipulationCompletedEventArgs e)
         {
             Debug.WriteLine(" Handler ");
+        }
+
+        private void sortByDistance(List<ImageMetadata> listToSort)
+        {
+            listToSort.Sort(delegate(ImageMetadata x, ImageMetadata y)
+            {
+                if (x.CurrentDistance == null && y.CurrentDistance == null
+                    || x.CurrentDistance.Equals(y.CurrentDistance))
+                {
+                    return 0;
+                }
+                else if (x.CurrentDistance == null)
+                {
+                    return -1;
+                }
+                else if (y.CurrentDistance == null)
+                {
+                    return 1;
+                }
+                else
+                {
+                    return Convert.ToDouble(x.CurrentDistance.Replace(" km", "")) > Convert.ToDouble(y.CurrentDistance.Replace(" km", "")) ? 1 : -1;
+                }
+            });
+            Deployment.Current.Dispatcher.BeginInvoke(delegate
+            {
+                ReloadContent();
+            });
         }
 
     }

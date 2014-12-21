@@ -716,10 +716,10 @@ namespace Wanderer
 
         private void UpdateDescriptionCanvasProperties(Point point)
         {
-            point.LeftPrimaryDescriptionTextBlock.FontSize = Configuration.PrimaryDescriptionFontSize;// *currentScale;
-            point.LeftSecondaryDescriptionTextBlock.FontSize = Configuration.SecondaryDescriptionFontSize;// *currentScale;
-            point.RightPrimaryDescriptionTextBlock.FontSize = Configuration.PrimaryDescriptionFontSize;// *currentScale;
-            point.RightSecondaryDescriptionTextBlock.FontSize = Configuration.SecondaryDescriptionFontSize;// *currentScale;
+            point.LeftPrimaryDescriptionTextBlock.FontSize = Configuration.PrimaryDescriptionFontSize;
+            point.LeftSecondaryDescriptionTextBlock.FontSize = Configuration.SecondaryDescriptionFontSize;
+            point.RightPrimaryDescriptionTextBlock.FontSize = Configuration.PrimaryDescriptionFontSize;
+            point.RightSecondaryDescriptionTextBlock.FontSize = Configuration.SecondaryDescriptionFontSize;
 
             point.RightPanoramaLine.X1 = ComputeRelativeX(point.X);
             point.RightPanoramaLine.X2 = point.RightPanoramaLine.X1;

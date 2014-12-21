@@ -18,22 +18,67 @@ namespace Wanderer
 
         private static readonly double Degrees_To_Kilometers_Factor = 111;
 
-        public static double CurrentLongitude { get; private set; }
-        public static double CurrentLatitude { get; private set; }
+        private static double _currentLongitude;
+        private static double _currentLatitude;
+
+
+        public static double CurrentLongitude
+        {
+            get
+            {
+                return _currentLongitude;
+            }
+            private set
+            {
+                _currentLongitude = value;
+                Configuration.saveSettingProperty("LastKnownLogitude", value);
+            }
+        }
+        public static double CurrentLatitude
+        {
+            get
+            {
+                return _currentLatitude;
+            }
+            private set
+            {
+                _currentLatitude = value;
+                Configuration.saveSettingProperty("LastKnownLatitude", value);
+            }
+        }
 
         private readonly ListOfPlaces _listOfPlaces;
         private Geolocator _geolocator = null;
 
         public GPSTracker(ListOfPlaces listOfPlaces)
         {
-            CurrentLongitude = LocationUnknown;
-            CurrentLatitude = LocationUnknown;
             this._listOfPlaces = listOfPlaces;
+        }
+
+        public static void LoadLastKnownPositionIfExists()
+        {
+            if (Configuration.getSettingProperty("LastKnownLogitude") != null)
+            {
+                CurrentLongitude = (double)Configuration.getSettingProperty("LastKnownLogitude");
+                Debug.WriteLine("LAST KNOWN LONGITUDE : " + CurrentLongitude + "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+            }
+            else
+            {
+                CurrentLongitude = LocationUnknown;
+            }
+            if (Configuration.getSettingProperty("LastKnownLatitude") != null)
+            {
+                CurrentLatitude = (double)Configuration.getSettingProperty("LastKnownLatitude");
+            }
+            else
+            {
+                CurrentLatitude = LocationUnknown;
+            }
         }
 
         public static double ComputeDistance(double x1, double y1, double x2, double y2)
         {
-            return Math.Sqrt(Math.Pow(Math.Abs(x1 - x2) * Degrees_To_Kilometers_Factor, 2) 
+            return Math.Sqrt(Math.Pow(Math.Abs(x1 - x2) * Degrees_To_Kilometers_Factor, 2)
                 + Math.Pow(Math.Abs(y1 - y2) * Degrees_To_Kilometers_Factor, 2));
         }
 
@@ -65,6 +110,7 @@ namespace Wanderer
             {
                 _geolocator.PositionChanged -= GeolocatorPositionChanged;
                 _geolocator.StatusChanged -= GeolocatorStatusChanged;
+
                 _geolocator = null;
 
             }

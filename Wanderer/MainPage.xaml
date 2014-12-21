@@ -3,6 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:phone="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone"
+    xmlns:toolkit="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone.Controls.Toolkit"
     xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
     xmlns:controls="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -31,6 +32,18 @@
                     <CheckBox Background="Red" Checked="UseGPSCheckboxChecked" Name="UseGPSCheckbox" Unchecked="UseGPSCheckboxUnchecked">
                         <TextBlock>Używaj GPS</TextBlock>
                     </CheckBox>
+                    <StackPanel Orientation="Vertical">
+                        <TextBlock>Rozmiar czcionki podstawowego opisu</TextBlock>
+                        <toolkit:ListPicker x:Name="PrimaryDescriptionFontSizePicker" SelectedItem="{Binding PrimaryDescriptionFontSize, Mode=TwoWay}" SelectionChanged="PrimaryDescriptionFontSizeSelectionChanged"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Vertical">
+                        <TextBlock>Rozmiar czcionki dodatkowego opisu</TextBlock>
+                        <toolkit:ListPicker x:Name="SecondaryDescriptionFontSizePicker" SelectedItem="{Binding SecondaryDescriptionFontSize, Mode=TwoWay}" SelectionChanged="SecondaryDescriptionFontSizeSelectionChanged"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Vertical">
+                        <TextBlock>Promień wyszukiwania miejsc (w metrach):</TextBlock>
+                        <TextBox Background="White"/>
+                    </StackPanel>
                 </StackPanel>
 
 
