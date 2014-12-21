@@ -63,7 +63,7 @@ namespace Wanderer
 
             Map.Layers.Add(myLocationLayer);
 
-            DAO.SendRequestForMetadataOfPlacesWithinRange(this, _actualPosition.Longitude, _actualPosition.Latitude, 100000000);
+            DAO.SendRequestForMetadataOfPlacesWithinRange(this, _actualPosition.Longitude, _actualPosition.Latitude, Configuration.GPSRange);
         }
 
         public void RequestCallback(IAsyncResult result)
