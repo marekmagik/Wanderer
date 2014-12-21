@@ -81,7 +81,7 @@ namespace Wanderer
 //            IsolatedStorageDAO.InitIsolatedStorageDAO();
 //>>>>>>> 2ee94d284e8ac258dbc28922c767b943f64be3ca
 
-            _gpsTracker = new GPSTracker(listOfPlaces);
+            _gpsTracker = new GPSTracker(listOfPlaces,mapPage);
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)

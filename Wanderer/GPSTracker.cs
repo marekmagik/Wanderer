@@ -48,11 +48,13 @@ namespace Wanderer
         }
 
         private readonly ListOfPlaces _listOfPlaces;
+        private readonly MapWithPlacesPage _mapPage;
         private Geolocator _geolocator = null;
 
-        public GPSTracker(ListOfPlaces listOfPlaces)
+        public GPSTracker(ListOfPlaces listOfPlaces, MapWithPlacesPage mapPage)
         {
             this._listOfPlaces = listOfPlaces;
+            this._mapPage = mapPage;
         }
 
         public static void LoadLastKnownPositionIfExists()
@@ -124,6 +126,7 @@ namespace Wanderer
             CurrentLongitude = args.Position.Coordinate.Longitude;
             CurrentLatitude = args.Position.Coordinate.Latitude;
             _listOfPlaces.UpdateDistanceForAllPlaces(CurrentLongitude, CurrentLatitude);
+            _mapPage.NotifyGeolocatorPositionChanged(CurrentLongitude, CurrentLatitude);
             Debug.WriteLine("Lon: " + CurrentLongitude + ", Lat: " + CurrentLatitude);
         }
 

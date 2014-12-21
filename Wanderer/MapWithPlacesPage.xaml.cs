@@ -24,7 +24,7 @@ namespace Wanderer
         private List<ImageMetadata> _metadataList = new List<ImageMetadata>();
         private ImageMetadata _selectedMetadata;
         private MainPage _mainPage;
-        private MapOverlay myLocationOverlay = new MapOverlay();
+        private MapOverlay myLocationOverlay = null;
         private Dictionary<ImageMetadata, MapOverlay> _pointOnMapDictionary = new Dictionary<ImageMetadata, MapOverlay>();
         private MapLayer _pointsLayer = new MapLayer();
 
@@ -33,26 +33,27 @@ namespace Wanderer
             InitializeComponent();
 
             _mainPage = mainPage;
-
-            //na razie testowo ustawione na krakow
-            _actualPosition = new GeoCoordinate(50.3, 19.9);
             Map.CartographicMode = MapCartographicMode.Terrain;
-            Map.Center = _actualPosition;
-            //Map.ZoomLevel = 10;
-
-            ShowLocationOnMap(_actualPosition);
-            DAO.SendRequestForMetadataOfPlacesWithinRange(this, _actualPosition.Longitude, _actualPosition.Latitude, 100000000);
+            if (GPSTracker.CurrentLatitude != GPSTracker.LocationUnknown && GPSTracker.CurrentLongitude != GPSTracker.LocationUnknown)
+            {
+                _actualPosition = new GeoCoordinate(GPSTracker.CurrentLatitude, GPSTracker.CurrentLongitude);
+                ShowLocationOnMap(_actualPosition);
+            }
+            
         }
 
         private void ShowLocationOnMap(GeoCoordinate position)
         {
+            Map.Center = _actualPosition;
+            Map.ZoomLevel = 10;
+
             Ellipse myCircle = new Ellipse();
             myCircle.Fill = new SolidColorBrush(Colors.Blue);
             myCircle.Height = 20;
             myCircle.Width = 20;
             myCircle.Opacity = 50;
 
-
+            myLocationOverlay = new MapOverlay();
             myLocationOverlay.Content = myCircle;
             myLocationOverlay.PositionOrigin = new System.Windows.Point(0.5, 0.5);
             myLocationOverlay.GeoCoordinate = position;
@@ -61,6 +62,8 @@ namespace Wanderer
             myLocationLayer.Add(myLocationOverlay);
 
             Map.Layers.Add(myLocationLayer);
+
+            DAO.SendRequestForMetadataOfPlacesWithinRange(this, _actualPosition.Longitude, _actualPosition.Latitude, 100000000);
         }
 
         public void RequestCallback(IAsyncResult result)
@@ -102,7 +105,7 @@ namespace Wanderer
                         myCircle.Height = 20;
                         myCircle.Width = 20;
                         myCircle.Opacity = 50;
-                        myCircle.Tap += myCircle_Tap;
+                        myCircle.Tap += ShowContextMenu;
                         myCircle.DataContext = metadata;
 
                         MapOverlay myPointOverlay = new MapOverlay();
@@ -118,16 +121,22 @@ namespace Wanderer
                 });
         }
 
-        void myCircle_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        void ShowContextMenu(object sender, System.Windows.Input.GestureEventArgs e)
         {
             ContextMenu.Width = MainGrid.ActualWidth - 10;
+            Thumbnail.Source = null;
 
             Debug.WriteLine(" Tap on point handler ");
             Ellipse ellipse = sender as Ellipse;
             ImageMetadata metadata = ellipse.DataContext as ImageMetadata;
             _selectedMetadata = metadata;
 
-            DAO.SendRequestForThumbnail(this, metadata.PictureSHA256);
+            if(IsolatedStorageDAO.IsThumbnailCached(metadata.PictureSHA256)){
+                WriteableBitmap image = IsolatedStorageDAO.loadThumbnail(metadata.PictureSHA256);
+                Thumbnail.Source = image;
+            }
+            else
+                DAO.SendRequestForThumbnail(this, metadata.PictureSHA256);
 
             Debug.WriteLine(metadata.PictureDescription);
             PrimaryDescription.Text = metadata.PictureDescription;
@@ -177,7 +186,16 @@ namespace Wanderer
 
         public void NotifyGeolocatorPositionChanged(double longitude, double latitude)
         {
-            myLocationOverlay.GeoCoordinate = new GeoCoordinate(latitude, longitude);
+            Deployment.Current.Dispatcher.BeginInvoke(delegate
+                {
+                    if (myLocationOverlay == null)
+                    {
+                        _actualPosition = new GeoCoordinate(latitude, longitude);
+                        ShowLocationOnMap(_actualPosition);
+                    }
+                    else
+                        myLocationOverlay.GeoCoordinate = new GeoCoordinate(latitude, longitude);
+                });
         }
 
         public void NotifyPlacesListUpdated(List<ImageMetadata> newList)
@@ -208,7 +226,7 @@ namespace Wanderer
                             myCircle.Height = 20;
                             myCircle.Width = 20;
                             myCircle.Opacity = 50;
-                            myCircle.Tap += myCircle_Tap;
+                            myCircle.Tap += ShowContextMenu;
                             myCircle.DataContext = metadata;
 
                             MapOverlay myPointOverlay = new MapOverlay();
