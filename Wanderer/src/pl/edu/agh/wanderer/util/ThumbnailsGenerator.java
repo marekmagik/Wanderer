@@ -10,11 +10,24 @@ import javax.imageio.ImageIO;
 import org.imgscalr.Scalr;
 import org.imgscalr.Scalr.Mode;
 
+/**
+ * Klasa utilowa sluzaca generowaniu miniaturek
+ *
+ */
 public class ThumbnailsGenerator {
 
 	private static final int THUMBNAIL_WIDTH = 600;
 	private static final int THUMBNAIL_HEIGHT = 140;
 
+	/**
+	 * Metoda generujaca miniaturke zdjecia
+	 * 
+	 * @param image zdjecie
+	 * @param width szerokosc zdjecia
+	 * @param height wysokosc zdjecia
+	 * @return miniaturka
+	 * @throws IOException
+	 */
 	public static ByteArrayInputStream generateThumbnail(ByteArrayInputStream image, int width, int height) throws IOException {
 		BufferedImage bufferedImage = ImageIO.read(image);
 		image.reset();
@@ -25,6 +38,12 @@ public class ThumbnailsGenerator {
 		return new ByteArrayInputStream(baos.toByteArray());
 	}
 
+	/**
+	 * Metoda wykonujaca proces stworzenia odpowiedniego bufora z miniaturka
+	 * 
+	 * @param img zdjecie jako bufor
+	 * @return miniaturka jako bufor
+	 */
 	private static BufferedImage generateThumbnail(BufferedImage img) {
 		double perfectScale = ((double) THUMBNAIL_WIDTH) / ((double) THUMBNAIL_HEIGHT);
 		double actualScale = ((double) img.getWidth()) / ((double) img.getHeight());

@@ -7,11 +7,16 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import pl.edu.agh.wanderer.dao.PostgresDB;
 
 @Path("/places")
 public class Places {
 
+	private final Logger logger = LogManager.getLogger(Places.class);
+	
 	/**
 	 * Metoda zwracajace opis dla miejsca o danym id. Metoda do celow testowych.
 	 * 
@@ -26,7 +31,7 @@ public class Places {
 	@Produces(MediaType.TEXT_PLAIN)
 	public String getPlaceDesc(@PathParam("id") String placeId) throws Exception {
 
-		System.out.println(" Sending description for place with id " + placeId);
+		logger.debug(" Sending description for place with id " + placeId);
 		PostgresDB dao = new PostgresDB();
 		String myString = dao.getPlaceDesc(Integer.parseInt(placeId));
 
@@ -53,20 +58,26 @@ public class Places {
 	public String getPointsInRange(@PathParam("lon") String lon, @PathParam("lat") String lat,
 			@PathParam("range") String range) throws Exception {
 
-		System.out.println(" Received request for places ");
-		System.out.println(lon + " " + lat + " " + range);
+		logger.debug(" Received request for places ");
+		logger.debug(lon + " " + lat + " " + range);
 
 		PostgresDB dao = new PostgresDB();
 		String myString = dao.getPointsWithinRange(lon, lat, range);
 
 		if (myString == null)
-			System.out.println(" Failed to get points from DB");
+			logger.debug(" Failed to get points from DB");
 		else
-			System.out.println(myString);
+			logger.debug(myString);
 
 		return myString;
 	}
 	
+	/**
+	 * Metoda zwracajaca wszystkie miejsca z poczekalni
+	 * 
+	 * @return lista miejsc w formacie JSON
+	 * @throws Exception
+	 */
 	@Path("/get/all")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
@@ -77,11 +88,18 @@ public class Places {
 		return myString;
 	}
 
+	/**
+	 * Metoda usuwajaca dane miejsce (oraz powiazane zdjecie i miniature)
+	 * 
+	 * @param hash skrot SHA powiazany z miejscem
+	 * @return status wykonania operacji, 200 - OK, 500 - ERROR
+	 * @throws Exception
+	 */
 	@Path("/delete/waiting/{hash}")
 	@DELETE
 	@Produces(MediaType.TEXT_PLAIN)
 	public String deletePlaceFromWaitingRoom(@PathParam("hash")String hash) throws Exception {
-		System.out.println(" Received delete request "+hash);
+		logger.debug(" Received delete request "+hash);
 		
 		PostgresDB dao = new PostgresDB();
 		boolean result = dao.deletePlaceFromWaitingRoom(hash);
@@ -91,6 +109,13 @@ public class Places {
 			return "500";
 	}
 	
+	/**
+	 * Pobiera wszystkie miejsca o danej kategori
+	 * 
+	 * @param category szukana kategoria
+	 * @return lista miejsc w formacie JSON
+	 * @throws Exception
+	 */
 	@Path("/get/category/{category}")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
@@ -100,6 +125,11 @@ public class Places {
 		return json;
 	}
 	
+	/**
+	 * Metoda pobiera wszystkie dostepne w bazie kategorie
+	 * 
+	 * @return lista kategori w formacie JSON
+	 */
 	@Path("/get/categories")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)

@@ -8,6 +8,8 @@ import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -23,6 +25,8 @@ import pl.edu.agh.wanderer.model.Point;
  */
 public class JSONConverter {
 
+	private final Logger logger = LogManager.getLogger(JSONConverter.class);
+	
 	/**
 	 * Metoda konwertujaca wynik zapytania z bazy danych na dane w formacie JSON
 	 * (JSONArray).
@@ -52,49 +56,34 @@ public class JSONConverter {
 
 					if (rsmd.getColumnType(i) == java.sql.Types.ARRAY) {
 						obj.put(column_name, rs.getArray(column_name));
-						/* Debug */System.out.println("ToJson: ARRAY");
 					} else if (rsmd.getColumnType(i) == java.sql.Types.BIGINT) {
 						obj.put(column_name, rs.getInt(column_name));
-						/* Debug */System.out.println("ToJson: BIGINT");
 					} else if (rsmd.getColumnType(i) == java.sql.Types.BOOLEAN) {
 						obj.put(column_name, rs.getBoolean(column_name));
-						/* Debug */System.out.println("ToJson: BOOLEAN");
 					} else if (rsmd.getColumnType(i) == java.sql.Types.BLOB) {
 						obj.put(column_name, rs.getBlob(column_name));
-						/* Debug */System.out.println("ToJson: BLOB");
 					} else if (rsmd.getColumnType(i) == java.sql.Types.DOUBLE) {
 						obj.put(column_name, rs.getDouble(column_name));
-						/* Debug */System.out.println("ToJson: DOUBLE");
 					} else if (rsmd.getColumnType(i) == java.sql.Types.FLOAT) {
 						obj.put(column_name, rs.getFloat(column_name));
-						/* Debug */System.out.println("ToJson: FLOAT");
 					} else if (rsmd.getColumnType(i) == java.sql.Types.INTEGER) {
 						obj.put(column_name, rs.getInt(column_name));
-						/* Debug */System.out.println("ToJson: INTEGER");
 					} else if (rsmd.getColumnType(i) == java.sql.Types.NVARCHAR) {
 						obj.put(column_name, rs.getNString(column_name));
-						/* Debug */System.out.println("ToJson: NVARCHAR");
 					} else if (rsmd.getColumnType(i) == java.sql.Types.VARCHAR) {
 						obj.put(column_name, rs.getString(column_name));
-						/* Debug */System.out.println("ToJson: VARCHAR");
 					} else if (rsmd.getColumnType(i) == java.sql.Types.TINYINT) {
 						obj.put(column_name, rs.getInt(column_name));
-						/* Debug */System.out.println("ToJson: TINYINT");
 					} else if (rsmd.getColumnType(i) == java.sql.Types.SMALLINT) {
 						obj.put(column_name, rs.getInt(column_name));
-						/* Debug */System.out.println("ToJson: SMALLINT");
 					} else if (rsmd.getColumnType(i) == java.sql.Types.DATE) {
 						obj.put(column_name, rs.getDate(column_name));
-						/* Debug */System.out.println("ToJson: DATE");
 					} else if (rsmd.getColumnType(i) == java.sql.Types.TIMESTAMP) {
 						obj.put(column_name, rs.getTimestamp(column_name));
-						/* Debug */System.out.println("ToJson: TIMESTAMP");
 					} else if (rsmd.getColumnType(i) == java.sql.Types.NUMERIC) {
 						obj.put(column_name, rs.getBigDecimal(column_name));
-						/* Debug */System.out.println("ToJson: NUMERIC");
 					} else {
 						obj.put(column_name, rs.getObject(column_name));
-						/* Debug */System.out.println("ToJson: Object " + column_name);
 					}
 				}
 
@@ -194,10 +183,28 @@ public class JSONConverter {
 		return jsonObjects;
 	}
 
+	/**
+	 * Metoda konwertujaca json w postaci napisu do obiektu JSONObject
+	 * 
+	 * @param json json
+	 * @return json jako obiekt JSONObject
+	 * @throws JSONException
+	 */
 	public JSONObject toJSONArray(String json) throws JSONException {
 		return new JSONObject(json);
 	}
 
+	/**
+	 * Metoda konwertujaca zestaw danych o miejscu (zapisany w json'ie i tablicy bajtow)
+	 * do obiektu Metadanych 
+	 * 
+	 * @param json json opisujacy miejsce
+	 * @param image zdjecie jako tablica bajtow
+	 * @return zainicjalizowany obiekt metadanych
+	 * @throws JSONException
+	 * @throws IOException
+	 * @throws NoSuchAlgorithmException
+	 */
 	public Metadata toMetadataObject(String json, byte [] image) throws JSONException, IOException, NoSuchAlgorithmException{
 		JSONObject metadataJson = new JSONObject(json);
 		JSONArray pointsJson = metadataJson.getJSONArray("Points");
@@ -207,7 +214,7 @@ public class JSONConverter {
 		for(int i=0;i<pointsJson.length();i++){
 			JSONObject pointJson = pointsJson.getJSONObject(i);
 			Point point = new Point(pointJson);
-			System.out.println(point);
+			logger.debug(point);
 			points.add(point);
 		}
 		
@@ -216,10 +223,10 @@ public class JSONConverter {
 		ByteArrayInputStream imageInputStream = new ByteArrayInputStream(image);
 		ByteArrayInputStream thumbnailInoutStream = ThumbnailsGenerator.generateThumbnail(imageInputStream, width, height);
 		Photo photo = new Photo(imageInputStream,thumbnailInoutStream,width,height);
-		System.out.println(photo);
+		logger.debug(photo);
 		
 		Metadata metadata = new Metadata(metadataJson,photo,points);
-		System.out.println(metadata);
+		logger.debug(metadata);
 		
 		return metadata;
 	}

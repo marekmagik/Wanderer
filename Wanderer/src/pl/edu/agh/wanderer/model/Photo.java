@@ -2,6 +2,9 @@ package pl.edu.agh.wanderer.model;
 
 import java.io.ByteArrayInputStream;
 
+/**
+ * Klasa reprezentujaca zdjecie
+ */
 public class Photo {
 
 	private ByteArrayInputStream photo;

@@ -14,6 +14,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.codehaus.jettison.json.JSONException;
 
 import pl.edu.agh.wanderer.dao.PostgresDB;
@@ -21,6 +23,8 @@ import pl.edu.agh.wanderer.dao.PostgresDB;
 @Path("/photos")
 public class Photos {
 
+	private final Logger logger = LogManager.getLogger(Photos.class); 
+	
 	/**
 	 * Metoda zwracajaca dane zdjêcie w postaci tablicy bajtów.
 	 * 
@@ -35,7 +39,7 @@ public class Photos {
 	@Produces({ "image/jpeg" })
 	public Response getPlaceDesc(@PathParam("id") String photoId) throws Exception {
 
-		System.out.println(" Sending photo with id: " + photoId);
+		logger.debug(" Sending photo with id: " + photoId);
 
 		PostgresDB dao = new PostgresDB();
 		byte[] result = dao.getPhoto(photoId);
@@ -48,7 +52,7 @@ public class Photos {
 	@Produces({ "image/jpeg" })
 	public Response getImageFromWaitingRoom(@PathParam("id") String photoId) throws Exception {
 
-		System.out.println(" Sending photo with id: " + photoId);
+		logger.debug(" Sending photo with id: " + photoId);
 
 		PostgresDB dao = new PostgresDB();
 		byte[] result = dao.getPhotoFromWaitingRoom(photoId);
@@ -70,11 +74,11 @@ public class Photos {
 	@Produces({ "image/jpeg" })
 	public Response getPlaceThumbnail(@PathParam("id") String photoId) throws Exception {
 
-		System.out.println("Sending thumbnail of photo with id  " + photoId);
+		logger.debug("Sending thumbnail of photo with id  " + photoId);
 
 		PostgresDB dao = new PostgresDB();
 		byte[] result = dao.getThumbnail(photoId);
-		System.out.println(" Number of bytes: " + result.length);
+		logger.debug(" Number of bytes: " + result.length);
 		return Response.ok(result).build();
 
 	}
@@ -84,11 +88,11 @@ public class Photos {
 	@Produces({ "image/jpeg" })
 	public Response getPlaceThumbnailFromWaitingRoom(@PathParam("id") String photoId) throws Exception {
 
-		System.out.println("Sending thumbnail of photo with id  " + photoId);
+		logger.debug("Sending thumbnail of photo with id  " + photoId);
 
 		PostgresDB dao = new PostgresDB();
 		byte[] result = dao.getThumbnailFromWaitingRoom(photoId);
-		System.out.println(" Number of bytes: " + result.length);
+		logger.debug(" Number of bytes: " + result.length);
 		return Response.ok(result).build();
 
 	}
@@ -111,7 +115,7 @@ public class Photos {
 	@Produces(MediaType.TEXT_PLAIN)
 	public String setPlacePhoto(@PathParam("id") String photoId, byte[] incomingData) throws Exception {
 
-		System.out.println("Received photo id " + photoId);
+		logger.debug("Received photo id " + photoId);
 		FileOutputStream fos = new FileOutputStream("D:/img/recv.jpg");
 		fos.write(incomingData);
 		fos.close();
@@ -134,13 +138,23 @@ public class Photos {
 	@Produces(MediaType.TEXT_PLAIN)
 	public String getPhotoMetadata(@PathParam("id") String placeId) throws Exception {
 
-		System.out.println(" Sending metadata for place with id: " + placeId);
+		logger.debug(" Sending metadata for place with id: " + placeId);
 		PostgresDB dao = new PostgresDB();
 		String myString = dao.getPhotoMetadata(Integer.parseInt(placeId));
 
 		return myString;
 	}
 
+	/**
+	 * Metoda wstawiajaca do bazy komplet danych o miejscu
+	 * (lacznie ze zdjeciem i miniaturka)
+	 * 
+	 * @param mode tryp wstawiania
+	 * @param metadataLength ilosc bajtow metadanych
+	 * @param imageLength ilosc bajtow zdjecia
+	 * @param input closc przeslanych danych
+	 * @return status wykonania, 200 - OK, 500 - ERROR
+	 */
 	@Path("/insert/{mode}/{metadataLength}/{imageLength}")
 	@POST
 	@Consumes(MediaType.APPLICATION_OCTET_STREAM)
@@ -174,7 +188,7 @@ public class Photos {
 		} catch (UnsupportedEncodingException e) {
 			return "500";
 		}
-		System.out.println(metadata);
+		logger.debug(metadata);
 
 		PostgresDB dao = new PostgresDB();
 		try {
@@ -184,7 +198,7 @@ public class Photos {
 			return "500";
 		}
 
-		System.out.println(" New photo and metadata inserted ");
+		logger.debug(" New photo and metadata inserted ");
 		return "200";
 	}
 }

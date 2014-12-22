@@ -9,6 +9,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -23,7 +25,8 @@ import pl.edu.agh.wanderer.util.JSONConverter;
  */
 public class PostgresDB extends DBConnection {
 	private final JSONConverter toJsonConverter = new JSONConverter();
-
+	private final Logger logger = LogManager.getLogger(PostgresDB.class);
+	
 	/**
 	 * Metoda dokonujaca bezposredniego zapytania na bazie danych w celu
 	 * uzyskania opisu miejsca. Metoda w celach testowych.
@@ -115,6 +118,12 @@ public class PostgresDB extends DBConnection {
 		return result;
 	}
 	
+	/**
+	 * Metoda pobierajaca z poczekalni zdjecie o podanym id
+	 * 
+	 * @param photoId id zdjecia
+	 * @return zdjecie jako tablica bajtow
+	 */
 	public byte[] getPhotoFromWaitingRoom(String photoId) {
 		Connection connection = getConnection();
 		byte[] result = null;
@@ -171,6 +180,12 @@ public class PostgresDB extends DBConnection {
 		return result;
 	}
 	
+	/**
+	 * Metoda pobierajaca z poczekalni miniaturke o danym id
+	 * 
+	 * @param photoId id miniaturki
+	 * @return miniaturka jako tablica bajtow
+	 */
 	public byte[] getThumbnailFromWaitingRoom(String photoId) {
 		Connection connection = getConnection();
 		byte[] result = null;
@@ -209,7 +224,7 @@ public class PostgresDB extends DBConnection {
 	 */
 	public String getPointsWithinRange(String lon, String lat, String range) {
 		Connection connection = getConnection();
-		System.out.println("got an query");
+		logger.debug("got an query");
 		List<JSONObject> jsonObjects = new ArrayList<JSONObject>();
 		try {
 			PreparedStatement querry = connection
@@ -251,7 +266,7 @@ public class PostgresDB extends DBConnection {
 			ResultSet result = null;
 
 			int metadataID = json.getInt("metadata_id");
-			System.out.println("metadataID: " + metadataID);
+			logger.debug("metadataID: " + metadataID);
 
 			PreparedStatement querry = connection
 					.prepareStatement(query);
@@ -272,6 +287,18 @@ public class PostgresDB extends DBConnection {
 		}
 	}
 
+	/**
+	 * Metoda wstawiajaca do bazy pelny zakres danych o miejscu
+	 * (metadane, zdjecie i miniaturka) 
+	 * 
+	 * @param image zdjecie jako tablica bajtow
+	 * @param metadata metadane w formacie JSON
+	 * @param mode tryb wprowadzania danych do bazy
+	 * @return wartosc logiczna mowiaca czy operacja sie powiodla
+	 * @throws JSONException
+	 * @throws IOException
+	 * @throws NoSuchAlgorithmException
+	 */
 	public boolean insertPhotoAndMetadata(byte[] image, String metadata, String mode) throws JSONException, IOException,
 			NoSuchAlgorithmException {
 		JSONConverter converter = new JSONConverter();
@@ -377,6 +404,13 @@ public class PostgresDB extends DBConnection {
 		return true;
 	}
 
+	/**
+	 * Metoda pobierajaca wartosc klucza glownego dla metadanych
+	 * 
+	 * @param hash skrot SHA zdjecia powiazanego z metadanymi
+	 * @param mode tryb pobierania klucza
+	 * @return wartosc klucza
+	 */
 	private int getMetadataIndex(String hash, String mode) {
 		Connection connection = getConnection();
 		
@@ -407,9 +441,14 @@ public class PostgresDB extends DBConnection {
 		return result;
 	}
 
+	/**
+	 * Pobiera wszystkie miejsca znajdujace sie w poczekalni
+	 * 
+	 * @return lista miejsc w formacie JSON
+	 */
 	public String getAllPointsFromWaitingRoom() {
 		Connection connection = getConnection();
-		System.out.println("got an query");
+		logger.debug("got an query");
 		List<JSONObject> jsonObjects = new ArrayList<JSONObject>();
 		try {
 			PreparedStatement querry = connection
@@ -428,6 +467,12 @@ public class PostgresDB extends DBConnection {
 		return toJsonConverter.convertListOfJSONObjects(jsonObjects);
 	}
 
+	/**
+	 * Usuwa wszystkie dane miejsca powiazanego z odpowiednim skrotem SHA
+	 * 
+	 * @param hash skrot SHA
+	 * @return wartosc logiczna mowiaca czy operacja sie powiodla
+	 */
 	public boolean deletePlaceFromWaitingRoom(String hash) {
 		Connection connection = getConnection();
 		boolean result = true;
@@ -465,6 +510,12 @@ public class PostgresDB extends DBConnection {
 		return result;
 	}
 	
+	/**
+	 * Metoda zwraca wszystkkie miejsca o danej kategorii
+	 * 
+	 * @param category poszukiwana kategoria
+	 * @return lista miejsc w formacie JSON
+	 */
 	public String getPlacesWithCategory(String category) {
 		Connection connection = getConnection();
 		List<JSONObject> jsonObjects = new ArrayList<JSONObject>();
@@ -486,6 +537,11 @@ public class PostgresDB extends DBConnection {
 		return toJsonConverter.convertListOfJSONObjects(jsonObjects);
 	}
 	
+	/**
+	 * Metoda zwraca wszystkie rodzaje kategorii znajdujace sie w bazie
+	 * 
+	 * @return lista kategorii w formacie JSON
+	 */
 	public String getAllPlacesCategories(){
 		Connection connection = getConnection();
 		String resultJson = "{}";

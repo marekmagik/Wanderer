@@ -9,6 +9,9 @@ import org.codehaus.jettison.json.JSONObject;
 
 import pl.edu.agh.wanderer.util.HashGenerator;
 
+/**
+ * Klasa reprezentujaca metadane 
+ */
 public class Metadata {
 	private String primaryDescription;
 	private String secondaryDescription;

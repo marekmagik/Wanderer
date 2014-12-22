@@ -3,6 +3,9 @@ package pl.edu.agh.wanderer.model;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
+/**
+ * Klasa reprezentujaca punkt
+ */
 public class Point {
 	private String primaryDescription;
 	private String secondaryDescription;
