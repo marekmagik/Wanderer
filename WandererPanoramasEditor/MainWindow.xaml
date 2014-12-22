@@ -1,7 +1,7 @@
 ﻿<Window x:Class="WandererPanoramasEditor.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Panoramas Editor" Height="450" Width="1055" SizeChanged="WindowSizeChanged">
+        Title="Panoramas Editor" Height="450" Width="1055">
     <Grid Background="Beige">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="20*"/>
@@ -17,9 +17,9 @@
         BorderThickness="1" DockPanel.Dock="Top">
                 <Menu DockPanel.Dock="Top" Background="Black" Foreground="White">
                     <MenuItem Background="Black" Header="Plik">
-                        <MenuItem Foreground="Black" Header="Wczytaj zdjęcie..." Name="LoadFileMenuItem" Click="loadPanoramaFile" />
+                        <MenuItem Foreground="Black" Header="Wczytaj zdjęcie..." Name="LoadFileMenuItem" Click="LoadPanoramaFile" />
                         <MenuItem Foreground="Black" Header="Wczytaj metadane..." IsEnabled="False" Name="MetaDataMenuItem" Click="LoadMetadataFile" />
-                        <MenuItem Foreground="Black" Header="Zakończ" Name="CloseAppMenuItem" Click="closeApplication" />
+                        <MenuItem Foreground="Black" Header="Zakończ" Name="CloseAppMenuItem" Click="CloseApplication" />
                     </MenuItem>
                     <MenuItem Background="Black" Header="Kursor">
                         <MenuItem Foreground="Black" Header="Kolor" Name="ColorMenuItem" >
@@ -36,13 +36,13 @@
             </Border>
         </DockPanel>
         <Canvas Name="ImageCanvas" Background="DimGray" SizeChanged="ImageCanvasSizeChanged" Grid.ColumnSpan="2" Margin="0,23,0,0" Grid.RowSpan="2">
-            <ScrollViewer Name="ScrollViewer" ScrollChanged="ScrollViewerScrollChanged" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <ScrollViewer Name="ScrollViewer" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
                 <Canvas Name="WrappingCanvas" VerticalAlignment="Center">
-                <Image Name="Panorama" MouseLeftButtonUp="PanoramaMouseLeftButtonUp" Source="{Binding}"  Stretch="None">
-                    <Image.RenderTransform>
-                        <ScaleTransform></ScaleTransform>
-                    </Image.RenderTransform>
-                </Image>
+                    <Image Name="Panorama" MouseLeftButtonUp="PanoramaMouseLeftButtonUp" Source="{Binding}"  Stretch="None">
+                        <Image.RenderTransform>
+                            <ScaleTransform></ScaleTransform>
+                        </Image.RenderTransform>
+                    </Image>
 
                     <Line Name="PointToTextLine" Stroke="Black" StrokeThickness="2" X1="0" Y1="0" X2="100" Y2="100" Visibility="Hidden" />
 
@@ -76,9 +76,9 @@
                 </Canvas>
             </ScrollViewer>
 
-            
 
-            
+
+
 
         </Canvas>
 

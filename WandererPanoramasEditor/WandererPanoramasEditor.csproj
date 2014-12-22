@@ -73,10 +73,11 @@
     <Compile Include="AddEditPointToList.xaml.cs">
       <DependentUpon>AddEditPointToList.xaml</DependentUpon>
     </Compile>
+    <Compile Include="IServerCallback.cs" />
     <Compile Include="JSONParser.cs" />
     <Compile Include="ObservableCollection.cs" />
     <Compile Include="PropertiesFileParser.cs" />
-    <Compile Include="ServerDAO.cs" />
+    <Compile Include="ServerConnector.cs" />
     <Page Include="AddCategoryDialogWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

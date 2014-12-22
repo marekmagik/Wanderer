@@ -11,7 +11,12 @@ namespace WandererPanoramasEditor
 {
     public class ImageMetadata : INotifyPropertyChanged
     {
+        #region Members
+        private ImageSource m_thumbnail = null;
+        public event PropertyChangedEventHandler PropertyChanged;
+        #endregion
 
+        #region Properties
         public List<Point> Points { get; private set; }
         public List<Category> Categories { get; private set; }
         public double OrientationOfLeftBorder { get; set; }
@@ -22,15 +27,9 @@ namespace WandererPanoramasEditor
         public double Latitude { get; set; }
         public double Version { get; set; }
         public String PictureSHA256 { get; set; }
-
         public String Category { get; set; }
-
         public int Width { get; set; }
-
-        public int Height { get; set; }
-        //public ImageSource Thumbnail { get; set; }
-
-        private ImageSource m_thumbnail=null;
+        public int Height { get; set; }   
         public ImageSource Thumbnail
         {
             get { return m_thumbnail; }
@@ -43,14 +42,18 @@ namespace WandererPanoramasEditor
                 }
             }
         }
+        #endregion
 
+        #region Constructors
         public ImageMetadata()
         {
             Points = new List<Point>();
             Categories = new List<Category>();
         }
+        #endregion
 
-        public bool addCategory(Category category)
+        #region Methods
+        public bool AddCategory(Category category)
         {
             if (Categories.Contains(category))
             {
@@ -63,7 +66,7 @@ namespace WandererPanoramasEditor
             }
         }
 
-        public bool addPoint(Point point)
+        public bool AddPoint(Point point)
         {
             bool canAddPoint = true;
             foreach (Point p in Points)
@@ -82,10 +85,9 @@ namespace WandererPanoramasEditor
             {
                 return false;
             }
-
         }
 
-        public bool removeCategory(Category category)
+        public bool RemoveCategory(Category category)
         {
             bool canDelete = true;
             foreach (Point p in Points)
@@ -105,8 +107,6 @@ namespace WandererPanoramasEditor
             }
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
-
         private void NotifyPropertyChanged(String info)
         {
             if (PropertyChanged != null)
@@ -114,5 +114,6 @@ namespace WandererPanoramasEditor
                 PropertyChanged(this, new PropertyChangedEventArgs(info));
             }
         }
+        #endregion
     }
 }

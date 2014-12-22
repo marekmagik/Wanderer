@@ -14,19 +14,22 @@ using System.Windows.Shapes;
 
 namespace WandererPanoramasEditor
 {
-    /// <summary>
-    /// Interaction logic for CategoryManager.xaml
-    /// </summary>
     public partial class CategoriesManager : Window
     {
+        #region Members
         private readonly ImageMetadata _metadata;
+        #endregion
+
+        #region Constructors
         public CategoriesManager(ImageMetadata metadata)
         {
             InitializeComponent();
             this._metadata = metadata;
             RefreshList();
         }
+        #endregion
 
+        #region Event Handlers
         private void AddCategory(object sender, RoutedEventArgs e)
         {
             AddCategoryDialogWindow addCategoryWindow = new AddCategoryDialogWindow(_metadata, this);
@@ -36,7 +39,7 @@ namespace WandererPanoramasEditor
         private void RemoveCategory(object sender, RoutedEventArgs e)
         {
             if (CategoryList.SelectedItem != null) {
-                if (!_metadata.removeCategory((Category)CategoryList.SelectedItem)) {
+                if (!_metadata.RemoveCategory((Category)CategoryList.SelectedItem)) {
                     ToolTip tooltip = new ToolTip() { Content = "Kategoria jest w użyciu!" };
                     RemoveCategoryButton.ToolTip = tooltip;
                     tooltip.IsOpen = true;
@@ -44,11 +47,14 @@ namespace WandererPanoramasEditor
             }
             RefreshList();
         }
+        #endregion
 
+        #region Help Methods
         internal void RefreshList(){
             CategoryList.ItemsSource = null;
             CategoryList.ItemsSource = _metadata.Categories;
         }
+        #endregion
 
     }
 }

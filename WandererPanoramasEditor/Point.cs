@@ -9,6 +9,7 @@ namespace WandererPanoramasEditor
 {
     public class Point
     {
+        #region Properties
         public String PrimaryDescription { get; set; }
         public String SecondaryDescription { get; set; }
         public Category Category { get; set; }
@@ -18,7 +19,9 @@ namespace WandererPanoramasEditor
         public Char Color { get; set; }
         public double LineLength { get; set; }
         public double Angle { get; set; }
+        #endregion
 
+        #region Constructors
         public Point(double x, double y, Category category, String primaryDescription, String secondaryDescription)
         {
             this.X = x;
@@ -28,11 +31,10 @@ namespace WandererPanoramasEditor
             this.SecondaryDescription = secondaryDescription;
         }
 
-        public Point()
-        {
+        public Point() { }
+        #endregion
 
-        }
-
+        #region Methods
         public override string ToString()
         {
             return PrimaryDescription;
@@ -76,5 +78,6 @@ namespace WandererPanoramasEditor
             this.LineLength = point.LineLength;
             this.Angle = point.Angle;
         }
+        #endregion
     }
 }

@@ -23,6 +23,7 @@ namespace WandererPanoramasEditor
 
     public partial class GenerateJSONWindow : Window
     {
+        #region Members
         private readonly ImageMetadata _metadata;
         private readonly string _imageFileName;
         public static String GENERATE_JSON_MODE = "GenerateJSONMode";
@@ -31,10 +32,16 @@ namespace WandererPanoramasEditor
         private byte[] _image;
         private Boolean _shouldDeletePlaceFromWaitingList;
         private BindingList<ImageMetadata> _waitingRoomList;
+        private ServerConnector _serverConnector;
+        #endregion
 
+        #region Constructors
         public GenerateJSONWindow(ImageMetadata metadata, string imageFileName, String mode , byte [] image, bool ifDeletePlaceFromWaitingRoom, BindingList<ImageMetadata> bindingList)
         {
             InitializeComponent();
+
+            this._serverConnector = new ServerConnector();
+
             this._metadata = metadata;
             this._imageFileName = imageFileName;
             ImageDescriptionTextBox.Text = metadata.PictureDescription;
@@ -49,12 +56,19 @@ namespace WandererPanoramasEditor
             _shouldDeletePlaceFromWaitingList = ifDeletePlaceFromWaitingRoom;
             this._waitingRoomList = bindingList;
 
-            if(mode.Equals(GENERATE_JSON_MODE))
+            if (mode.Equals(GENERATE_JSON_MODE))
+            {
                 GenerateButtonTextBlock.Text = "Generuj plik metadanych";
-            else if(mode.Equals(SEND_TO_SERVER_MODE))
+            }
+            else if (mode.Equals(SEND_TO_SERVER_MODE))
+            {
                 GenerateButtonTextBlock.Text = "Wyślij na serwer";
+                JSONWindow.Title = "Wyślij plik";
+            }
         }
+        #endregion
 
+        #region Handlers
         private void GenerateButtonClick(object sender, RoutedEventArgs e)
         {
             try
@@ -109,11 +123,9 @@ namespace WandererPanoramasEditor
                 }
                 else if (_actualMode.Equals(SEND_TO_SERVER_MODE))
                 {
-
-
-                    Boolean resultOfRequest = ServerDAO.SendDataToServer(_image, _metadata);
+                    Boolean resultOfRequest = _serverConnector.SendDataToServer(_image, _metadata);
                     if (_shouldDeletePlaceFromWaitingList)
-                        resultOfRequest = ServerDAO.DeletePlaceFromWaitingRoom(_metadata.PictureSHA256);
+                        resultOfRequest = _serverConnector.DeletePlaceFromWaitingRoom(_metadata.PictureSHA256);
 
                     this.Close();
                     Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.Normal, new Action(delegate()
@@ -134,16 +146,18 @@ namespace WandererPanoramasEditor
             }
             catch (Exception)
             {
-                showToolTipOnError();
+                ShowToolTipOnError();
             }
-
         }
+        #endregion
 
-        private void showToolTipOnError()
+        #region Help Functions
+        private void ShowToolTipOnError()
         {
             ToolTip toolTip = new ToolTip() { Content = "Podane wartości są niepoprawne!" };
             GenerateButton.ToolTip = toolTip;
             toolTip.IsOpen = true;
         }
+        #endregion
     }
 }

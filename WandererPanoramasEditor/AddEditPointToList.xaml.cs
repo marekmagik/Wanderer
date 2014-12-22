@@ -17,11 +17,9 @@ using System.Windows.Shapes;
 
 namespace WandererPanoramasEditor
 {
-    /// <summary>
-    /// Interaction logic for Window1.xaml
-    /// </summary>
     public partial class AddOrEditPointToListWindow : Window
     {
+        #region Members
         private readonly ImageMetadata _metadata;
         private readonly double _x;
         private readonly double y;
@@ -30,11 +28,12 @@ namespace WandererPanoramasEditor
         private readonly TranslateTransform _translateTransform;
         private readonly RotateTransform _rotateTransform; 
         private const int TopPointMargin = 50;
-        private List<String> _colors = new List<String>{"Biały","Czarny","Żółty"};
-
+        private List<String> _colors = AvailableColors.AvailableColorsList;
         private Point _initialPoint = new Point();
         private bool _closeWindowWithButton;
+        #endregion
 
+        #region Constructors
         public AddOrEditPointToListWindow(ImageMetadata metadata, double x, double y, Point pointToEdit, MainWindow mainWindow)
         {
             InitializeComponent();
@@ -76,6 +75,7 @@ namespace WandererPanoramasEditor
 
             if (pointToEdit != null)
             {
+                SetColorInComboBox(pointToEdit.Color);
                 mainWindow.SelectedIndex = mainWindow.PointsComboBox.SelectedIndex;
                 mainWindow.PointsComboBox.SelectedIndex = -1;
                 _initialPoint.SetValues(pointToEdit);
@@ -103,11 +103,9 @@ namespace WandererPanoramasEditor
                 }
                 PointToTextLineLengthSlider.Value = pointToEdit.LineLength;
                 AngleTextSlider.Value = Math.Abs(pointToEdit.Angle);
-                Debug.WriteLine("angle: " + pointToEdit.Angle);
             }
             else
             {
-                //this._pointToEdit = new Point(x*_mainWindow.DisplayedImageScale, y*_mainWindow.DisplayedImageScale, null, "", "");
                 this._pointToEdit = new Point(x, y, null, "", "");
                 this._pointToEdit.Color = 'b';
                 ConfirmButton.Click += new RoutedEventHandler(AddPointToList);
@@ -116,52 +114,9 @@ namespace WandererPanoramasEditor
 
             UpdateDescriptionCanvasProperties();
         }
+        #endregion    
 
-        private void UpdateDescriptionCanvasProperties()
-        {
-            double translateX = 0;
-            double translateY = 0;
-            double rotationCenterX = 0;
-            double rotationCenterY = _mainWindow.DescriptionStackPanel.ActualHeight;
-
-            if (_pointToEdit.Alignment == 0)
-            {
-                translateX = _mainWindow.PointToTextLine.X2;
-                translateY = _mainWindow.PointToTextLine.Y2 - (_mainWindow.DescriptionStackPanel.ActualHeight + 5);
-                rotationCenterX = 0;
-                _pointToEdit.Angle = (-1.0) * Math.Abs(_pointToEdit.Angle);
-            }
-            if (_pointToEdit.Alignment == 1)
-            {
-                translateX = _mainWindow.PointToTextLine.X2 - (_mainWindow.DescriptionStackPanel.ActualWidth / 2.0);
-                translateY = _mainWindow.PointToTextLine.Y2 - (_mainWindow.DescriptionStackPanel.ActualHeight + 5);
-                rotationCenterX = 0.5 * _mainWindow.DescriptionStackPanel.ActualWidth;
-                _pointToEdit.Angle = (-1.0) * Math.Abs(_pointToEdit.Angle);
-            }
-            if (_pointToEdit.Alignment == 2)
-            {
-                translateX = _mainWindow.PointToTextLine.X2 - (_mainWindow.DescriptionStackPanel.ActualWidth);
-                translateY = _mainWindow.PointToTextLine.Y2 - (_mainWindow.DescriptionStackPanel.ActualHeight + 5);
-                rotationCenterX = _mainWindow.DescriptionStackPanel.ActualWidth;
-            }
-
-            TranslateTransform translateTransform = _mainWindow.DescriptionCanvas.RenderTransform as TranslateTransform;
-            translateTransform.X = translateX;
-            translateTransform.Y = translateY;
-
-            RotateTransform roateTransform = _mainWindow.DescriptionStackPanel.RenderTransform as RotateTransform;
-            _rotateTransform.CenterX = rotationCenterX;
-            _rotateTransform.CenterY = rotationCenterY;
-            _rotateTransform.Angle = _pointToEdit.Angle;
-
-            _mainWindow.DescriptionStackPanel.RenderTransform = _rotateTransform;
-
-            _mainWindow.UpdateLayout();
-            _mainWindow.DescriptionCanvas.UpdateLayout();
-        }
-
-
-
+        #region Event Handlers
         private void AddPointToList(object sender, RoutedEventArgs e)
         {
             if (CategoryComboBox.SelectedItem == null || PrimaryDescription.Text.Equals(""))
@@ -169,7 +124,7 @@ namespace WandererPanoramasEditor
                 return;
             }
             _pointToEdit.Category = (Category)CategoryComboBox.SelectedItem;
-            _metadata.addPoint(_pointToEdit);
+            _metadata.AddPoint(_pointToEdit);
             _closeWindowWithButton = true;
             Close();
         }
@@ -180,14 +135,10 @@ namespace WandererPanoramasEditor
             {
                 return;
             }
-            Debug.WriteLine(_mainWindow.DisplayedImageScale);
 
-            //_pointToEdit.X = _x * _mainWindow.DisplayedImageScale;
-            //_pointToEdit.Y = y * _mainWindow.DisplayedImageScale;
             _pointToEdit.X = _x ;
             _pointToEdit.Y = y ;
             _pointToEdit.Category = (Category)CategoryComboBox.SelectedItem;
-            Debug.WriteLine(" Length from slider "+PointToTextLineLengthSlider.Value);
             _closeWindowWithButton = true;
             Close();
         }
@@ -195,7 +146,6 @@ namespace WandererPanoramasEditor
         private void PointToTextLineLengthSliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             _mainWindow.PointToTextLine.Y2 = _mainWindow.PointToTextLine.Y1 - PointToTextLineLengthSlider.Value;
-            //_pointToEdit.LineLength = PointToTextLineLengthSlider.Value*_mainWindow.DisplayedImageScale;
             _pointToEdit.LineLength = PointToTextLineLengthSlider.Value;
             UpdateDescriptionCanvasProperties();
         }
@@ -243,17 +193,17 @@ namespace WandererPanoramasEditor
             String colorName = _colors.ElementAt(ColorComboBox.SelectedIndex);
             Color color = Colors.Black;
             Char colorSymbol = 'b';
-            if ("Biały".Equals(colorName))
+            if (AvailableColors.White.Equals(colorName))
             {
                 colorSymbol = 'w';
                 color = Colors.White;
             }
-            else if ("Czarny".Equals(colorName))
+            else if (AvailableColors.Black.Equals(colorName))
             {
                 colorSymbol = 'b';
                 color = Colors.Black;
             }
-            else if ("Żółty".Equals(colorName))
+            else if (AvailableColors.Yellow.Equals(colorName))
             {
                 colorSymbol = 'y';
                 color = Colors.Yellow;
@@ -277,6 +227,60 @@ namespace WandererPanoramasEditor
                 _mainWindow.ResetPoint = true;
             }
         }
+        #endregion
 
+        #region Help Functions
+        private void SetColorInComboBox(char color)
+        {
+            if (color.Equals('b'))
+                ColorComboBox.SelectedIndex = _colors.IndexOf(AvailableColors.Black);
+            else if (color.Equals('w'))
+                ColorComboBox.SelectedIndex = _colors.IndexOf(AvailableColors.White);
+            else if (color.Equals('y'))
+                ColorComboBox.SelectedIndex = _colors.IndexOf(AvailableColors.Yellow);
+        }
+        private void UpdateDescriptionCanvasProperties()
+        {
+            double translateX = 0;
+            double translateY = 0;
+            double rotationCenterX = 0;
+            double rotationCenterY = _mainWindow.DescriptionStackPanel.ActualHeight;
+
+            if (_pointToEdit.Alignment == 0)
+            {
+                translateX = _mainWindow.PointToTextLine.X2;
+                translateY = _mainWindow.PointToTextLine.Y2 - (_mainWindow.DescriptionStackPanel.ActualHeight + 5);
+                rotationCenterX = 0;
+                _pointToEdit.Angle = (-1.0) * Math.Abs(_pointToEdit.Angle);
+            }
+            if (_pointToEdit.Alignment == 1)
+            {
+                translateX = _mainWindow.PointToTextLine.X2 - (_mainWindow.DescriptionStackPanel.ActualWidth / 2.0);
+                translateY = _mainWindow.PointToTextLine.Y2 - (_mainWindow.DescriptionStackPanel.ActualHeight + 5);
+                rotationCenterX = 0.5 * _mainWindow.DescriptionStackPanel.ActualWidth;
+                _pointToEdit.Angle = (-1.0) * Math.Abs(_pointToEdit.Angle);
+            }
+            if (_pointToEdit.Alignment == 2)
+            {
+                translateX = _mainWindow.PointToTextLine.X2 - (_mainWindow.DescriptionStackPanel.ActualWidth);
+                translateY = _mainWindow.PointToTextLine.Y2 - (_mainWindow.DescriptionStackPanel.ActualHeight + 5);
+                rotationCenterX = _mainWindow.DescriptionStackPanel.ActualWidth;
+            }
+
+            TranslateTransform translateTransform = _mainWindow.DescriptionCanvas.RenderTransform as TranslateTransform;
+            translateTransform.X = translateX;
+            translateTransform.Y = translateY;
+
+            RotateTransform roateTransform = _mainWindow.DescriptionStackPanel.RenderTransform as RotateTransform;
+            _rotateTransform.CenterX = rotationCenterX;
+            _rotateTransform.CenterY = rotationCenterY;
+            _rotateTransform.Angle = _pointToEdit.Angle;
+
+            _mainWindow.DescriptionStackPanel.RenderTransform = _rotateTransform;
+
+            _mainWindow.UpdateLayout();
+            _mainWindow.DescriptionCanvas.UpdateLayout();
+        }
+        #endregion
     }
 }

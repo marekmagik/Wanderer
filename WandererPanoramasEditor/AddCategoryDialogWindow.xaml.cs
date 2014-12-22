@@ -14,25 +14,28 @@ using System.Windows.Shapes;
 
 namespace WandererPanoramasEditor
 {
-    /// <summary>
-    /// Interaction logic for AddCategoryDialogWindow.xaml
-    /// </summary>
     public partial class AddCategoryDialogWindow : Window
     {
+        #region Members
         private readonly ImageMetadata _metadata;
         private readonly CategoriesManager _categoriesManager;
+        #endregion
+
+        #region Constructors
         public AddCategoryDialogWindow(ImageMetadata metadata, CategoriesManager categoriesManager)
         {
             InitializeComponent();
             this._metadata = metadata;
             this._categoriesManager = categoriesManager;
         }
+        #endregion
 
-        private void addCategory(object sender, RoutedEventArgs e)
+        #region Event handlers
+        private void AddCategory(object sender, RoutedEventArgs e)
         {
             if (CategoryNameTextBox.Text != "")
             {
-                if (!_metadata.addCategory(new Category(CategoryNameTextBox.Text)))
+                if (!_metadata.AddCategory(new Category(CategoryNameTextBox.Text)))
                 {
                     ToolTip tooltip = new ToolTip() { Content = "Kategoria już istnieje!" };
                     AddCategoryButton.ToolTip = tooltip;
@@ -42,5 +45,6 @@ namespace WandererPanoramasEditor
 
             _categoriesManager.RefreshList();
         }
+        #endregion
     }
 }

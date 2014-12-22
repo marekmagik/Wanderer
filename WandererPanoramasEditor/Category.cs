@@ -8,13 +8,18 @@ namespace WandererPanoramasEditor
 {
     public class Category
     {
+        #region Properties
         public String Name { get; set; }
+        #endregion
 
+        #region Constructors
         public Category(String name)
         {
             this.Name = name;
         }
+        #endregion
 
+        #region Methods
         public override String ToString()
         {
             return Name;
@@ -46,5 +51,6 @@ namespace WandererPanoramasEditor
             return hash;
         }
 
+        #endregion
     }
 }

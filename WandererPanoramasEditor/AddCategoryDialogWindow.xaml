@@ -6,7 +6,7 @@
         <StackPanel>
             <TextBlock Margin="10,10,0,0">Podaj nazwę nowej kategorii:</TextBlock>
             <TextBox Margin="10,5" Height="25" MaxLines="1" MaxLength="40" Name="CategoryNameTextBox"></TextBox>
-            <Button Click="addCategory" Margin="10,10" Height="30" HorizontalAlignment="Right" Name="AddCategoryButton" Width="100">Dodaj</Button>
+            <Button Click="AddCategory" Margin="10,10" Height="30" HorizontalAlignment="Right" Name="AddCategoryButton" Width="100">Dodaj</Button>
         </StackPanel>
     </Grid>
 </Window>
