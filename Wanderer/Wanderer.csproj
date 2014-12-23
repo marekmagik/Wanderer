@@ -114,6 +114,7 @@
     <Compile Include="MapWithPlacesPage.xaml.cs">
       <DependentUpon>MapWithPlacesPage.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ObservablePlacesCollection.cs" />
     <Compile Include="PanoramaView.xaml.cs">
       <DependentUpon>PanoramaView.xaml</DependentUpon>
     </Compile>

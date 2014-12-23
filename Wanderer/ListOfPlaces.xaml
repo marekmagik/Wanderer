@@ -32,7 +32,7 @@
 
         <!--ContentPanel - place additional content here-->
         <Grid x:Name="ContentPanel" Grid.Row="1" Margin="12,0,12,0">
-            <ListBox ItemsSource="{Binding Places}" Height="630" Name="PlacesListBox" Width="440" ManipulationCompleted="PlacesListBoxManipulationCompleted" VerticalAlignment="Top">
+            <ListBox Height="630" Name="PlacesListBox" Width="440"  ItemsSource="{Binding Places}" VerticalAlignment="Top">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Background="DimGray" Margin="0,15,0,15"  Orientation="Vertical">

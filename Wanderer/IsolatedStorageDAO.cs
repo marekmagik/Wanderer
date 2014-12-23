@@ -281,7 +281,6 @@ namespace Wanderer
                 cachedMetadata.Add(getCachedMetadata(hash));
             }
             return cachedMetadata;
-            //throw new NotImplementedException();
         }
     }
 }
