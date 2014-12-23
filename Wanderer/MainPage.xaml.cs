@@ -154,6 +154,8 @@ namespace Wanderer
         private void WorkOnlineCheckboxChecked(object sender, RoutedEventArgs e)
         {
             Configuration.WorkOnline = true;
+            if(_mapPage.Count==0 && GPSTracker.IsEnabled)
+                DAO.SendRequestForMetadataOfPlacesWithinRange(_mapPage, GPSTracker.CurrentLongitude, GPSTracker.CurrentLatitude, Configuration.GPSRange);
         }
 
         private void WorkOnlineCheckboxUnchecked(object sender, RoutedEventArgs e)

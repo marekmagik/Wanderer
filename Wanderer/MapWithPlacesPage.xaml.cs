@@ -28,6 +28,14 @@ namespace Wanderer
         private Dictionary<ImageMetadata, MapOverlay> _pointOnMapDictionary = new Dictionary<ImageMetadata, MapOverlay>();
         private MapLayer _pointsLayer = new MapLayer();
 
+        public int Count 
+        {
+            get
+            {
+                return _metadataList.Count;
+            }
+        }
+
         public MapWithPlacesPage(MainPage mainPage)
         {
             InitializeComponent();
@@ -80,8 +88,16 @@ namespace Wanderer
 
                     Debug.WriteLine("---JSON, req : " + json);
                     JSONParser parser = new JSONParser();
-                    _metadataList.AddRange(parser.ParsePlacesJSON(json));
-                    ShowPointsOnMap();
+                    if (_metadataList.Count == 0)
+                    {
+                        _metadataList.AddRange(parser.ParsePlacesJSON(json));
+                        ShowPointsOnMap();
+                    }
+                    else
+                    {
+                        NotifyPlacesListUpdated(parser.ParsePlacesJSON(json));
+                    }
+                    
 
                 }
                 catch (WebException)
