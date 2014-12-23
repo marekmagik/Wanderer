@@ -30,6 +30,7 @@
 
         <!--ContentPanel - place additional content here-->
         <Grid x:Name="ContentPanel" Grid.Row="1" Margin="12,0,12,0">
+            <StackPanel>
             <ListBox ItemsSource="{Binding}" Height="600" Name="CategoriesListBox" Width="400" >
                 <ListBox.ItemTemplate>
                     <DataTemplate>
@@ -42,7 +43,8 @@
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
+            <Button Name="UpdateButton" Click="MarkBundlesToUpdate" Content="Sprawdź dostępne aktualizacje"></Button>
+            </StackPanel>
         </Grid>
     </Grid>
-
 </phone:PhoneApplicationPage>

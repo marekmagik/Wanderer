@@ -105,5 +105,15 @@ namespace Wanderer
                 (HttpWebRequest)HttpWebRequest.Create(uri);
             request.BeginGetResponse(callback.ThumbRequestCallback, request);
         }
+
+        public static void SendRequestForPlacesWithCategoryForUpdate(CategoriesBudlesPage callback, String category)
+        {
+            string uri = "http://" + Configuration.ServerAddress + ":7001/Wanderer/api/places/get/category/";
+
+            HttpWebRequest request =
+                (HttpWebRequest)HttpWebRequest.Create(uri + category);
+            request.Method = "GET";
+            request.BeginGetResponse(new AsyncCallback(callback.PlacesUpdateRequestCallback), request);
+        }
     }
 }

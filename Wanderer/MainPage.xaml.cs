@@ -90,7 +90,7 @@ namespace Wanderer
             CategoriesBundlesPanoramaItem.Content = categoriesPage;
             MapWithPlacesItem.Content = mapPage;
 
-            _gpsTracker = new GPSTracker(_listOfPlaces);
+            _gpsTracker = new GPSTracker(_listOfPlaces,mapPage);
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)

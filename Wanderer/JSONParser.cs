@@ -263,5 +263,30 @@ namespace Wanderer
             width = (int)textBlock.ActualWidth;
             return width;
         }
+
+        public String ConvertMetadataCategoryToJson(List<ImageMetadata> metadataList)
+        {
+            JArray array = new JArray();
+            foreach (ImageMetadata metadata in metadataList)
+            {
+                array.Add(metadata.PictureSHA256);
+            }
+
+            Debug.WriteLine(array.ToString());
+
+            return array.ToString();
+        }
+
+        public List<String> ConvertJsonToMetadataCategory(String json)
+        {
+            JArray array = JArray.Parse(json); ;
+            List<String> result = new List<string>();
+            foreach (Object obj in array.Children())
+            {
+                result.Add(obj.ToString());
+            }
+
+            return result;
+        }
     }
 }
