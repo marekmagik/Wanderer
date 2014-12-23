@@ -318,7 +318,8 @@ namespace Wanderer
         {
             Grid grid = (Grid)sender;
             TextBlock textBlock = (TextBlock)grid.Children[0];
-            _gridMap.Add(textBlock.Text, grid);
+            if(!_gridMap.ContainsKey(textBlock.Text)
+                _gridMap.Add(textBlock.Text, grid);
             if (grid.Children[1] is Button)
             {
                 Button button = (Button)grid.Children[1];
