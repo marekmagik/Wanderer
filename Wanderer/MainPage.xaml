@@ -32,6 +32,9 @@
                     <CheckBox Background="Red" Checked="UseGPSCheckboxChecked" Name="UseGPSCheckbox" Unchecked="UseGPSCheckboxUnchecked">
                         <TextBlock>Używaj GPS</TextBlock>
                     </CheckBox>
+                    <CheckBox Background="Red" Checked="WorkOnlineCheckboxChecked" Name="WorkOnlineCheckbox" Unchecked="WorkOnlineCheckboxUnchecked">
+                        <TextBlock>Tryb online</TextBlock>
+                    </CheckBox>
                     <StackPanel Orientation="Vertical">
                         <TextBlock>Rozmiar czcionki podstawowego opisu</TextBlock>
                         <toolkit:ListPicker x:Name="PrimaryDescriptionFontSizePicker" SelectedItem="{Binding PrimaryDescriptionFontSize, Mode=TwoWay}" SelectionChanged="PrimaryDescriptionFontSizeSelectionChanged"/>
@@ -42,7 +45,8 @@
                     </StackPanel>
                     <StackPanel Orientation="Vertical">
                         <TextBlock>Promień wyszukiwania miejsc (w metrach):</TextBlock>
-                        <TextBox Background="White"/>
+                        <TextBox Background="White" Text="{Binding GPSRange}" InputScope="Number" Name="GPSRangeTextBox" TextChanged="TextBoxTextChanged">
+                        </TextBox>
                     </StackPanel>
                 </StackPanel>
 

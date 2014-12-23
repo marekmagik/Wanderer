@@ -17,6 +17,7 @@ namespace Wanderer
     {
         private GPSTracker _gpsTracker;
         private static bool _initialized = false;
+        private ListOfPlaces _listOfPlaces = null;
 
         public int PrimaryDescriptionFontSize
         {
@@ -40,59 +41,70 @@ namespace Wanderer
                 Configuration.SecondaryDescriptionFontSize = value;
             }
         }
-        private Int32 GPSRange
+        private String GPSRange
         {
             get
             {
-                return Configuration.GPSRange;
+                return Convert.ToString(Configuration.GPSRange);
             }
             set
             {
-                Configuration.GPSRange = value;
+                Configuration.GPSRange = Convert.ToInt32(value);
+                _listOfPlaces.UpdateDistanceForAllPlaces(GPSTracker.CurrentLongitude, GPSTracker.CurrentLatitude);
             }
         }
 
+        public GPSTracker GPSTracker
+        {
+            get
+            {
+                return _gpsTracker;
+            }
+        }
 
         private List<int> PossiblePrimaryDescriptionFontSizes = new List<int>() { 15, 20, 25, 30, 35 };
         private List<int> PossibleSecondaryDescriptionFontSizes = new List<int>() { 10, 15, 20, 25, 30 };
         public MainPage()
         {
+            Configuration.loadConfiguration();
+
             InitializeComponent();
 
-            Configuration.loadConfiguration();
             GPSTracker.LoadLastKnownPositionIfExists();
-            
+
             PrimaryDescriptionFontSizePicker.ItemsSource = PossiblePrimaryDescriptionFontSizes;
             PrimaryDescriptionFontSizePicker.SelectedItem = PrimaryDescriptionFontSize;
             SecondaryDescriptionFontSizePicker.ItemsSource = PossibleSecondaryDescriptionFontSizes;
             SecondaryDescriptionFontSizePicker.SelectedItem = SecondaryDescriptionFontSize;
 
+            GPSRangeTextBox.Text = GPSRange;
+            WorkOnlineCheckbox.IsChecked = Configuration.WorkOnline;
+
             IsolatedStorageDAO.InitIsolatedStorageDAO();
 
-            ListOfPlaces listOfPlaces = new ListOfPlaces(this);
+            _listOfPlaces = new ListOfPlaces(this);
             CategoriesBudlesPage categoriesPage = new CategoriesBudlesPage();
             MapWithPlacesPage mapPage = new MapWithPlacesPage(this);
 
-            ListOfPlacesPanoraaItem.Content = listOfPlaces;
-//<<<<<<< HEAD
-///=======
+            ListOfPlacesPanoraaItem.Content = _listOfPlaces;
             CategoriesBundlesPanoramaItem.Content = categoriesPage;
             MapWithPlacesItem.Content = mapPage;
-//            IsolatedStorageDAO.InitIsolatedStorageDAO();
-//>>>>>>> 2ee94d284e8ac258dbc28922c767b943f64be3ca
 
-            _gpsTracker = new GPSTracker(listOfPlaces,mapPage);
+            _gpsTracker = new GPSTracker(_listOfPlaces,mapPage);
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
-            ((ListOfPlaces)ListOfPlacesPanoraaItem.Content).ReloadContent();
+            ((ListOfPlaces)ListOfPlacesPanoraaItem.Content).UpdateDistanceForAllPlaces(GPSTracker.CurrentLongitude, GPSTracker.CurrentLatitude);
+
             if (_initialized)
             {
                 _gpsTracker.activateGPSTracker();
             }
-            else {
-                if (Configuration.UseGPS) {
+            else
+            {
+                if (Configuration.UseGPS)
+                {
                     Configuration.UseGPS = false;
                     UseGPSCheckbox.IsChecked = true;
                 }
@@ -137,6 +149,17 @@ namespace Wanderer
             }
         }
 
+
+        private void WorkOnlineCheckboxChecked(object sender, RoutedEventArgs e)
+        {
+            Configuration.WorkOnline = true;
+        }
+
+        private void WorkOnlineCheckboxUnchecked(object sender, RoutedEventArgs e)
+        {
+            Configuration.WorkOnline = false;
+        }
+
         private void PrimaryDescriptionFontSizeSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             Configuration.PrimaryDescriptionFontSize = (int)((ListPicker)sender).SelectedItem;
@@ -145,6 +168,33 @@ namespace Wanderer
         private void SecondaryDescriptionFontSizeSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             Configuration.SecondaryDescriptionFontSize = (int)((ListPicker)sender).SelectedItem;
+        }
+
+        private void TextBoxTextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (GPSRangeTextBox.Text.Equals("0"))
+            {
+                return;
+            }
+            if (GPSRangeTextBox.Text.StartsWith("0"))
+            {
+                GPSRangeTextBox.Text = GPSRangeTextBox.Text.Replace("0", "");
+            }
+            int position = GPSRangeTextBox.Text.IndexOf(",");
+            if (position >= 0)
+            {
+                GPSRangeTextBox.Text = GPSRangeTextBox.Text.Substring(0, position);
+                GPSRangeTextBox.Select(GPSRangeTextBox.Text.Length, 0);
+            }
+            if (GPSRangeTextBox.Text.Length > 0)
+            {
+                GPSRange = GPSRangeTextBox.Text;
+            }
+            else
+            {
+                GPSRangeTextBox.Text = "0";
+                GPSRangeTextBox.Select(GPSRangeTextBox.Text.Length, 0);
+            }
         }
 
     }

@@ -15,6 +15,7 @@ namespace Wanderer
         private static int _primaryDescriptionFontSize;
         private static int _secondaryDescriptionFontSize;
         private static bool _useGPS;
+        private static bool _workOnline;
         private static Int32 _GPSRange;
         private static String _serverAddress;
 
@@ -56,6 +57,17 @@ namespace Wanderer
                 saveSettingProperty("useGPS", value);
             }
         }
+
+        public static bool WorkOnline {
+            get {
+                return _workOnline;
+            }
+            set {
+                _workOnline = value;
+                saveSettingProperty("workOnline", value);
+            }
+        }
+
         public static Int32 GPSRange
         {
             get
@@ -118,13 +130,15 @@ namespace Wanderer
                 Configuration.ServerAddress = (String)getSettingProperty("serverAddress");
                 Configuration.UseGPS = (bool)getSettingProperty("useGPS");
                 Configuration.GPSRange = (Int32)getSettingProperty("GPSRange");
+                Configuration.WorkOnline = (bool)getSettingProperty("workOnline");
             }
             else
             {
                 Configuration.PrimaryDescriptionFontSize = 20;
                 Configuration.SecondaryDescriptionFontSize = 15;
-                Configuration.ServerAddress = "192.168.0.12";
+                Configuration.ServerAddress = "192.168.1.100";
                 Configuration.UseGPS = false;
+                Configuration.WorkOnline = false;
                 Configuration.GPSRange = 100000000;
             }
         }
