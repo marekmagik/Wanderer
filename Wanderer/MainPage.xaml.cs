@@ -18,6 +18,7 @@ namespace Wanderer
         private GPSTracker _gpsTracker;
         private static bool _initialized = false;
         private ListOfPlaces _listOfPlaces = null;
+        private MapWithPlacesPage _mapPage = null;
 
         public int PrimaryDescriptionFontSize
         {
@@ -84,13 +85,13 @@ namespace Wanderer
 
             _listOfPlaces = new ListOfPlaces(this);
             CategoriesBudlesPage categoriesPage = new CategoriesBudlesPage();
-            MapWithPlacesPage mapPage = new MapWithPlacesPage(this);
+            _mapPage = new MapWithPlacesPage(this);
 
             ListOfPlacesPanoraaItem.Content = _listOfPlaces;
             CategoriesBundlesPanoramaItem.Content = categoriesPage;
-            MapWithPlacesItem.Content = mapPage;
+            MapWithPlacesItem.Content = _mapPage;
 
-            _gpsTracker = new GPSTracker(_listOfPlaces,mapPage);
+            _gpsTracker = new GPSTracker(_listOfPlaces,_mapPage);
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)

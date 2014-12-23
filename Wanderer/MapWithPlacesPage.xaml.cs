@@ -86,6 +86,8 @@ namespace Wanderer
                 }
                 catch (WebException)
                 {
+                    _metadataList.AddRange(IsolatedStorageDAO.getAllCachedMetadatas());
+                    ShowPointsOnMap();
                     return;
                 }
             }
