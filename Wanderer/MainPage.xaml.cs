@@ -18,6 +18,7 @@ namespace Wanderer
         private GPSTracker _gpsTracker;
         private static bool _initialized = false;
         private ListOfPlaces _listOfPlaces = null;
+        private CategoriesBudlesPage _categoriesPage;
 
         public int PrimaryDescriptionFontSize
         {
@@ -83,11 +84,11 @@ namespace Wanderer
             IsolatedStorageDAO.InitIsolatedStorageDAO();
 
             _listOfPlaces = new ListOfPlaces(this);
-            CategoriesBudlesPage categoriesPage = new CategoriesBudlesPage();
+            _categoriesPage = new CategoriesBudlesPage(_listOfPlaces);
             MapWithPlacesPage mapPage = new MapWithPlacesPage(this);
 
             ListOfPlacesPanoraaItem.Content = _listOfPlaces;
-            CategoriesBundlesPanoramaItem.Content = categoriesPage;
+            CategoriesBundlesPanoramaItem.Content = _categoriesPage;
             MapWithPlacesItem.Content = mapPage;
 
             _gpsTracker = new GPSTracker(_listOfPlaces,mapPage);

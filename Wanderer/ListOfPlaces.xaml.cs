@@ -140,7 +140,7 @@ namespace Wanderer
             }
         }
 
-        private void LoadPhotoFromIsolatedStorage(ImageMetadata place)
+        public void LoadPhotoFromIsolatedStorage(ImageMetadata place)
         {
             Debug.WriteLine(" Loading from iso ");
             Deployment.Current.Dispatcher.BeginInvoke(delegate
@@ -312,6 +312,13 @@ namespace Wanderer
             {
                 handler(this, new PropertyChangedEventArgs(name));
             }
+        }
+
+        public void insertPlace(ImageMetadata place) { 
+            if(!_invisiblePlaces.Contains(place) && !Places.Contains(place)){
+                _invisiblePlaces.Add(place);
+            }
+            UpdateDistanceForAllPlaces(GPSTracker.CurrentLongitude, GPSTracker.CurrentLatitude);
         }
 
         public static void CopyElementsToObservableCollection(ObservableCollection<ImageMetadata> target, List<ImageMetadata> source)

@@ -136,7 +136,7 @@ namespace Wanderer
             {
                 Configuration.PrimaryDescriptionFontSize = 20;
                 Configuration.SecondaryDescriptionFontSize = 15;
-                Configuration.ServerAddress = "192.168.1.100";
+                Configuration.ServerAddress = "10.20.120.20"; //"10.22.122.154";
                 Configuration.UseGPS = false;
                 Configuration.WorkOnline = false;
                 Configuration.GPSRange = 100000000;

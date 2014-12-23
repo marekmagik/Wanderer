@@ -30,13 +30,17 @@ namespace Wanderer
         private const String _actionDownloadPanorama = "pano";
         private IEnumerator<String> _categoriesEnumerator = null;
         private Dictionary<String, Grid> _gridMap = new Dictionary<string, Grid>();
+        private ListOfPlaces _listOfPlaces;
 
-        public CategoriesBudlesPage()
+        public CategoriesBudlesPage(ListOfPlaces listOfPlaces)
         {
-
+            this._listOfPlaces = listOfPlaces;
             InitializeComponent();
             CategoriesListBox.DataContext = _categories;
-            DAO.SendRequestForCategories(this);
+            if (Configuration.WorkOnline)
+            {
+                DAO.SendRequestForCategories(this);
+            }
         }
 
 
@@ -69,6 +73,7 @@ namespace Wanderer
                         Debug.WriteLine("wyjatek wewnatrz UI!");
                         return;
                     }
+                    _isDownloadingInProgress = false;
                 });
             }
         }
@@ -88,6 +93,8 @@ namespace Wanderer
 
                     PerformNearestAction(_actionDownloadPanorama);
                     //DAO.SendRequestForPanorama(this, place.PictureSHA256);
+
+                    //_listOfPlaces.insertPlace(place);
 
                 }
                 catch (WebException)
@@ -111,6 +118,10 @@ namespace Wanderer
 
                     ImageMetadata place = _metadataEnumerator.Current;
                     IsolatedStorageDAO.CachePhoto(stream, place.Width, place.Height, place);
+
+                    _listOfPlaces.LoadPhotoFromIsolatedStorage(place);
+                    _listOfPlaces.insertPlace(place);
+
                     if (_metadataEnumerator.MoveNext())
                     {
                         // DAO.SendRequestForThumbnail(this, _metadataEnumerator.Current.PictureSHA256);
@@ -212,6 +223,7 @@ namespace Wanderer
                         }
                         else
                         {
+                            //_listOfPlaces.insertPlace(metadata);
                             _isDownloadingInProgress = false;
                             ChangeUIElements();
                             IsolatedStorageDAO.CacheCategory(_actualCategory, _metadataForActualCategory);
@@ -246,6 +258,16 @@ namespace Wanderer
 
         private void MarkBundlesToUpdate(object sender, RoutedEventArgs e)
         {
+            if (_categories.Count == 0)
+            {
+                if (!_isDownloadingInProgress && Configuration.WorkOnline)
+                {
+                    _isDownloadingInProgress = true;
+                    DAO.SendRequestForCategories(this);
+                }
+                return;
+            }
+
             List<String> categoriesToCheck = new List<String>();
             foreach (String category in _categories)
             {
@@ -318,7 +340,7 @@ namespace Wanderer
         {
             Grid grid = (Grid)sender;
             TextBlock textBlock = (TextBlock)grid.Children[0];
-            if(!_gridMap.ContainsKey(textBlock.Text))
+            if (!_gridMap.ContainsKey(textBlock.Text))
                 _gridMap.Add(textBlock.Text, grid);
             if (grid.Children[1] is Button)
             {
@@ -398,7 +420,7 @@ namespace Wanderer
                     if (toUpdate)
                         MarkCategoryToUpdate(_categoriesEnumerator.Current);
 
-                    if(_categoriesEnumerator.MoveNext())
+                    if (_categoriesEnumerator.MoveNext())
                         DAO.SendRequestForPlacesWithCategoryForUpdate(this, _categoriesEnumerator.Current);
                 });
             }
@@ -413,7 +435,7 @@ namespace Wanderer
             button.Click += DownloadBundleClick;
             button.HorizontalAlignment = HorizontalAlignment.Right;
             grid.Children.Add(button);
-            Debug.WriteLine(" category to update "+category);
+            Debug.WriteLine(" category to update " + category);
         }
     }
 }
