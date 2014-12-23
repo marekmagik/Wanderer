@@ -153,7 +153,7 @@ namespace Wanderer
                 WriteableBitmap image = IsolatedStorageDAO.loadThumbnail(metadata.PictureSHA256);
                 Thumbnail.Source = image;
             }
-            else
+            else if(Configuration.WorkOnline)
                 DAO.SendRequestForThumbnail(this, metadata.PictureSHA256);
 
             Debug.WriteLine(metadata.PictureDescription);
