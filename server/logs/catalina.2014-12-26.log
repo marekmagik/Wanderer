@@ -1,0 +1,182 @@
+gru 26, 2014 2:18:11 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Server version:        Apache Tomcat/7.0.57
+gru 26, 2014 2:18:11 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Server built:          Nov 3 2014 08:39:16 UTC
+gru 26, 2014 2:18:11 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Server number:         7.0.57.0
+gru 26, 2014 2:18:11 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: OS Name:               Windows 8
+gru 26, 2014 2:18:11 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: OS Version:            6.2
+gru 26, 2014 2:18:11 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Architecture:          amd64
+gru 26, 2014 2:18:11 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: JAVA_HOME:             C:\Program Files\Java\jdk1.7.0_21\jre
+gru 26, 2014 2:18:11 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: JVM Version:           1.7.0_21-b11
+gru 26, 2014 2:18:11 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: JVM Vendor:            Oracle Corporation
+gru 26, 2014 2:18:11 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: CATALINA_BASE:         C:\Users\marekmagik\Desktop\apache-tomcat-7.0.57
+gru 26, 2014 2:18:11 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: CATALINA_HOME:         C:\Users\marekmagik\Desktop\apache-tomcat-7.0.57
+gru 26, 2014 2:18:11 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Djava.util.logging.config.file=C:\Users\marekmagik\Desktop\apache-tomcat-7.0.57\conf\logging.properties
+gru 26, 2014 2:18:11 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager
+gru 26, 2014 2:18:11 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Djava.endorsed.dirs=C:\Users\marekmagik\Desktop\apache-tomcat-7.0.57\endorsed
+gru 26, 2014 2:18:11 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Dcatalina.base=C:\Users\marekmagik\Desktop\apache-tomcat-7.0.57
+gru 26, 2014 2:18:11 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Dcatalina.home=C:\Users\marekmagik\Desktop\apache-tomcat-7.0.57
+gru 26, 2014 2:18:11 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Djava.io.tmpdir=C:\Users\marekmagik\Desktop\apache-tomcat-7.0.57\temp
+gru 26, 2014 2:18:11 AM org.apache.catalina.core.AprLifecycleListener lifecycleEvent
+INFO: Loaded APR based Apache Tomcat Native library 1.1.32 using APR version 1.5.1.
+gru 26, 2014 2:18:11 AM org.apache.catalina.core.AprLifecycleListener lifecycleEvent
+INFO: APR capabilities: IPv6 [true], sendfile [true], accept filters [false], random [true].
+gru 26, 2014 2:18:12 AM org.apache.catalina.core.AprLifecycleListener initializeSSL
+INFO: OpenSSL successfully initialized (OpenSSL 1.0.1j 15 Oct 2014)
+gru 26, 2014 2:18:12 AM org.apache.coyote.AbstractProtocol init
+INFO: Initializing ProtocolHandler ["http-apr-8080"]
+gru 26, 2014 2:18:12 AM org.apache.coyote.AbstractProtocol init
+INFO: Initializing ProtocolHandler ["ajp-apr-8009"]
+gru 26, 2014 2:18:12 AM org.apache.catalina.startup.Catalina load
+INFO: Initialization processed in 2194 ms
+gru 26, 2014 2:18:12 AM org.apache.catalina.core.StandardService startInternal
+INFO: Starting service Catalina
+gru 26, 2014 2:18:12 AM org.apache.catalina.core.StandardEngine startInternal
+INFO: Starting Servlet Engine: Apache Tomcat/7.0.57
+gru 26, 2014 2:18:12 AM org.apache.catalina.startup.HostConfig deployWAR
+INFO: Deploying web application archive C:\Users\marekmagik\Desktop\apache-tomcat-7.0.57\webapps\wanderer.war
+gru 26, 2014 2:18:15 AM com.sun.jersey.api.core.PackagesResourceConfig init
+INFO: Scanning for root resource and provider classes in the packages:
+  pl.edu.agh.wanderer
+gru 26, 2014 2:18:15 AM com.sun.jersey.api.core.ScanningResourceConfig logClasses
+INFO: Root resource classes found:
+  class pl.edu.agh.wanderer.places.Photos
+  class pl.edu.agh.wanderer.places.Places
+gru 26, 2014 2:18:15 AM com.sun.jersey.api.core.ScanningResourceConfig init
+INFO: No provider classes found.
+gru 26, 2014 2:18:15 AM com.sun.jersey.server.impl.application.WebApplicationImpl _initiate
+INFO: Initiating Jersey application, version 'Jersey: 1.8 06/24/2011 12:17 PM'
+gru 26, 2014 2:18:16 AM org.apache.catalina.startup.HostConfig deployWAR
+INFO: Deployment of web application archive C:\Users\marekmagik\Desktop\apache-tomcat-7.0.57\webapps\wanderer.war has finished in 3,545 ms
+gru 26, 2014 2:18:16 AM org.apache.catalina.startup.HostConfig deployDirectory
+INFO: Deploying web application directory C:\Users\marekmagik\Desktop\apache-tomcat-7.0.57\webapps\docs
+gru 26, 2014 2:18:16 AM org.apache.catalina.startup.HostConfig deployDirectory
+INFO: Deployment of web application directory C:\Users\marekmagik\Desktop\apache-tomcat-7.0.57\webapps\docs has finished in 82 ms
+gru 26, 2014 2:18:16 AM org.apache.catalina.startup.HostConfig deployDirectory
+INFO: Deploying web application directory C:\Users\marekmagik\Desktop\apache-tomcat-7.0.57\webapps\examples
+gru 26, 2014 2:18:17 AM org.apache.catalina.startup.HostConfig deployDirectory
+INFO: Deployment of web application directory C:\Users\marekmagik\Desktop\apache-tomcat-7.0.57\webapps\examples has finished in 869 ms
+gru 26, 2014 2:18:17 AM org.apache.catalina.startup.HostConfig deployDirectory
+INFO: Deploying web application directory C:\Users\marekmagik\Desktop\apache-tomcat-7.0.57\webapps\host-manager
+gru 26, 2014 2:18:17 AM org.apache.catalina.startup.HostConfig deployDirectory
+INFO: Deployment of web application directory C:\Users\marekmagik\Desktop\apache-tomcat-7.0.57\webapps\host-manager has finished in 64 ms
+gru 26, 2014 2:18:17 AM org.apache.catalina.startup.HostConfig deployDirectory
+INFO: Deploying web application directory C:\Users\marekmagik\Desktop\apache-tomcat-7.0.57\webapps\manager
+gru 26, 2014 2:18:17 AM org.apache.catalina.startup.HostConfig deployDirectory
+INFO: Deployment of web application directory C:\Users\marekmagik\Desktop\apache-tomcat-7.0.57\webapps\manager has finished in 57 ms
+gru 26, 2014 2:18:17 AM org.apache.catalina.startup.HostConfig deployDirectory
+INFO: Deploying web application directory C:\Users\marekmagik\Desktop\apache-tomcat-7.0.57\webapps\ROOT
+gru 26, 2014 2:18:17 AM org.apache.catalina.startup.HostConfig deployDirectory
+INFO: Deployment of web application directory C:\Users\marekmagik\Desktop\apache-tomcat-7.0.57\webapps\ROOT has finished in 51 ms
+gru 26, 2014 2:18:17 AM org.apache.coyote.AbstractProtocol start
+INFO: Starting ProtocolHandler ["http-apr-8080"]
+gru 26, 2014 2:18:17 AM org.apache.coyote.AbstractProtocol start
+INFO: Starting ProtocolHandler ["ajp-apr-8009"]
+gru 26, 2014 2:18:17 AM org.apache.catalina.startup.Catalina start
+INFO: Server startup in 4809 ms
+gru 26, 2014 3:51:38 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Server version:        Apache Tomcat/7.0.57
+gru 26, 2014 3:51:38 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Server built:          Nov 3 2014 08:39:16 UTC
+gru 26, 2014 3:51:38 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Server number:         7.0.57.0
+gru 26, 2014 3:51:38 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: OS Name:               Windows 8
+gru 26, 2014 3:51:38 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: OS Version:            6.2
+gru 26, 2014 3:51:38 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Architecture:          amd64
+gru 26, 2014 3:51:38 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: JAVA_HOME:             C:\Program Files\Java\jdk1.7.0_21\jre
+gru 26, 2014 3:51:38 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: JVM Version:           1.7.0_21-b11
+gru 26, 2014 3:51:38 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: JVM Vendor:            Oracle Corporation
+gru 26, 2014 3:51:38 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: CATALINA_BASE:         C:\Users\marekmagik\Desktop\Wanderer\server
+gru 26, 2014 3:51:38 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: CATALINA_HOME:         C:\Users\marekmagik\Desktop\Wanderer\server
+gru 26, 2014 3:51:38 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Djava.util.logging.config.file=C:\Users\marekmagik\Desktop\Wanderer\server\conf\logging.properties
+gru 26, 2014 3:51:38 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager
+gru 26, 2014 3:51:38 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Djava.endorsed.dirs=C:\Users\marekmagik\Desktop\Wanderer\server\endorsed
+gru 26, 2014 3:51:38 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Dcatalina.base=C:\Users\marekmagik\Desktop\Wanderer\server
+gru 26, 2014 3:51:38 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Dcatalina.home=C:\Users\marekmagik\Desktop\Wanderer\server
+gru 26, 2014 3:51:38 AM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Djava.io.tmpdir=C:\Users\marekmagik\Desktop\Wanderer\server\temp
+gru 26, 2014 3:51:38 AM org.apache.catalina.core.AprLifecycleListener lifecycleEvent
+INFO: Loaded APR based Apache Tomcat Native library 1.1.32 using APR version 1.5.1.
+gru 26, 2014 3:51:38 AM org.apache.catalina.core.AprLifecycleListener lifecycleEvent
+INFO: APR capabilities: IPv6 [true], sendfile [true], accept filters [false], random [true].
+gru 26, 2014 3:51:39 AM org.apache.catalina.core.AprLifecycleListener initializeSSL
+INFO: OpenSSL successfully initialized (OpenSSL 1.0.1j 15 Oct 2014)
+gru 26, 2014 3:51:39 AM org.apache.coyote.AbstractProtocol init
+INFO: Initializing ProtocolHandler ["http-apr-7001"]
+gru 26, 2014 3:51:39 AM org.apache.coyote.AbstractProtocol init
+INFO: Initializing ProtocolHandler ["ajp-apr-8009"]
+gru 26, 2014 3:51:39 AM org.apache.catalina.startup.Catalina load
+INFO: Initialization processed in 2146 ms
+gru 26, 2014 3:51:39 AM org.apache.catalina.core.StandardService startInternal
+INFO: Starting service Catalina
+gru 26, 2014 3:51:39 AM org.apache.catalina.core.StandardEngine startInternal
+INFO: Starting Servlet Engine: Apache Tomcat/7.0.57
+gru 26, 2014 3:51:39 AM org.apache.catalina.startup.HostConfig deployWAR
+INFO: Deploying web application archive C:\Users\marekmagik\Desktop\Wanderer\server\webapps\Wanderer.war
+gru 26, 2014 3:51:41 AM com.sun.jersey.api.core.PackagesResourceConfig init
+INFO: Scanning for root resource and provider classes in the packages:
+  pl.edu.agh.wanderer
+gru 26, 2014 3:51:41 AM com.sun.jersey.api.core.ScanningResourceConfig logClasses
+INFO: Root resource classes found:
+  class pl.edu.agh.wanderer.places.Places
+  class pl.edu.agh.wanderer.places.Photos
+gru 26, 2014 3:51:41 AM com.sun.jersey.api.core.ScanningResourceConfig init
+INFO: No provider classes found.
+gru 26, 2014 3:51:41 AM com.sun.jersey.server.impl.application.WebApplicationImpl _initiate
+INFO: Initiating Jersey application, version 'Jersey: 1.8 06/24/2011 12:17 PM'
+gru 26, 2014 3:51:42 AM org.apache.catalina.startup.HostConfig deployWAR
+INFO: Deployment of web application archive C:\Users\marekmagik\Desktop\Wanderer\server\webapps\Wanderer.war has finished in 2,621 ms
+gru 26, 2014 3:51:42 AM org.apache.catalina.startup.HostConfig deployDirectory
+INFO: Deploying web application directory C:\Users\marekmagik\Desktop\Wanderer\server\webapps\docs
+gru 26, 2014 3:51:42 AM org.apache.catalina.startup.HostConfig deployDirectory
+INFO: Deployment of web application directory C:\Users\marekmagik\Desktop\Wanderer\server\webapps\docs has finished in 83 ms
+gru 26, 2014 3:51:42 AM org.apache.catalina.startup.HostConfig deployDirectory
+INFO: Deploying web application directory C:\Users\marekmagik\Desktop\Wanderer\server\webapps\examples
+gru 26, 2014 3:51:42 AM org.apache.catalina.startup.HostConfig deployDirectory
+INFO: Deployment of web application directory C:\Users\marekmagik\Desktop\Wanderer\server\webapps\examples has finished in 554 ms
+gru 26, 2014 3:51:42 AM org.apache.catalina.startup.HostConfig deployDirectory
+INFO: Deploying web application directory C:\Users\marekmagik\Desktop\Wanderer\server\webapps\host-manager
+gru 26, 2014 3:51:43 AM org.apache.catalina.startup.HostConfig deployDirectory
+INFO: Deployment of web application directory C:\Users\marekmagik\Desktop\Wanderer\server\webapps\host-manager has finished in 86 ms
+gru 26, 2014 3:51:43 AM org.apache.catalina.startup.HostConfig deployDirectory
+INFO: Deploying web application directory C:\Users\marekmagik\Desktop\Wanderer\server\webapps\manager
+gru 26, 2014 3:51:43 AM org.apache.catalina.startup.HostConfig deployDirectory
+INFO: Deployment of web application directory C:\Users\marekmagik\Desktop\Wanderer\server\webapps\manager has finished in 81 ms
+gru 26, 2014 3:51:43 AM org.apache.catalina.startup.HostConfig deployDirectory
+INFO: Deploying web application directory C:\Users\marekmagik\Desktop\Wanderer\server\webapps\ROOT
+gru 26, 2014 3:51:43 AM org.apache.catalina.startup.HostConfig deployDirectory
+INFO: Deployment of web application directory C:\Users\marekmagik\Desktop\Wanderer\server\webapps\ROOT has finished in 72 ms
+gru 26, 2014 3:51:43 AM org.apache.coyote.AbstractProtocol start
+INFO: Starting ProtocolHandler ["http-apr-7001"]
+gru 26, 2014 3:51:43 AM org.apache.coyote.AbstractProtocol start
+INFO: Starting ProtocolHandler ["ajp-apr-8009"]
+gru 26, 2014 3:51:43 AM org.apache.catalina.startup.Catalina start
+INFO: Server startup in 3604 ms
