@@ -12,11 +12,11 @@ namespace Wanderer
 {
     public class Point
     {
-        public String PrimaryDescription { get; set; }
-        public String SecondaryDescription { get; set; }
-        public Category Category { get; set; }
-        public double X { get; set; }
-        public double Y { get; set; }
+        public String PrimaryDescription { get; private set; }
+        public String SecondaryDescription { get; private set; }
+        public Category Category { get; private set; }
+        public double X { get; private set; }
+        public double Y { get; private set; }
         public byte Alignment { get; set; }
         public Color Color { get; set; }
         public double LineLength { get; set; }
@@ -34,7 +34,7 @@ namespace Wanderer
         public double MinimumScaleDescriptionVisibility { get; set; }
         public Ellipse LeftBall { get; set; }
         public Ellipse RightBall { get; set; }
-        //TODO: delete following
+
         public Line BottomLine { get; set; }
         public Line TopLine { get; set; }
 
@@ -57,7 +57,7 @@ namespace Wanderer
 
         public override bool Equals(object obj)
         {
-            if (obj.GetType() == this.GetType())
+            if (obj != null && obj.GetType() == this.GetType())
             {
                 if (((Point)obj).X == this.X && ((Point)obj).Y == this.Y)
                 {

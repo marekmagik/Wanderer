@@ -13,7 +13,7 @@ using System.Windows;
 
 namespace Wanderer
 {
-    class JSONParser
+    public class JSONParser
     {
 
         private const int FontSize = 20;
@@ -165,8 +165,8 @@ namespace Wanderer
 
                 foreach (TextBlock textBlock in textBlocks)
                 {
-                    actualWidth+= (int)textBlock.ActualWidth;
-                    if (!firstLineConstructed && actualWidth  >= OneLineWidth)
+                    actualWidth += (int)textBlock.ActualWidth;
+                    if (!firstLineConstructed && actualWidth >= OneLineWidth)
                     {
                         if (textBlock.Name.Equals(WordTextBlock))
                             actualWidth = OneLineWidth + (int)textBlock.ActualWidth;
@@ -195,10 +195,10 @@ namespace Wanderer
         private List<TextBlock> SplitDescriptionIntoBlocks(String fullDescription, Char firstSign)
         {
             Boolean isWordTextBlock;
-            if(firstSign.Equals(' '))
-                isWordTextBlock=false;
+            if (firstSign.Equals(' '))
+                isWordTextBlock = false;
             else
-                isWordTextBlock=true;
+                isWordTextBlock = true;
 
             String textForActualBlock = "";
             List<TextBlock> textBlocks = new List<TextBlock>();
@@ -207,7 +207,8 @@ namespace Wanderer
             for (int i = 0; i < fullDescription.Length; i++)
             {
                 textForActualBlock += fullDescription.ElementAt(i);
-                if(i==fullDescription.Length-1 ||  CheckIfEndOfTextBlock(isWordTextBlock,fullDescription.ElementAt(i+1))){
+                if (i == fullDescription.Length - 1 || CheckIfEndOfTextBlock(isWordTextBlock, fullDescription.ElementAt(i + 1)))
+                {
                     TextBlock textBlock = new TextBlock();
                     textBlock.Text = textForActualBlock;
                     textBlock.FontSize = FontSize;

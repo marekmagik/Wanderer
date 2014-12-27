@@ -28,6 +28,14 @@ namespace Wanderer
         private Dictionary<ImageMetadata, MapOverlay> _pointOnMapDictionary = new Dictionary<ImageMetadata, MapOverlay>();
         private MapLayer _pointsLayer = new MapLayer();
 
+        public int Count 
+        {
+            get
+            {
+                return _metadataList.Count;
+            }
+        }
+
         public MapWithPlacesPage(MainPage mainPage)
         {
             InitializeComponent();
@@ -80,12 +88,22 @@ namespace Wanderer
 
                     Debug.WriteLine("---JSON, req : " + json);
                     JSONParser parser = new JSONParser();
-                    _metadataList.AddRange(parser.ParsePlacesJSON(json));
-                    ShowPointsOnMap();
+                    if (_metadataList.Count == 0)
+                    {
+                        _metadataList.AddRange(parser.ParsePlacesJSON(json));
+                        ShowPointsOnMap();
+                    }
+                    else
+                    {
+                        NotifyPlacesListUpdated(parser.ParsePlacesJSON(json));
+                    }
+                    
 
                 }
                 catch (WebException)
                 {
+                    _metadataList.AddRange(IsolatedStorageDAO.getAllCachedMetadatas());
+                    ShowPointsOnMap();
                     return;
                 }
             }
@@ -135,7 +153,7 @@ namespace Wanderer
                 WriteableBitmap image = IsolatedStorageDAO.loadThumbnail(metadata.PictureSHA256);
                 Thumbnail.Source = image;
             }
-            else
+            else if(Configuration.WorkOnline)
                 DAO.SendRequestForThumbnail(this, metadata.PictureSHA256);
 
             Debug.WriteLine(metadata.PictureDescription);

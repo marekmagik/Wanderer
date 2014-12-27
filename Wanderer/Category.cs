@@ -46,6 +46,5 @@ namespace Wanderer
             hash = (hash * 7) + Name.GetHashCode();
             return hash;
         }
-
     }
 }

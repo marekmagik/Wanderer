@@ -64,8 +64,6 @@ namespace Wanderer
             request.BeginGetResponse(new AsyncCallback(callback.PlacesRequestCallback), request);
         }
 
-        //na razie po prostu skopiowane, zeby to jakos ladnie zmienic prawdopodobnie trzeba bedzie troche przerobic dao
-        // (zeby nie bylo statyczne tylko instancjonowane)
         public static void SendRequestForThumbnail(CategoriesBudlesPage callback, string pictureSHA256)
         {
             string uri = "http://" + Configuration.ServerAddress + ":7001/Wanderer/api/photos/get/thumbnail/" + pictureSHA256;
@@ -98,7 +96,7 @@ namespace Wanderer
             request.BeginGetResponse(new AsyncCallback(callback.RequestCallback), request);
         }
 
-        internal static void SendRequestForThumbnail(MapWithPlacesPage callback, string pictureSHA256)
+        public static void SendRequestForThumbnail(MapWithPlacesPage callback, string pictureSHA256)
         {
             string uri = "http://" + Configuration.ServerAddress + ":7001/Wanderer/api/photos/get/thumbnail/" + pictureSHA256;
             HttpWebRequest request =

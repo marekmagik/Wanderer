@@ -19,6 +19,7 @@ namespace Wanderer
         private static bool _initialized = false;
         private ListOfPlaces _listOfPlaces = null;
         private CategoriesBudlesPage _categoriesPage;
+        private MapWithPlacesPage _mapPage = null;
 
         public int PrimaryDescriptionFontSize
         {
@@ -78,6 +79,8 @@ namespace Wanderer
             SecondaryDescriptionFontSizePicker.ItemsSource = PossibleSecondaryDescriptionFontSizes;
             SecondaryDescriptionFontSizePicker.SelectedItem = SecondaryDescriptionFontSize;
 
+            _mapPage = new MapWithPlacesPage(this);
+
             GPSRangeTextBox.Text = GPSRange;
             WorkOnlineCheckbox.IsChecked = Configuration.WorkOnline;
 
@@ -85,19 +88,39 @@ namespace Wanderer
 
             _listOfPlaces = new ListOfPlaces(this);
             _categoriesPage = new CategoriesBudlesPage(_listOfPlaces);
-            MapWithPlacesPage mapPage = new MapWithPlacesPage(this);
+
 
             ListOfPlacesPanoraaItem.Content = _listOfPlaces;
             CategoriesBundlesPanoramaItem.Content = _categoriesPage;
-            MapWithPlacesItem.Content = mapPage;
+            MapWithPlacesItem.Content = _mapPage;
 
-            _gpsTracker = new GPSTracker(_listOfPlaces,mapPage);
+            _gpsTracker = new GPSTracker(_listOfPlaces,_mapPage);
+
+/*            if (Configuration.UseGPS)
+            {
+                UseGPSCheckbox.IsChecked = true;
+            }
+            else {
+                UseGPSCheckbox.IsChecked = false;
+            }
+*/
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             ((ListOfPlaces)ListOfPlacesPanoraaItem.Content).UpdateDistanceForAllPlaces(GPSTracker.CurrentLongitude, GPSTracker.CurrentLatitude);
 
+            if (Configuration.UseGPS) {
+           //     _gpsTracker.activateGPSTracker();
+           //     Deployment.Current.Dispatcher.BeginInvoke(delegate
+           //     {
+                    UseGPSCheckbox.IsChecked = true;
+                    _gpsTracker.activateGPSTracker();
+           //     });
+            }
+            base.OnNavigatedTo(e);
+            return;
+            /**/
             if (_initialized)
             {
                 _gpsTracker.activateGPSTracker();
@@ -106,7 +129,7 @@ namespace Wanderer
             {
                 if (Configuration.UseGPS)
                 {
-                    Configuration.UseGPS = false;
+                //    Configuration.UseGPS = false;
                     UseGPSCheckbox.IsChecked = true;
                 }
             }
@@ -116,7 +139,11 @@ namespace Wanderer
 
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
-            _gpsTracker.deactivateGPSTracker();
+        //    if (Configuration.UseGPS)
+        //    {
+                _gpsTracker.deactivateGPSTracker();
+        
+        //    }
             base.OnNavigatedFrom(e);
         }
 
@@ -124,14 +151,14 @@ namespace Wanderer
         {
             lock (this)
             {
-                if (!Configuration.UseGPS)
-                {
+//                if (!Configuration.UseGPS)
+//                {
                     Deployment.Current.Dispatcher.BeginInvoke(delegate
                     {
-                        _gpsTracker.activateGPSTracker();
                         Configuration.UseGPS = true;
+                        _gpsTracker.activateGPSTracker();
                     });
-                }
+//                }
             }
         }
 
@@ -139,14 +166,14 @@ namespace Wanderer
         {
             lock (this)
             {
-                if (Configuration.UseGPS)
-                {
+//                if (Configuration.UseGPS)
+//                {
                     Deployment.Current.Dispatcher.BeginInvoke(delegate
                         {
                             _gpsTracker.deactivateGPSTracker();
                             Configuration.UseGPS = false;
                         });
-                }
+//                }
             }
         }
 
@@ -154,6 +181,8 @@ namespace Wanderer
         private void WorkOnlineCheckboxChecked(object sender, RoutedEventArgs e)
         {
             Configuration.WorkOnline = true;
+            if(_mapPage.Count==0 && GPSTracker != null && GPSTracker.IsEnabled)
+                DAO.SendRequestForMetadataOfPlacesWithinRange(_mapPage, GPSTracker.CurrentLongitude, GPSTracker.CurrentLatitude, Configuration.GPSRange);
         }
 
         private void WorkOnlineCheckboxUnchecked(object sender, RoutedEventArgs e)

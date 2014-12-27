@@ -24,6 +24,7 @@ using Microsoft.Xna.Framework;
 using System.Windows.Threading;
 using System.Windows.Shapes;
 using System.Threading;
+using System.Windows.Resources;
 
 
 
@@ -31,7 +32,6 @@ namespace Wanderer
 {
     public partial class PanoramaView : PhoneApplicationPage, IImageCallbackReceiver
     {
-
         private TimerCallback _normalPriorityTaskCallback;
         private DispatcherTimer _descRotationTaskTimer;
         private Timer _normalPriorityTaskTimer;
@@ -100,6 +100,15 @@ namespace Wanderer
         {
             PanoramaImageLeft.DataContext = null;
             PanoramaImageRight.DataContext = null;
+
+            /*
+            BitmapImage bitmapImage = ImageSource as BitmapImage;
+            if (bitmapImage != null)
+            {
+                bitmapImage.UriSource = null;
+            }
+            */
+              
             ImageSource = null;
             GC.Collect();
             GC.WaitForPendingFinalizers();
@@ -134,8 +143,26 @@ namespace Wanderer
             }
 
             PanoramaImageLeft.DataContext = null;
+            PanoramaImageLeft.Source = null;
             PanoramaImageRight.DataContext = null;
-            ImageSource = null;
+            PanoramaImageRight.Source = null;
+
+            WriteableBitmap wb = (WriteableBitmap)ImageSource;
+            Uri uri = new Uri("Resources/onePixel.png", UriKind.Relative);
+            StreamResourceInfo sr = Application.GetResourceStream(uri);
+    //        try
+    //        {
+                using (Stream stream = sr.Stream)
+                {
+                  //  wb.p = 1; //This is essential!
+                  //  wb.PixelWidth = 1;
+                    wb.SetSource(stream);
+                }
+   //         }
+   //         catch { }
+
+
+            CollectPreviousImage();
 
             LoadingAnimation.Visibility = Visibility.Visible;
             base.OnNavigatingFrom(e);
@@ -840,7 +867,7 @@ namespace Wanderer
                     point.BottomLine.X2 = point.BottomLine.X1 + descriptionWidth * Math.Cos((-1.0) * point.Angle * (Math.PI / 180));
                     point.TopLine.X2 = point.BottomLine.X2;
 
-                    point.BottomLine.Y1 = translateY + descriptionHeight;// ComputeRelativeY(point.Y) - translateY - point.LineLength * _currentScale;
+                    point.BottomLine.Y1 = translateY + descriptionHeight;
                     point.BottomLine.Y2 = point.BottomLine.Y1 - heightOffset;
 
                     point.TopLine.Y1 = point.BottomLine.Y1 - descriptionHeight;
@@ -852,16 +879,13 @@ namespace Wanderer
                     translateY += 5.0;
                     translateX += descriptionHeight * Math.Cos((-1.0) * point.Angle * (Math.PI / 180));
 
-                    point.BottomLine.X1 = translateX;// +descriptionHeight * Math.Sin(point.Angle * (Math.PI / 180)); ;// +descriptionAlignmentWidth;
-
-                    // (point.X) - translateX - descriptionWidth * Math.Cos((-1.0) * point.Angle * (Math.PI / 180)); ;// +descriptionAlignmentWidth;
-
+                    point.BottomLine.X1 = translateX;
                     point.TopLine.X1 = point.BottomLine.X1;
 
                     point.BottomLine.X2 = point.BottomLine.X1 + descriptionWidth * Math.Cos((-1.0) * point.Angle * (Math.PI / 180));
                     point.TopLine.X2 = point.BottomLine.X2;
 
-                    point.BottomLine.Y2 = translateY + descriptionHeight; // ComputeRelativeY(point.Y) - translateY - point.LineLength * _currentScale;
+                    point.BottomLine.Y2 = translateY + descriptionHeight;
                     point.BottomLine.Y1 = point.BottomLine.Y2 + heightOffset;
 
                     point.TopLine.Y2 = point.BottomLine.Y2 - descriptionHeight;
@@ -880,10 +904,6 @@ namespace Wanderer
                 point.BottomLine.Stroke = LoadingAnimation.Background;
                 point.TopLine.StrokeThickness = point.BottomLine.StrokeThickness;
                 point.TopLine.Stroke = LoadingAnimation.Background;
-
-
-                if (point.PrimaryDescription.Equals("Grand Mont Ruan"))
-                    Debug.WriteLine("[ " + point.PrimaryDescription + " ]:  X = " + (translateX - (_width * _currentScale)));
             }
         }
 
@@ -907,17 +927,16 @@ namespace Wanderer
         }
 
         #region DAOCallbacksMethods
-        //private void GenerateUIElementsForPoints(List<Point> points)
+
+        
         private void GenerateUIElementsForPoints()
         {
             int index = 0;
             foreach (Point point in _metadata.Points)
-            //foreach (Point point in points)
             {
                 Deployment.Current.Dispatcher.BeginInvoke(delegate
                 {
-                    /*
-                     * Tworzenie komponenów linii i granic opisów.
+                    /* Tworzenie komponenów linii i granic opisów.
                      */
                     point.LeftPanoramaLine = new Line();
                     point.RightPanoramaLine = new Line();
@@ -947,14 +966,12 @@ namespace Wanderer
                     point.RightPrimaryDescriptionTextBlock = PrimaryDescriptionTextBlockRight;
                     point.RightSecondaryDescriptionTextBlock = SecondaryDescriptionTextBlockRight;
 
-                    /*
-                     * Tworzenie komponentu TranslateTransform, używanego do przesuwania opisu.
+                    /* Tworzenie komponentu TranslateTransform, używanego do przesuwania opisu.
                      */
                     point.LeftCanvas.RenderTransform = new TranslateTransform();
                     point.RightCanvas.RenderTransform = new TranslateTransform();
 
-                    /*
-                     * Generowanie punktu pojawiającego się zamiast podpisu w momencie kolizji.
+                    /* Generowanie punktu pojawiającego się zamiast podpisu w momencie kolizji.
                      */
                     Ellipse leftBall = new Ellipse();
                     Ellipse rightBall = new Ellipse();
@@ -967,16 +984,14 @@ namespace Wanderer
                     point.LeftBall = leftBall;
                     point.RightBall = rightBall;
 
-                    /*
-                     * Ustawienie tekstu podpisów.
+                    /* Ustawienie tekstu podpisów.
                      */
                     point.LeftPrimaryDescriptionTextBlock.Text = point.PrimaryDescription;
                     point.RightPrimaryDescriptionTextBlock.Text = point.PrimaryDescription;
                     point.LeftSecondaryDescriptionTextBlock.Text = point.SecondaryDescription;
                     point.RightSecondaryDescriptionTextBlock.Text = point.SecondaryDescription;
 
-                    /*
-                     * Ustawienie grubości linii oraz kolory linii oraz tekstu.
+                    /* Ustawienie grubości linii oraz kolory linii oraz tekstu.
                      */
                     point.LeftPanoramaLine.StrokeThickness = 3;
                     point.LeftPanoramaLine.Stroke = new SolidColorBrush(point.Color);
@@ -998,8 +1013,7 @@ namespace Wanderer
                     point.LeftCanvas.Children.Add(point.LeftBall);
                     point.RightCanvas.Children.Add(point.RightBall);
 
-                    /*
-                     * Umieść przygotowane elementy na ekranie.
+                    /* Umieść przygotowane elementy na ekranie.
                      */
                     GridLayoutPoints.Children.Add(point.LeftCanvas);
                     GridLayoutPoints.Children.Add(point.RightCanvas);
@@ -1019,7 +1033,7 @@ namespace Wanderer
                         _descRotationTaskTimer.Tick += new EventHandler(descRotationTaskTimerTick);
                         _descRotationTaskTimer.Start();
 
-                        /* Reszta ładowania należy wykonać w wątku nie będącym wątkiem Dispatchera UI.
+                        /* Resztę ładowania należy wykonać w wątku nie będącym wątkiem Dispatchera UI.
                          */
                         _normalPriorityTaskCallback = new TimerCallback(this.descCollisionsAlgorithm);
                         _normalPriorityTaskTimer = new Timer(_normalPriorityTaskCallback);
@@ -1029,7 +1043,7 @@ namespace Wanderer
             }
         }
 
-        public void descCollisionsAlgorithm(Object state)
+        private void descCollisionsAlgorithm(Object state)
         {
             Timer t = (Timer)state;
             t.Dispose();
@@ -1205,8 +1219,7 @@ namespace Wanderer
 
         private void SetPointsDesctiptionsRotation(List<Point> list)
         {
-            /*
-             * Tworzenie odpowiedniej rotacji i zastosowywanie jej do obu komponentów StackPanel.
+            /* Tworzenie odpowiedniej rotacji i zastosowywanie jej do obu komponentów StackPanel.
              */
             foreach (Point point in list)
             {

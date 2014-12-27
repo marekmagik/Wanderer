@@ -58,11 +58,14 @@ namespace Wanderer
             }
         }
 
-        public static bool WorkOnline {
-            get {
+        public static bool WorkOnline
+        {
+            get
+            {
                 return _workOnline;
             }
-            set {
+            set
+            {
                 _workOnline = value;
                 saveSettingProperty("workOnline", value);
             }
@@ -136,7 +139,7 @@ namespace Wanderer
             {
                 Configuration.PrimaryDescriptionFontSize = 20;
                 Configuration.SecondaryDescriptionFontSize = 15;
-                Configuration.ServerAddress = "10.20.120.20"; //"10.22.122.154";
+                Configuration.ServerAddress = "192.168.1.103";
                 Configuration.UseGPS = false;
                 Configuration.WorkOnline = false;
                 Configuration.GPSRange = 100000000;

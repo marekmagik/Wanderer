@@ -47,7 +47,6 @@ namespace Wanderer
         {
             InitializeComponent();
 
-
             DataContext = this;
 
             _allPlaces = new List<ImageMetadata>();
@@ -104,7 +103,6 @@ namespace Wanderer
                     }
 
                     UpdateDistanceForAllPlaces(GPSTracker.CurrentLongitude, GPSTracker.CurrentLatitude);
-
                 }
                 catch (WebException)
                 {
@@ -199,7 +197,9 @@ namespace Wanderer
             Debug.WriteLine("HASH: " + image.PictureSHA256);
             PlacesListBox.SelectedIndex = -1;
 
-            Configuration.UseGPS = false;
+            //Configuration.UseGPS = false;
+            //Pano
+
             _mainPage.NavigationService.Navigate(uri);
         }
 

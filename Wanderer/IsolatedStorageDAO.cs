@@ -32,12 +32,8 @@ namespace Wanderer
             if (_cachedMetadata == null)
                 _cachedMetadata = new List<String>();
 
-//<<<<<<< HEAD
             InitializeDirectories();
             LoadCachedFiles();
-//=======
-//            LoadPlacesData();
-//            LoadNewFiles();
             LoadCategories();
         }
 

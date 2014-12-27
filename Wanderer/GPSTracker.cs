@@ -14,13 +14,15 @@ namespace Wanderer
 {
     public class GPSTracker : UserControl
     {
-        public static double LocationUnknown = 1000.0;
-
+        public static readonly double LocationUnknown = 1000.0;
         private static readonly double Degrees_To_Kilometers_Factor = 111;
 
         private static double _currentLongitude;
         private static double _currentLatitude;
 
+        private readonly ListOfPlaces _listOfPlaces;
+        private readonly MapWithPlacesPage _mapPage;
+        private Geolocator _geolocator = null;
 
         public static double CurrentLongitude
         {
@@ -34,6 +36,7 @@ namespace Wanderer
                 Configuration.saveSettingProperty("LastKnownLogitude", value);
             }
         }
+
         public static double CurrentLatitude
         {
             get
@@ -47,10 +50,6 @@ namespace Wanderer
             }
         }
 
-        private readonly ListOfPlaces _listOfPlaces;
-        private readonly MapWithPlacesPage _mapPage;
-        private Geolocator _geolocator = null;
-
         public GPSTracker(ListOfPlaces listOfPlaces, MapWithPlacesPage mapPage)
         {
             this._listOfPlaces = listOfPlaces;
@@ -62,7 +61,7 @@ namespace Wanderer
             if (Configuration.getSettingProperty("LastKnownLogitude") != null)
             {
                 CurrentLongitude = (double)Configuration.getSettingProperty("LastKnownLogitude");
-                Debug.WriteLine("LAST KNOWN LONGITUDE : " + CurrentLongitude + "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+                Debug.WriteLine("Last known longitude loaded : " + CurrentLongitude);
             }
             else
             {
@@ -86,25 +85,24 @@ namespace Wanderer
 
         public void activateGPSTracker()
         {
-            if (!Configuration.UseGPS)
+            if (Configuration.UseGPS)
             {
                 _geolocator = new Geolocator();
                 _geolocator.DesiredAccuracy = PositionAccuracy.High;
                 _geolocator.MovementThreshold = 10;
 
+                _listOfPlaces.GpsSign.Source = null;
+                _listOfPlaces.GpsSign.Source = new BitmapImage(new Uri("Images/GpsOnline.png", UriKind.Relative));
+
                 _geolocator.StatusChanged += GeolocatorStatusChanged;
                 _geolocator.PositionChanged += GeolocatorPositionChanged;
 
-                _listOfPlaces.GpsSign.Source = null;
-                _listOfPlaces.GpsSign.Source = new BitmapImage(new Uri("Images/GpsOnline.png", UriKind.Relative));
             }
             else
             {
                 _listOfPlaces.GpsSign.Source = null;
-                CurrentLongitude = LocationUnknown;
-                CurrentLatitude = LocationUnknown;
             }
-        }
+      }
 
         public void deactivateGPSTracker()
         {
@@ -114,11 +112,9 @@ namespace Wanderer
                 _geolocator.StatusChanged -= GeolocatorStatusChanged;
 
                 _geolocator = null;
-
             }
+
             _listOfPlaces.GpsSign.Source = null;
-            CurrentLongitude = LocationUnknown;
-            CurrentLatitude = LocationUnknown;
         }
 
         private void GeolocatorPositionChanged(Geolocator sender, PositionChangedEventArgs args)
@@ -127,7 +123,7 @@ namespace Wanderer
             CurrentLatitude = args.Position.Coordinate.Latitude;
             _listOfPlaces.UpdateDistanceForAllPlaces(CurrentLongitude, CurrentLatitude);
             _mapPage.NotifyGeolocatorPositionChanged(CurrentLongitude, CurrentLatitude);
-            Debug.WriteLine("Lon: " + CurrentLongitude + ", Lat: " + CurrentLatitude);
+            Debug.WriteLine("Odebrano współrzędne. Longitude: " + CurrentLongitude + ", Latitude: " + CurrentLatitude);
         }
 
         private void GeolocatorStatusChanged(Geolocator sender, StatusChangedEventArgs args)
@@ -138,25 +134,20 @@ namespace Wanderer
             switch (args.Status)
             {
                 case PositionStatus.Disabled:
-                    // the application does not have the right capability or the location master switch is off
                     status = "GPS wyłączony w ustawieniach urządzenia.";
                     errorOccured = true;
                     break;
                 case PositionStatus.Initializing:
-                    // the geolocator started the tracking operation
                     status = "Inicjalizacja w toku.";
                     break;
                 case PositionStatus.NoData:
-                    // the location service was not able to acquire the location
                     status = "Odbiór danych GPS jest niemożliwy.";
                     errorOccured = true;
                     break;
                 case PositionStatus.Ready:
-                    // the location service is generating geopositions as specified by the tracking parameters
                     status = "Odbiornik GPS pracuje poprawnie.";
                     break;
                 case PositionStatus.NotInitialized:
-                    // the initial state of the geolocator, once the tracking operation is stopped by the user the geolocator moves back to this state
                     status = "Urządzenie nie zainicjalizowane.";
                     break;
             }
@@ -181,10 +172,8 @@ namespace Wanderer
                         _listOfPlaces.GpsSign.Source = null;
                         _listOfPlaces.UpdateDistanceForAllPlaces(LocationUnknown, LocationUnknown);
                     }
-
                 }
             );
-
             Debug.WriteLine(status);
         }
     }

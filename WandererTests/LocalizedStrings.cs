@@ -1,6 +1,6 @@
-﻿using Wanderer.Resources;
+﻿using WandererTests.Resources;
 
-namespace Wanderer
+namespace WandererTests
 {
     /// <summary>
     /// Provides access to string resources.

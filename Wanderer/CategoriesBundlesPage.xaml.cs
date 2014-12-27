@@ -16,6 +16,8 @@ namespace Wanderer
 {
     public partial class CategoriesBudlesPage : PhoneApplicationPage
     {
+        private const String ActionDownloadThumbnail = "thumb";
+        private const String _actionDownloadPanorama = "pano";
 
         private List<String> _categories = new List<String>();
         private IEnumerator<ImageMetadata> _metadataEnumerator = null;
@@ -26,8 +28,7 @@ namespace Wanderer
         private String _actualCategory;
         private List<String> _cachedCategories;
         private List<ImageMetadata> _metadataForActualCategory;
-        private const String _actionDownloadThumbnail = "thumb";
-        private const String _actionDownloadPanorama = "pano";
+
         private IEnumerator<String> _categoriesEnumerator = null;
         private Dictionary<String, Grid> _gridMap = new Dictionary<string, Grid>();
         private ListOfPlaces _listOfPlaces;
@@ -125,7 +126,7 @@ namespace Wanderer
                     if (_metadataEnumerator.MoveNext())
                     {
                         // DAO.SendRequestForThumbnail(this, _metadataEnumerator.Current.PictureSHA256);
-                        PerformNearestAction(_actionDownloadThumbnail);
+                        PerformNearestAction(ActionDownloadThumbnail);
                     }
                     else
                     {
@@ -178,7 +179,7 @@ namespace Wanderer
                         Debug.WriteLine(" Sending request for thumbnail ");
                         try
                         {
-                            PerformNearestAction(_actionDownloadThumbnail);
+                            PerformNearestAction(ActionDownloadThumbnail);
                             //DAO.SendRequestForThumbnail(this, _metadataEnumerator.Current.PictureSHA256);
                         }
                         catch (WebException)
@@ -198,7 +199,7 @@ namespace Wanderer
             while (shouldRunning)
             {
                 ImageMetadata metadata = _metadataEnumerator.Current;
-                if (currentAction.Equals(_actionDownloadThumbnail))
+                if (currentAction.Equals(ActionDownloadThumbnail))
                 {
                     if (!IsolatedStorageDAO.IsThumbnailCached(metadata.PictureSHA256))
                     {
@@ -219,7 +220,7 @@ namespace Wanderer
                     {
                         if (_metadataEnumerator.MoveNext())
                         {
-                            currentAction = _actionDownloadThumbnail;
+                            currentAction = ActionDownloadThumbnail;
                         }
                         else
                         {
