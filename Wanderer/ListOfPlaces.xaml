@@ -54,10 +54,10 @@
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
-            <StackPanel Background="Black" VerticalAlignment="Bottom">
+     <!--       <StackPanel Background="Black" VerticalAlignment="Bottom">
                 <Button Content="Pokaż więcej" VerticalAlignment="Bottom" Click="ButtonClick" />
             </StackPanel>
-        </Grid>
+  -->      </Grid>
     </Grid>
 
 </phone:PhoneApplicationPage>

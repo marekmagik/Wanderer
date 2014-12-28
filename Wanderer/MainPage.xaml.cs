@@ -79,71 +79,56 @@ namespace Wanderer
             SecondaryDescriptionFontSizePicker.ItemsSource = PossibleSecondaryDescriptionFontSizes;
             SecondaryDescriptionFontSizePicker.SelectedItem = SecondaryDescriptionFontSize;
 
-            _mapPage = new MapWithPlacesPage(this);
-
-            GPSRangeTextBox.Text = GPSRange;
-            WorkOnlineCheckbox.IsChecked = Configuration.WorkOnline;
-
             IsolatedStorageDAO.InitIsolatedStorageDAO();
 
             _listOfPlaces = new ListOfPlaces(this);
             _categoriesPage = new CategoriesBudlesPage(_listOfPlaces);
 
+            _mapPage = new MapWithPlacesPage(this, _listOfPlaces);
+
+            GPSRangeTextBox.Text = GPSRange;
+            WorkOnlineCheckbox.IsChecked = Configuration.WorkOnline;
 
             ListOfPlacesPanoraaItem.Content = _listOfPlaces;
             CategoriesBundlesPanoramaItem.Content = _categoriesPage;
             MapWithPlacesItem.Content = _mapPage;
 
-            _gpsTracker = new GPSTracker(_listOfPlaces,_mapPage);
-
-/*            if (Configuration.UseGPS)
-            {
-                UseGPSCheckbox.IsChecked = true;
-            }
-            else {
-                UseGPSCheckbox.IsChecked = false;
-            }
-*/
+            _gpsTracker = new GPSTracker(_listOfPlaces, _mapPage);
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             ((ListOfPlaces)ListOfPlacesPanoraaItem.Content).UpdateDistanceForAllPlaces(GPSTracker.CurrentLongitude, GPSTracker.CurrentLatitude);
 
-            if (Configuration.UseGPS) {
-           //     _gpsTracker.activateGPSTracker();
-           //     Deployment.Current.Dispatcher.BeginInvoke(delegate
-           //     {
-                    UseGPSCheckbox.IsChecked = true;
-                    _gpsTracker.activateGPSTracker();
-           //     });
-            }
-            base.OnNavigatedTo(e);
-            return;
-            /**/
-            if (_initialized)
+            if (Configuration.UseGPS)
             {
+                UseGPSCheckbox.IsChecked = true;
                 _gpsTracker.activateGPSTracker();
             }
-            else
+            if (Configuration.WorkOnline)
             {
-                if (Configuration.UseGPS)
-                {
-                //    Configuration.UseGPS = false;
-                    UseGPSCheckbox.IsChecked = true;
-                }
+                _listOfPlaces.InternetSign.Visibility = Visibility.Visible;
             }
-            _initialized = true;
+            else {
+                _listOfPlaces.InternetSign.Visibility = Visibility.Collapsed;
+            }
+            if (Configuration.InternetExceptionOccured)
+            {
+                _listOfPlaces.setInternetSignOffline();
+                Configuration.InternetExceptionOccured = false;
+            }
+            else {
+                _listOfPlaces.setInternetSignOnline();
+            }
+            _listOfPlaces.refreshCollectionElements();
+
             base.OnNavigatedTo(e);
         }
 
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
-        //    if (Configuration.UseGPS)
-        //    {
-                _gpsTracker.deactivateGPSTracker();
-        
-        //    }
+            _gpsTracker.deactivateGPSTracker();
+
             base.OnNavigatedFrom(e);
         }
 
@@ -151,14 +136,11 @@ namespace Wanderer
         {
             lock (this)
             {
-//                if (!Configuration.UseGPS)
-//                {
-                    Deployment.Current.Dispatcher.BeginInvoke(delegate
-                    {
-                        Configuration.UseGPS = true;
-                        _gpsTracker.activateGPSTracker();
-                    });
-//                }
+                Deployment.Current.Dispatcher.BeginInvoke(delegate
+                {
+                    Configuration.UseGPS = true;
+                    _gpsTracker.activateGPSTracker();
+                });
             }
         }
 
@@ -166,14 +148,11 @@ namespace Wanderer
         {
             lock (this)
             {
-//                if (Configuration.UseGPS)
-//                {
-                    Deployment.Current.Dispatcher.BeginInvoke(delegate
-                        {
-                            _gpsTracker.deactivateGPSTracker();
-                            Configuration.UseGPS = false;
-                        });
-//                }
+                Deployment.Current.Dispatcher.BeginInvoke(delegate
+                    {
+                        _gpsTracker.deactivateGPSTracker();
+                        Configuration.UseGPS = false;
+                    });
             }
         }
 
@@ -181,13 +160,20 @@ namespace Wanderer
         private void WorkOnlineCheckboxChecked(object sender, RoutedEventArgs e)
         {
             Configuration.WorkOnline = true;
-            if(_mapPage.Count==0 && GPSTracker != null && GPSTracker.IsEnabled)
+            if (_mapPage.Count == 0 && GPSTracker != null && GPSTracker.IsEnabled)
                 DAO.SendRequestForMetadataOfPlacesWithinRange(_mapPage, GPSTracker.CurrentLongitude, GPSTracker.CurrentLatitude, Configuration.GPSRange);
+            Deployment.Current.Dispatcher.BeginInvoke(delegate {
+                _listOfPlaces.InternetSign.Visibility = Visibility.Visible;
+            });
         }
 
         private void WorkOnlineCheckboxUnchecked(object sender, RoutedEventArgs e)
         {
             Configuration.WorkOnline = false;
+            Deployment.Current.Dispatcher.BeginInvoke(delegate
+            {
+                _listOfPlaces.InternetSign.Visibility = Visibility.Collapsed;
+            });
         }
 
         private void PrimaryDescriptionFontSizeSelectionChanged(object sender, SelectionChangedEventArgs e)

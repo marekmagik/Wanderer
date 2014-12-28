@@ -21,23 +21,6 @@ namespace Wanderer
                     this.Insert(sorted.IndexOf(place), place);
                 }
             }
-
-/*
-            int ptr = 0;
-            while (ptr < sorted.Count)
-            {
-                if (!this[ptr].Equals(sorted[ptr]))
-                {
-                    ImageMetadata t = this[ptr];
-                    this.RemoveAt(ptr);
-                    this.Insert(sorted.IndexOf(t), t);
-                }
-                else
-                {
-                    ptr++;
-                }
-            }
- */ 
         }
     }
 }

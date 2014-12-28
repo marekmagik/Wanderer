@@ -60,17 +60,17 @@ namespace Wanderer
                         string json = streamReader.ReadToEnd();
 
                         JSONParser parser = new JSONParser();
-                        _categories.AddRange(parser.ParceCategoriesJSON(json));
+                        _categories.AddRange(parser.ParseCategoriesJSON(json));
 
                         CategoriesListBox.DataContext = null;
                         CategoriesListBox.DataContext = _categories;
 
-
                         Debug.WriteLine("---JSON, req : " + json);
+                        _listOfPlaces.setInternetSignOnline();
                     }
                     catch (WebException)
                     {
-                        //HandleWebException();
+                        _listOfPlaces.setInternetSignOffline();
                         Debug.WriteLine("wyjatek wewnatrz UI!");
                         return;
                     }
@@ -93,10 +93,7 @@ namespace Wanderer
                     IsolatedStorageDAO.CacheThumbnail(stream, place.Width, place.Height, place.PictureSHA256);
 
                     PerformNearestAction(_actionDownloadPanorama);
-                    //DAO.SendRequestForPanorama(this, place.PictureSHA256);
-
-                    //_listOfPlaces.insertPlace(place);
-
+                    _listOfPlaces.setInternetSignOnline();
                 }
                 catch (WebException)
                 {
@@ -125,7 +122,6 @@ namespace Wanderer
 
                     if (_metadataEnumerator.MoveNext())
                     {
-                        // DAO.SendRequestForThumbnail(this, _metadataEnumerator.Current.PictureSHA256);
                         PerformNearestAction(ActionDownloadThumbnail);
                     }
                     else
@@ -134,7 +130,8 @@ namespace Wanderer
                         ChangeUIElements();
                         IsolatedStorageDAO.CacheCategory(_actualCategory, _metadataForActualCategory);
                     }
-
+                    _listOfPlaces.refreshCollectionElements();
+                    _listOfPlaces.setInternetSignOnline();
                 }
                 catch (WebException)
                 {
@@ -160,34 +157,33 @@ namespace Wanderer
             {
                 Deployment.Current.Dispatcher.BeginInvoke(delegate
                 {
-                    WebResponse response = request.EndGetResponse(result);
-                    Stream stream = response.GetResponseStream();
-                    StreamReader streamReader = new StreamReader(stream);
-                    string json = streamReader.ReadToEnd();
-
-                    Debug.WriteLine("---JSON, req : " + json);
-
-                    JSONParser parser = new JSONParser();
-                    _metadataForActualCategory = parser.ParsePlacesJSON(json);
-
-
-                    IsolatedStorageDAO.CacheMetadata(json);
-
-                    _metadataEnumerator = _metadataForActualCategory.GetEnumerator();
-                    if (_metadataEnumerator.MoveNext())
+                    try
                     {
-                        Debug.WriteLine(" Sending request for thumbnail ");
-                        try
-                        {
-                            PerformNearestAction(ActionDownloadThumbnail);
-                            //DAO.SendRequestForThumbnail(this, _metadataEnumerator.Current.PictureSHA256);
-                        }
-                        catch (WebException)
-                        {
-                            HandleWebException();
-                        }
-                    }
+                        WebResponse response = request.EndGetResponse(result);
+                        Stream stream = response.GetResponseStream();
+                        StreamReader streamReader = new StreamReader(stream);
+                        string json = streamReader.ReadToEnd();
 
+                        Debug.WriteLine("---JSON, req : " + json);
+
+                        JSONParser parser = new JSONParser();
+                        _metadataForActualCategory = parser.ParsePlacesJSON(json);
+
+
+                        IsolatedStorageDAO.CacheMetadata(json);
+
+                        _metadataEnumerator = _metadataForActualCategory.GetEnumerator();
+                        if (_metadataEnumerator.MoveNext())
+                        {
+                            Debug.WriteLine(" Sending request for thumbnail ");
+                            PerformNearestAction(ActionDownloadThumbnail);
+                        }
+                        _listOfPlaces.setInternetSignOnline();
+                    }
+                    catch (WebException)
+                    {
+                        HandleWebException();
+                    }
                 });
             }
         }
@@ -224,7 +220,6 @@ namespace Wanderer
                         }
                         else
                         {
-                            //_listOfPlaces.insertPlace(metadata);
                             _isDownloadingInProgress = false;
                             ChangeUIElements();
                             IsolatedStorageDAO.CacheCategory(_actualCategory, _metadataForActualCategory);
@@ -237,7 +232,7 @@ namespace Wanderer
 
         private void DownloadBundleClick(object sender, RoutedEventArgs e)
         {
-            if (!_isDownloadingInProgress)
+            if (!_isDownloadingInProgress && Configuration.WorkOnline)
             {
                 _isDownloadingInProgress = true;
                 Button button = sender as Button;
@@ -245,15 +240,7 @@ namespace Wanderer
                 _actualCategory = category;
                 CreateProgressBar(button, category);
                 Debug.WriteLine(" Selected category: " + category);
-
-                try
-                {
-                    DAO.SendRequestForPlacesWithCategory(this, category);
-                }
-                catch (WebException)
-                {
-                    HandleWebException();
-                }
+                DAO.SendRequestForPlacesWithCategory(this, category);
             }
         }
 
@@ -310,6 +297,7 @@ namespace Wanderer
 
         private void HandleWebException()
         {
+            _listOfPlaces.setInternetSignOffline();
             Deployment.Current.Dispatcher.BeginInvoke(delegate
             {
                 _isDownloadingInProgress = false;
@@ -367,8 +355,6 @@ namespace Wanderer
                     else
                     {
                         button.Content = "Aktualizuj";
-                        //button.Click -= DownloadBundleClick;
-                        //button.Click += UpdateBundleClick;
                     }
                 }
             }
@@ -399,30 +385,38 @@ namespace Wanderer
             {
                 Deployment.Current.Dispatcher.BeginInvoke(delegate
                 {
-                    WebResponse response = request.EndGetResponse(result);
-                    Stream stream = response.GetResponseStream();
-                    StreamReader streamReader = new StreamReader(stream);
-                    string json = streamReader.ReadToEnd();
-
-                    Debug.WriteLine("---JSON, req : " + json);
-
-                    JSONParser parser = new JSONParser();
-                    List<ImageMetadata> metadatas = parser.ParsePlacesJSON(json);
-
-                    List<String> cachedHashes = IsolatedStorageDAO.GetCachedPlacesForCategory(_categoriesEnumerator.Current);
-
-                    Boolean toUpdate = false;
-                    foreach (ImageMetadata metadata in metadatas)
+                    try
                     {
-                        if (!cachedHashes.Contains(metadata.PictureSHA256))
-                            toUpdate = true;
+                        WebResponse response = request.EndGetResponse(result);
+                        Stream stream = response.GetResponseStream();
+                        StreamReader streamReader = new StreamReader(stream);
+                        string json = streamReader.ReadToEnd();
+
+                        Debug.WriteLine("---JSON, req : " + json);
+
+                        JSONParser parser = new JSONParser();
+                        List<ImageMetadata> metadatas = parser.ParsePlacesJSON(json);
+
+                        List<String> cachedHashes = IsolatedStorageDAO.GetCachedPlacesForCategory(_categoriesEnumerator.Current);
+
+                        Boolean toUpdate = false;
+                        foreach (ImageMetadata metadata in metadatas)
+                        {
+                            if (!cachedHashes.Contains(metadata.PictureSHA256))
+                                toUpdate = true;
+                        }
+
+                        if (toUpdate)
+                            MarkCategoryToUpdate(_categoriesEnumerator.Current);
+
+                        if (_categoriesEnumerator.MoveNext())
+                            DAO.SendRequestForPlacesWithCategoryForUpdate(this, _categoriesEnumerator.Current);
+                        _listOfPlaces.setInternetSignOnline();
                     }
-
-                    if (toUpdate)
-                        MarkCategoryToUpdate(_categoriesEnumerator.Current);
-
-                    if (_categoriesEnumerator.MoveNext())
-                        DAO.SendRequestForPlacesWithCategoryForUpdate(this, _categoriesEnumerator.Current);
+                    catch (WebException)
+                    {
+                        HandleWebException();
+                    }
                 });
             }
         }

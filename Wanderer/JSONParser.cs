@@ -40,7 +40,7 @@ namespace Wanderer
             return placesInJSON;
         }
 
-        public List<String> ParceCategoriesJSON(string json)
+        public List<String> ParseCategoriesJSON(string json)
         {
             List<String> categories = new List<String>();
 

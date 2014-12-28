@@ -97,6 +97,7 @@ namespace Wanderer
             }
         }
 
+        public static bool InternetExceptionOccured { get; set; }
 
         public static void saveSettingProperty(String property, Object value)
         {
@@ -144,6 +145,7 @@ namespace Wanderer
                 Configuration.WorkOnline = false;
                 Configuration.GPSRange = 100000000;
             }
+            InternetExceptionOccured = false;
         }
 
     }

@@ -27,6 +27,7 @@ namespace Wanderer
         private MapOverlay myLocationOverlay = null;
         private Dictionary<ImageMetadata, MapOverlay> _pointOnMapDictionary = new Dictionary<ImageMetadata, MapOverlay>();
         private MapLayer _pointsLayer = new MapLayer();
+        private ListOfPlaces _listOfPlaces;
 
         public int Count 
         {
@@ -36,10 +37,10 @@ namespace Wanderer
             }
         }
 
-        public MapWithPlacesPage(MainPage mainPage)
+        public MapWithPlacesPage(MainPage mainPage, ListOfPlaces listOfPlaces)
         {
             InitializeComponent();
-
+            this._listOfPlaces = listOfPlaces;
             _mainPage = mainPage;
             Map.CartographicMode = MapCartographicMode.Terrain;
             if (GPSTracker.CurrentLatitude != GPSTracker.LocationUnknown && GPSTracker.CurrentLongitude != GPSTracker.LocationUnknown)
@@ -97,14 +98,13 @@ namespace Wanderer
                     {
                         NotifyPlacesListUpdated(parser.ParsePlacesJSON(json));
                     }
-                    
-
+                    _listOfPlaces.setInternetSignOnline();
                 }
                 catch (WebException)
                 {
+                    _listOfPlaces.setInternetSignOffline();
                     _metadataList.AddRange(IsolatedStorageDAO.getAllCachedMetadatas());
                     ShowPointsOnMap();
-                    return;
                 }
             }
         }
@@ -114,28 +114,32 @@ namespace Wanderer
             Debug.WriteLine(" Creating points overlay " + _metadataList.Count);
             Deployment.Current.Dispatcher.BeginInvoke(delegate
                 {
-
-
                     foreach (ImageMetadata metadata in _metadataList)
                     {
-                        Ellipse myCircle = new Ellipse();
-                        myCircle.Fill = new SolidColorBrush(Colors.Red);
-                        myCircle.Height = 20;
-                        myCircle.Width = 20;
-                        myCircle.Opacity = 50;
-                        myCircle.Tap += ShowContextMenu;
-                        myCircle.DataContext = metadata;
+                        if (!_pointOnMapDictionary.Keys.Contains(metadata))
+                        {
+                            Ellipse myCircle = new Ellipse();
+                            myCircle.Fill = new SolidColorBrush(Colors.Red);
+                            myCircle.Height = 20;
+                            myCircle.Width = 20;
+                            myCircle.Opacity = 50;
+                            myCircle.Tap += ShowContextMenu;
+                            myCircle.DataContext = metadata;
 
-                        MapOverlay myPointOverlay = new MapOverlay();
-                        myPointOverlay.Content = myCircle;
-                        myPointOverlay.PositionOrigin = new System.Windows.Point(0.5, 0.5);
-                        myPointOverlay.GeoCoordinate = new GeoCoordinate(metadata.Latitude, metadata.Longitude);
+                            MapOverlay myPointOverlay = new MapOverlay();
+                            myPointOverlay.Content = myCircle;
+                            myPointOverlay.PositionOrigin = new System.Windows.Point(0.5, 0.5);
+                            myPointOverlay.GeoCoordinate = new GeoCoordinate(metadata.Latitude, metadata.Longitude);
 
-                        _pointOnMapDictionary.Add(metadata, myPointOverlay);
+                            _pointOnMapDictionary.Add(metadata, myPointOverlay);
 
-                        _pointsLayer.Add(myPointOverlay);
+                            _pointsLayer.Add(myPointOverlay);
+                        }
                     }
-                    Map.Layers.Add(_pointsLayer);
+                    if (!Map.Layers.Contains(_pointsLayer))
+                    {
+                        Map.Layers.Add(_pointsLayer);
+                    }
                 });
         }
 
@@ -185,9 +189,11 @@ namespace Wanderer
                         
 
                         Thumbnail.Source = image;
+                        _listOfPlaces.setInternetSignOnline();
                     }
                     catch (WebException)
                     {
+                        _listOfPlaces.setInternetSignOffline();
                         Debug.WriteLine("wyjatek wewnatrz UI!");
                         return;
                     }
@@ -228,7 +234,6 @@ namespace Wanderer
                         {
                             _pointsLayer.Remove(_pointOnMapDictionary[metadata]);
                             toRemove.Add(metadata);
-
                         }
                     }
 

@@ -148,19 +148,15 @@ namespace Wanderer
             PanoramaImageRight.Source = null;
 
             WriteableBitmap wb = (WriteableBitmap)ImageSource;
-            Uri uri = new Uri("Resources/onePixel.png", UriKind.Relative);
-            StreamResourceInfo sr = Application.GetResourceStream(uri);
-    //        try
-    //        {
+            if (wb != null)
+            {
+                Uri uri = new Uri("Resources/onePixel.png", UriKind.Relative);
+                StreamResourceInfo sr = Application.GetResourceStream(uri);
                 using (Stream stream = sr.Stream)
                 {
-                  //  wb.p = 1; //This is essential!
-                  //  wb.PixelWidth = 1;
                     wb.SetSource(stream);
                 }
-   //         }
-   //         catch { }
-
+            }
 
             CollectPreviousImage();
 
@@ -1043,7 +1039,7 @@ namespace Wanderer
             }
         }
 
-        private void descCollisionsAlgorithm(Object state)
+        public void descCollisionsAlgorithm(Object state)
         {
             Timer t = (Timer)state;
             t.Dispose();
@@ -1205,6 +1201,7 @@ namespace Wanderer
                     }
                     catch (WebException)
                     {
+                        Configuration.InternetExceptionOccured = true;
                         LoadingAnimation.Visibility = Visibility.Collapsed;
                         ConnectionErrorMessage.Visibility = Visibility.Visible;
                     }

@@ -14,6 +14,9 @@ using System.Diagnostics;
 using System.ComponentModel;
 using System.Threading;
 using System.Collections.ObjectModel;
+using System.Windows.Media;
+using System.Windows.Controls.Primitives;
+using System.Collections;
 
 namespace Wanderer
 {
@@ -39,7 +42,7 @@ namespace Wanderer
         private MainPage _mainPage;
         private int _increaseAmount = 1;
         private int _actualNumberOfElementsInList = 1;
-        static ImageMetadata placeWaitingForThumbnail = null;
+        private static ImageMetadata placeWaitingForThumbnail = null;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -65,7 +68,36 @@ namespace Wanderer
             _actualIndex = 0;
 
             this._mainPage = mainPage;
+            Loaded += SetListBoxScrollEvent;
         }
+
+        private void SetListBoxScrollEvent(object sender, RoutedEventArgs routedEventArgs)
+        {
+            ScrollViewer scrollViewer = (ScrollViewer)VisualTreeHelper.GetChild(PlacesListBox, 0);
+            FrameworkElement framework = VisualTreeHelper.GetChild(scrollViewer, 0) as FrameworkElement;
+
+            IList groups = VisualStateManager.GetVisualStateGroups(framework);
+            VisualStateGroup visualStateGroup = groups.Cast<VisualStateGroup>().FirstOrDefault(@group => @group.Name == "ScrollStates");
+
+            visualStateGroup.CurrentStateChanged += OnListBoxStateChanged;
+        }
+
+        private void OnListBoxStateChanged(object sender, VisualStateChangedEventArgs e)
+        {
+            if (e.NewState.Name.Equals("NotScrolling"))
+            {
+                ScrollViewer scrollViewer = (ScrollViewer)VisualTreeHelper.GetChild(PlacesListBox, 0);
+                Debug.WriteLine("Event: " + e.NewState.Name);
+                Debug.WriteLine("offset: " + (scrollViewer.VerticalOffset));
+                Debug.WriteLine("offset: " + (scrollViewer.ScrollableHeight));
+                if (Configuration.WorkOnline
+                    && Math.Abs(scrollViewer.VerticalOffset - scrollViewer.ScrollableHeight) < 0.25)
+                {
+                    DAO.SendRequestForMetadataOfPlacesWithinRange(this, GPSTracker.CurrentLongitude, GPSTracker.CurrentLatitude, Configuration.GPSRange);
+                }
+            }
+        }
+
 
         public void RequestCallback(IAsyncResult result)
         {
@@ -103,12 +135,11 @@ namespace Wanderer
                     }
 
                     UpdateDistanceForAllPlaces(GPSTracker.CurrentLongitude, GPSTracker.CurrentLatitude);
+                    setInternetSignOnline();
                 }
                 catch (WebException)
                 {
-                    // odkomentuj do testów:
-                    //  DAO.LoadImage(this, 0);
-                    return;
+                    setInternetSignOffline();
                 }
             }
         }
@@ -162,7 +193,6 @@ namespace Wanderer
                             WebResponse response = request.EndGetResponse(result);
                             Stream stream = response.GetResponseStream();
 
-                            //ImageMetadata place = Places.ElementAt(_actualIndex);
                             IsolatedStorageDAO.CacheThumbnail(stream, placeWaitingForThumbnail.Width, placeWaitingForThumbnail.Height, placeWaitingForThumbnail.PictureSHA256);
 
                             BitmapImage image = new BitmapImage();
@@ -171,17 +201,15 @@ namespace Wanderer
                             placeWaitingForThumbnail.Image = image;
 
                             Debug.WriteLine("elements returned " + Places.Count);
-                            //_actualIndex++;
-                            //ProcessNextPlace();
-
+                            setInternetSignOnline();
                         }
                         catch (WebException)
                         {
+                            setInternetSignOffline();
                             Debug.WriteLine("wyjatek wewnatrz UI!");
                             return;
                         }
                         placeWaitingForThumbnail = null;
-                        //UpdateDistanceForAllPlaces(GPSTracker.CurrentLongitude, GPSTracker.CurrentLatitude);
                     });
             }
         }
@@ -197,9 +225,6 @@ namespace Wanderer
             Debug.WriteLine("HASH: " + image.PictureSHA256);
             PlacesListBox.SelectedIndex = -1;
 
-            //Configuration.UseGPS = false;
-            //Pano
-
             _mainPage.NavigationService.Navigate(uri);
         }
 
@@ -214,24 +239,6 @@ namespace Wanderer
                     metadata.ToggleDescriptions();
                 }
             });
-        }
-
-        private void ButtonClick(object sender, RoutedEventArgs e)
-        {
-            if (Configuration.WorkOnline)
-            {
-                DAO.SendRequestForMetadataOfPlacesWithinRange(this, GPSTracker.CurrentLongitude, GPSTracker.CurrentLatitude, Configuration.GPSRange);
-            }
-            /*
-                lock (this)
-                {
-                    if (_actualNumberOfElementsInList != _allPlaces.Count)
-                    {
-                        _actualNumberOfElementsInList += _increaseAmount;
-                        ProcessNextPlace();
-                    }
-                }
-             */
         }
 
         private void PlacesListBoxLoaded(object sender, RoutedEventArgs e)
@@ -260,21 +267,12 @@ namespace Wanderer
                 }
 
                 sortByDistance(Places);
-
-                //            OnPropertyChanged("Places");
+                refreshCollectionElements();
             });
         }
 
         private void sortByDistance(ObservablePlacesCollection listToSort)
         {
-            /*            lock (this)
-                        {
-                            Dispatcher.BeginInvoke(delegate
-                            {
-             * 
-             * 
-            */
-
             for (int i = 0; i < _invisiblePlaces.Count; )
             {
                 if (_invisiblePlaces.ElementAt(i).IsImageInDesiredRange)
@@ -301,11 +299,9 @@ namespace Wanderer
             }
 
             listToSort.Sort();
-            //                });
-            //           }
         }
 
-        protected void OnPropertyChanged(string name)
+        public void OnPropertyChanged(string name)
         {
             PropertyChangedEventHandler handler = PropertyChanged;
             if (handler != null)
@@ -314,8 +310,10 @@ namespace Wanderer
             }
         }
 
-        public void insertPlace(ImageMetadata place) { 
-            if(!_invisiblePlaces.Contains(place) && !Places.Contains(place)){
+        public void insertPlace(ImageMetadata place)
+        {
+            if (!_invisiblePlaces.Contains(place) && !Places.Contains(place))
+            {
                 _invisiblePlaces.Add(place);
             }
             UpdateDistanceForAllPlaces(GPSTracker.CurrentLongitude, GPSTracker.CurrentLatitude);
@@ -326,6 +324,32 @@ namespace Wanderer
             foreach (ImageMetadata place in source)
             {
                 target.Add(place);
+            }
+        }
+
+        public void setInternetSignOnline()
+        {
+            Deployment.Current.Dispatcher.BeginInvoke(delegate
+            {
+                InternetSign.Source = null;
+                InternetSign.Source = new BitmapImage(new Uri("Images/InternetOnline.png", UriKind.Relative));
+            });
+        }
+
+        public void setInternetSignOffline()
+        {
+            Deployment.Current.Dispatcher.BeginInvoke(delegate
+            {
+                InternetSign.Source = null;
+                InternetSign.Source = new BitmapImage(new Uri("Images/InternetOffline.png", UriKind.Relative));
+            });
+        }
+
+        public void refreshCollectionElements()
+        {
+            foreach (ImageMetadata metadata in Places)
+            {
+                metadata.OnPropertyChanged("IsPanoramaCached");
             }
         }
     }
