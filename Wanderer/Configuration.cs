@@ -140,7 +140,7 @@ namespace Wanderer
             {
                 Configuration.PrimaryDescriptionFontSize = 20;
                 Configuration.SecondaryDescriptionFontSize = 15;
-                Configuration.ServerAddress = "192.168.1.103";
+                Configuration.ServerAddress = "192.168.0.12";
                 Configuration.UseGPS = false;
                 Configuration.WorkOnline = false;
                 Configuration.GPSRange = 100000000;

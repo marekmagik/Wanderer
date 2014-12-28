@@ -28,8 +28,12 @@ namespace Wanderer
         private Dictionary<ImageMetadata, MapOverlay> _pointOnMapDictionary = new Dictionary<ImageMetadata, MapOverlay>();
         private MapLayer _pointsLayer = new MapLayer();
         private ListOfPlaces _listOfPlaces;
+        public ListOfPlaces ListOfPlaces
+        {
+            set { _listOfPlaces = value; }
+        }
 
-        public int Count 
+        public int Count
         {
             get
             {
@@ -37,10 +41,9 @@ namespace Wanderer
             }
         }
 
-        public MapWithPlacesPage(MainPage mainPage, ListOfPlaces listOfPlaces)
+        public MapWithPlacesPage(MainPage mainPage)
         {
             InitializeComponent();
-            this._listOfPlaces = listOfPlaces;
             _mainPage = mainPage;
             Map.CartographicMode = MapCartographicMode.Terrain;
             if (GPSTracker.CurrentLatitude != GPSTracker.LocationUnknown && GPSTracker.CurrentLongitude != GPSTracker.LocationUnknown)
@@ -48,7 +51,7 @@ namespace Wanderer
                 _actualPosition = new GeoCoordinate(GPSTracker.CurrentLatitude, GPSTracker.CurrentLongitude);
                 ShowLocationOnMap(_actualPosition);
             }
-            
+            Map.Layers.Add(_pointsLayer);
         }
 
         private void ShowLocationOnMap(GeoCoordinate position)
@@ -72,7 +75,6 @@ namespace Wanderer
 
             Map.Layers.Add(myLocationLayer);
 
-            DAO.SendRequestForMetadataOfPlacesWithinRange(this, _actualPosition.Longitude, _actualPosition.Latitude, Configuration.GPSRange);
         }
 
         public void RequestCallback(IAsyncResult result)
@@ -153,11 +155,12 @@ namespace Wanderer
             ImageMetadata metadata = ellipse.DataContext as ImageMetadata;
             _selectedMetadata = metadata;
 
-            if(IsolatedStorageDAO.IsThumbnailCached(metadata.PictureSHA256)){
+            if (IsolatedStorageDAO.IsThumbnailCached(metadata.PictureSHA256))
+            {
                 WriteableBitmap image = IsolatedStorageDAO.loadThumbnail(metadata.PictureSHA256);
                 Thumbnail.Source = image;
             }
-            else if(Configuration.WorkOnline)
+            else if (Configuration.WorkOnline)
                 DAO.SendRequestForThumbnail(this, metadata.PictureSHA256);
 
             Debug.WriteLine(metadata.PictureDescription);
@@ -183,10 +186,10 @@ namespace Wanderer
                     {
                         WebResponse response = request.EndGetResponse(result);
                         Stream stream = response.GetResponseStream();
-                        IsolatedStorageDAO.CacheThumbnail(stream,_selectedMetadata.Width,_selectedMetadata.Height ,_selectedMetadata.PictureSHA256);
+                        IsolatedStorageDAO.CacheThumbnail(stream, _selectedMetadata.Width, _selectedMetadata.Height, _selectedMetadata.PictureSHA256);
                         BitmapImage image = new BitmapImage();
                         image.SetSource(stream);
-                        
+
 
                         Thumbnail.Source = image;
                         _listOfPlaces.setInternetSignOnline();
@@ -219,6 +222,38 @@ namespace Wanderer
                     }
                     else
                         myLocationOverlay.GeoCoordinate = new GeoCoordinate(latitude, longitude);
+                });
+        }
+
+        public void NotifyNewElementAdded(ImageMetadata metadata)
+        {
+            Deployment.Current.Dispatcher.BeginInvoke(delegate
+                {
+                    Ellipse myCircle = new Ellipse();
+                    myCircle.Fill = new SolidColorBrush(Colors.Red);
+                    myCircle.Height = 20;
+                    myCircle.Width = 20;
+                    myCircle.Opacity = 50;
+                    myCircle.Tap += ShowContextMenu;
+                    myCircle.DataContext = metadata;
+
+                    MapOverlay myPointOverlay = new MapOverlay();
+                    myPointOverlay.Content = myCircle;
+                    myPointOverlay.PositionOrigin = new System.Windows.Point(0.5, 0.5);
+                    myPointOverlay.GeoCoordinate = new GeoCoordinate(metadata.Latitude, metadata.Longitude);
+
+                    _pointOnMapDictionary.Add(metadata, myPointOverlay);
+
+                    _pointsLayer.Add(myPointOverlay);
+                });
+        }
+
+        public void NotifyNewElementDeleted(ImageMetadata metadata)
+        {
+            Deployment.Current.Dispatcher.BeginInvoke(delegate
+                {
+                    _pointsLayer.Remove(_pointOnMapDictionary[metadata]);
+                    _pointOnMapDictionary.Remove(metadata);
                 });
         }
 

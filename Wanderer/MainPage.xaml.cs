@@ -81,10 +81,10 @@ namespace Wanderer
 
             IsolatedStorageDAO.InitIsolatedStorageDAO();
 
-            _listOfPlaces = new ListOfPlaces(this);
+            _mapPage = new MapWithPlacesPage(this);
+            _listOfPlaces = new ListOfPlaces(this, _mapPage);
+            _mapPage.ListOfPlaces = _listOfPlaces;
             _categoriesPage = new CategoriesBudlesPage(_listOfPlaces);
-
-            _mapPage = new MapWithPlacesPage(this, _listOfPlaces);
 
             GPSRangeTextBox.Text = GPSRange;
             WorkOnlineCheckbox.IsChecked = Configuration.WorkOnline;
@@ -160,8 +160,6 @@ namespace Wanderer
         private void WorkOnlineCheckboxChecked(object sender, RoutedEventArgs e)
         {
             Configuration.WorkOnline = true;
-            if (_mapPage.Count == 0 && GPSTracker != null && GPSTracker.IsEnabled)
-                DAO.SendRequestForMetadataOfPlacesWithinRange(_mapPage, GPSTracker.CurrentLongitude, GPSTracker.CurrentLatitude, Configuration.GPSRange);
             Deployment.Current.Dispatcher.BeginInvoke(delegate {
                 _listOfPlaces.InternetSign.Visibility = Visibility.Visible;
             });

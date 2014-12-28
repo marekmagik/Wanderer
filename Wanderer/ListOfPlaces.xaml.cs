@@ -46,9 +46,13 @@ namespace Wanderer
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public ListOfPlaces(MainPage mainPage)
+        public MapWithPlacesPage MapPage { get; set;}
+
+        public ListOfPlaces(MainPage mainPage, MapWithPlacesPage mapPage)
         {
             InitializeComponent();
+
+            MapPage = mapPage;
 
             DataContext = this;
 
@@ -57,6 +61,7 @@ namespace Wanderer
 
             foreach (ImageMetadata place in Places)
             {
+                MapPage.NotifyNewElementAdded(place);
                 Debug.WriteLine("deb: " + place.CurrentDistance);
                 LoadPhotoFromIsolatedStorage(place);
             }
@@ -68,6 +73,7 @@ namespace Wanderer
             _actualIndex = 0;
 
             this._mainPage = mainPage;
+
             Loaded += SetListBoxScrollEvent;
         }
 
@@ -152,6 +158,8 @@ namespace Wanderer
                 if (!Places.Contains(place))
                 {
                     Places.Add(place);
+                    MapPage.NotifyNewElementAdded(place);
+
                     if (IsolatedStorageDAO.IsThumbnailCached(place.PictureSHA256))
                     {
                         LoadPhotoFromIsolatedStorage(place);
@@ -278,6 +286,7 @@ namespace Wanderer
                 if (_invisiblePlaces.ElementAt(i).IsImageInDesiredRange)
                 {
                     Places.Add(_invisiblePlaces.ElementAt(i));
+                    MapPage.NotifyNewElementAdded(_invisiblePlaces.ElementAt(i));
                     _invisiblePlaces.RemoveAt(i);
                 }
                 else
@@ -290,6 +299,7 @@ namespace Wanderer
                 if (!Places.ElementAt(i).IsImageInDesiredRange)
                 {
                     _invisiblePlaces.Add(Places.ElementAt(i));
+                    MapPage.NotifyNewElementDeleted(Places.ElementAt(i));
                     Places.RemoveAt(i);
                 }
                 else
